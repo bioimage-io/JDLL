@@ -34,6 +34,7 @@ import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
 import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer;
 import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer.PreparedDataset;
 import io.bioimage.modelrunner.gui.custom.training.TrainingConfigFiles;
+import io.bioimage.modelrunner.gui.custom.training.ValidationRequests;
 import io.bioimage.modelrunner.model.special.unet.Unet;
 import io.bioimage.modelrunner.model.special.unet.UnetTrainingProgress;
 import io.bioimage.modelrunner.model.special.unet.UnetValidationPreview;
@@ -42,6 +43,7 @@ public class UnetTrainingService implements DenseSegmentationTrainingService {
 
     private final ModelInstaller installer;
     private Service runningPython;
+    private ValidationRequests validationRequests;
 
     /**
      * Creates a new UnetTrainingService instance.
@@ -101,6 +103,17 @@ public class UnetTrainingService implements DenseSegmentationTrainingService {
             Consumer<UnetValidationPreview> previewConsumer,
             Consumer<String> logConsumer)
             throws IOException, ExecutionException, InterruptedException, BuildException, TaskException {
+        train(config, progressConsumer, previewConsumer, logConsumer, null);
+    }
+
+    @Override
+    public void train(DenseSegmentationTrainingConfig input,
+            Consumer<UnetTrainingProgress> progressConsumer,
+            Consumer<UnetValidationPreview> previewConsumer, Consumer<String> logConsumer,
+            Consumer<Map<String, Object>> validationConsumer)
+            throws IOException, ExecutionException, InterruptedException, BuildException, TaskException {
+        if (!(input instanceof UnetTrainingConfig)) throw new IllegalArgumentException("Expected UNet configuration");
+        UnetTrainingConfig config = (UnetTrainingConfig) input;
         validate(config);
         if (!installer.isEnvironmentInstalled()) {
             installer.installEnvironment(logConsumer);
@@ -111,8 +124,22 @@ public class UnetTrainingService implements DenseSegmentationTrainingService {
         PreparedDataset dataset = SegmentationDatasetPreparer.prepare(config.getDatasetPath(), config.getModelName(),
                 config.getModelsDir(), 0.15d, SegmentationDatasetPreparer.Framework.UNET, logConsumer);
         validateDatasetCompatibility(config, dataset);
-        Unet.train(toPythonConfig(config, dataset.getDatasetRoot()), progressConsumer, previewConsumer,
-                logConsumer, this::setRunningPython);
+        try (ValidationRequests requests = new ValidationRequests()) {
+            synchronized (this) { validationRequests = requests; }
+            Map<String, Object> values = toPythonConfig(config, dataset.getDatasetRoot());
+            values.put("_jdll_validation_requests", requests.getDirectory());
+            Unet.train(values, progressConsumer, previewConsumer, logConsumer, this::setRunningPython, event -> {
+                requests.accept(event);
+                if (validationConsumer != null) validationConsumer.accept(event);
+            });
+        } finally {
+            synchronized (this) { validationRequests = null; }
+        }
+    }
+
+    @Override
+    public synchronized String requestFullValidation() throws IOException {
+        return validationRequests == null ? null : validationRequests.request();
     }
 
     /**
@@ -224,20 +251,23 @@ public class UnetTrainingService implements DenseSegmentationTrainingService {
                 "weight_decay", "lr_scheduler", "instance_scale_normalization", "validation_fraction",
                 "foreground_oversampling", "foreground_probability", "skip_empty_images",
                 "skip_empty_patches", "empty_patch_max_retries", "include_empty_patches_after_max_retries",
-                "empty_plane_fraction", "max_padding_ratio",
+                "max_empty_plane_fraction", "empty_patch_fraction", "max_padding_ratio",
                 "augmentation_profile", "num_workers", "mixed_precision", "deep_supervision",
                 "context_slices", "context", "spacing", "validation", "effective_batch_size",
-                "steps_per_epoch", "minimum_steps_per_epoch", "expected_patches_per_case",
+                "steps_per_epoch", "minimum_steps_per_epoch", "minimum_patches_per_epoch", "expected_patches_per_case",
                 "memory_fraction", "focal_gamma", "focal_alpha", "auto_focal",
                 "auto_focal_foreground_threshold", "auto_focal_boundary_threshold", "auto_focal_weight",
                 "auto_boundary_focal_weight", "auto_focal_sample_limit", "progress_update_interval",
                 "log_update_interval", "save_every_epoch", "preview_count", "normalization",
-                "postprocessing", "loss_weights", "augmentation"
+                "postprocessing", "loss_weights", "augmentation", "data_cache_mb", "annotation_preparation"
         };
         for (String key : keys) {
             if (source.containsKey(key)) {
                 target.put(key, source.get(key));
             }
+        }
+        if (source.containsKey("empty_plane_fraction") && !source.containsKey("max_empty_plane_fraction")) {
+            target.put("max_empty_plane_fraction", source.get("empty_plane_fraction"));
         }
     }
 

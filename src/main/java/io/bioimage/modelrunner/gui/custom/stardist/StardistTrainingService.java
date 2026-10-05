@@ -34,6 +34,7 @@ import org.apposed.appose.TaskException;
 
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
 import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer;
+import io.bioimage.modelrunner.gui.custom.training.ValidationRequests;
 import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer.Dimensionality;
 import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer.PreparedDataset;
 import io.bioimage.modelrunner.gui.custom.stardist.StardistModelRegistry.FineTuneSource;
@@ -51,6 +52,7 @@ public class StardistTrainingService {
 
     private final ModelInstaller installer;
     private File cancelSignalFile;
+    private ValidationRequests validationRequests;
     private Service runningPython;
 
     /**
@@ -79,6 +81,14 @@ public class StardistTrainingService {
             Consumer<StardistTrainingProgress> progressConsumer,
             Consumer<StardistValidationPreview> previewConsumer,
             Consumer<String> logConsumer)
+            throws IOException, ExecutionException, InterruptedException, BuildException, TaskException {
+        train(config, progressConsumer, previewConsumer, logConsumer, null);
+    }
+
+    public void train(StardistTrainingConfig config,
+            Consumer<StardistTrainingProgress> progressConsumer,
+            Consumer<StardistValidationPreview> previewConsumer,
+            Consumer<String> logConsumer, Consumer<Map<String, Object>> validationConsumer)
             throws IOException, ExecutionException, InterruptedException, BuildException, TaskException {
         validate(config);
         PreparedDataset dataset = SegmentationDatasetPreparer.prepare(config.getDatasetPath(), config.getModelName(),
@@ -113,14 +123,25 @@ public class StardistTrainingService {
         applyDimensionalityDefaults(trainingConfig, dataset.getDimensionality());
         trainingConfig.put("train_epochs", config.getEpochs());
         File cancelFile = beginCancelSignal();
-        try {
+        try (ValidationRequests requests = new ValidationRequests()) {
+            synchronized (this) { validationRequests = requests; }
+            trainingConfig.put("_jdll_full_validation_request", requests.getDirectory());
             StarDist.train(datasetRoot.getAbsolutePath(), null,
                     config.getOutputModelDir(), config.getDevice(), dataset.getImageChannels(),
                     config.getLabelColorMode(), config.getValidFraction(), trainingConfig,
-                    progressConsumer, previewConsumer, logConsumer, cancelFile.getAbsolutePath(), this::setRunningPython);
+                    progressConsumer, previewConsumer, logConsumer, cancelFile.getAbsolutePath(), this::setRunningPython,
+                    event -> {
+                        requests.accept(event);
+                        if (validationConsumer != null) validationConsumer.accept(event);
+                    });
         } finally {
             finishCancelSignal(cancelFile);
         }
+    }
+
+    /** Queues a one-shot request without submitting another task to the busy Python worker. */
+    public synchronized String requestFullValidation() throws IOException {
+        return validationRequests == null ? null : validationRequests.request();
     }
 
     /**
@@ -195,7 +216,7 @@ public class StardistTrainingService {
         if (dataset.is3D()) {
             trainingConfig.put("train_batch_size", 1);
             trainingConfig.putIfAbsent("train_patch_size", java.util.Arrays.asList(32, 128, 128));
-            trainingConfig.put("validation_preview_count", 1);
+            trainingConfig.put("validation_preview_count", 4);
         } else {
             trainingConfig.put("train_batch_size", 4);
             trainingConfig.put("train_patch_size", java.util.Arrays.asList(256, 256));
@@ -274,6 +295,10 @@ public class StardistTrainingService {
                     trainingConfig.put(entry.getKey(), entry.getValue());
                 }
             }
+            if (StardistModelRegistry.isArchitecture3D(architecture)
+                    && !customConfig.containsKey("validation_preview_count")) {
+                trainingConfig.put("validation_preview_count", 4);
+            }
             return;
         }
         String arch = architecture.toLowerCase();
@@ -329,7 +354,7 @@ public class StardistTrainingService {
         config.put("n_rays", 96);
         config.put("train_patch_size", java.util.Arrays.asList(z, y, x));
         config.put("train_batch_size", 1);
-        config.put("validation_preview_count", 1);
+        config.put("validation_preview_count", 4);
     }
 
     private static void applyDimensionalityDefaults(Map<String, Object> config, Dimensionality dimensionality) {
@@ -370,6 +395,7 @@ public class StardistTrainingService {
     private synchronized void finishCancelSignal(File signal) {
         if (cancelSignalFile == signal) {
             cancelSignalFile = null;
+            validationRequests = null;
         }
         if (signal == null) {
             return;

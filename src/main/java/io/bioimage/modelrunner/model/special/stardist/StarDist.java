@@ -1602,6 +1602,19 @@ public final class StarDist extends DLModelPytorchProtected {
 			String cancelSignalPath,
 			Consumer<Service> serviceConsumer)
 			throws IOException, BuildException, InterruptedException, TaskException {
+		train(dataDir, gtDir, outputDir, device, imageChannels, labelColorMode, validFraction,
+				config, progressConsumer, previewConsumer, logConsumer, cancelSignalPath, serviceConsumer, null);
+	}
+
+	/** Runs training with optional full-validation lifecycle notifications. */
+	public static void train(String dataDir, String gtDir, String outputDir,
+			String device, String imageChannels, String labelColorMode, double validFraction,
+			Map<String, Object> config,
+			Consumer<StardistTrainingProgress> progressConsumer,
+			Consumer<StardistValidationPreview> previewConsumer,
+			Consumer<String> logConsumer, String cancelSignalPath,
+			Consumer<Service> serviceConsumer, Consumer<Map<String, Object>> validationConsumer)
+			throws IOException, BuildException, InterruptedException, TaskException {
 		validateTrainingArguments(dataDir, gtDir, outputDir, validFraction, config);
 		String normalizedDevice = normalizeDevice(device);
 		File output = new File(outputDir);
@@ -1610,26 +1623,56 @@ public final class StarDist extends DLModelPytorchProtected {
 		}
 
 		PixiEnvironmentSpec envSpec = resolvePytorchEnv();
-		Environment env = Appose.pixi()
-				.environment(envSpec.getSelectedEnvironment())
-				.wrap(envSpec.getEnvironmentDirectory());
+        Environment env = Appose.pixi().wrap(envSpec.getEnvironmentDirectory()).activate(envSpec.getSelectedEnvironment());
 		Service python = env.python();
 		if (serviceConsumer != null) {
 			serviceConsumer.accept(python);
 		}
 		python.init("import numpy as np");
+		java.nio.file.Path workspace = java.nio.file.Files.createTempDirectory("jdll-stardist-");
 		try {
+			config = new LinkedHashMap<String, Object>(config);
+			config.put("_jdll_data_cache", workspace.toString());
 			Task task = python.task(buildTrainingCode(dataDir, gtDir, outputDir, normalizedDevice,
 					imageChannels, labelColorMode, validFraction, config, cancelSignalPath));
-			task.listen(event -> handleTrainingEvent(event, progressConsumer, previewConsumer, logConsumer));
+			task.listen(event -> handleTrainingEvent(event, progressConsumer, previewConsumer, logConsumer, validationConsumer));
 			task.waitFor();
 		} finally {
-			if (python.isAlive()) {
-				python.close();
+			try {
+				closeTrainingService(python, workspace, logConsumer);
+			} finally {
+				if (serviceConsumer != null) serviceConsumer.accept(null);
 			}
-			if (serviceConsumer != null) {
-				serviceConsumer.accept(null);
+		}
+	}
+
+	/** Called after training ends; never delete memory-mapped data while the worker is alive. */
+	static void closeTrainingService(Service python, java.nio.file.Path workspace, Consumer<String> logConsumer) {
+		if (python.isAlive()) python.close();
+		Thread cleanup = new Thread(() -> {
+			try {
+				if (python.isAlive()) python.waitFor();
+				try (java.util.stream.Stream<java.nio.file.Path> paths = java.nio.file.Files.walk(workspace)) {
+					for (java.nio.file.Path path : (Iterable<java.nio.file.Path>) paths.sorted(java.util.Comparator.reverseOrder())::iterator) {
+						java.nio.file.Files.deleteIfExists(path);
+					}
+				}
+			} catch (InterruptedException interrupted) {
+				Thread.currentThread().interrupt();
+			} catch (IOException cleanupError) {
+				if (logConsumer != null) logConsumer.accept("Could not remove temporary StarDist data at "
+						+ workspace + ": " + cleanupError.getMessage());
 			}
+		}, "stardist-training-cleanup");
+		cleanup.setDaemon(true);
+		cleanup.start();
+		try {
+			cleanup.join(250L);
+		} catch (InterruptedException interrupted) {
+			Thread.currentThread().interrupt();
+		} finally {
+			// Keep the caller responsive; the cleanup thread confirms exit before deleting files.
+			if (python.isAlive()) python.kill();
 		}
 	}
 
@@ -1851,7 +1894,13 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "  if fine_tune_source_config is not None:" + nl
 				+ "    fine_tune_source_config.pop(_derived_key, None)" + nl
 				+ "cancel_signal_path = r'" + TrainingCodeUtils.py(cancelSignalPath == null ? "" : cancelSignalPath) + "'" + nl
-				+ "preview_count = int(config.pop('validation_preview_count', 20))" + nl
+				+ "preview_count = int(config.pop('validation_preview_count', 4 if n_dim == 3 else 20))" + nl
+				+ "validation_options = config.pop('validation', {})" + nl
+				+ "data_options = config.pop('data_loading', {})" + nl
+				+ "data_workspace = config.pop('_jdll_data_cache', None)" + nl
+				+ "if data_workspace is not None:" + nl
+				+ "  data_options['cache_dir'] = data_workspace" + nl
+				+ "full_validation_request = config.pop('_jdll_full_validation_request', None)" + nl
 				+ "is_accelerated = _jdll_requested_device != 'cpu'" + nl
 				+ "progress_every_n_steps = 5 if is_accelerated else 1" + nl
 				+ "log_every_n_steps = 50 if is_accelerated else 10" + nl
@@ -1924,11 +1973,16 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "      if len(tif.series) != 1:" + nl
 				+ "        raise ValueError('Multiple TIFF series; export one image series for training')" + nl
 				+ "      series = tif.series[0]" + nl
-				+ "      array = np.asarray(series.asarray())" + nl
+				+ "      store = globals().get('storage')" + nl
+				+ "      direct = series.dataoffset is not None and series.keyframe.is_memmappable" + nl
+				+ "      destination = store.decode_path(path, int(np.prod(series.shape)) * series.dtype.itemsize) if store is not None and not direct else 'memmap'" + nl
+				+ "      array = series.asarray(out=destination, maxworkers=1)" + nl
 				+ "      if n_dim == 3 and not is_mask:" + nl
 				+ "        _image_ome_metadata[str(path)] = tif.ome_metadata" + nl
 				+ "      return array, str(series.axes).upper()" + nl
 				+ "  with Image.open(path, formats=[file_format]) as image:" + nl
+				+ "    if 'storage' in globals():" + nl
+				+ "      storage.raster_guard(path, image)" + nl
 				+ "    if getattr(image, 'n_frames', 1) != 1:" + nl
 				+ "      raise ValueError('Multiple raster frames; export a TIFF stack with explicit axes')" + nl
 				+ "    if image.mode == 'P' and not is_mask:" + nl
@@ -1968,17 +2022,17 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "      axes[unknown[0]] = 'Z'" + nl
 				+ "  for index in range(len(axes) - 1, -1, -1):" + nl
 				+ "    axis = axes[index]" + nl
-				+ "    if axis == 'T' or axis not in ('X', 'Y', 'Z', 'C'):" + nl
+				+ "    if axis == 'T' or (axis == 'Z' and n_dim == 2) or axis not in ('X', 'Y', 'Z', 'C'):" + nl
 				+ "      if array.shape[index] != 1:" + nl
 				+ "        raise ValueError('Unsupported non-spatial axis %s with size %d in shape %s' % (axis, array.shape[index], array.shape))" + nl
-				+ "      array = np.take(array, 0, axis=index)" + nl
+				+ "      array = array[tuple(0 if i == index else slice(None) for i in range(array.ndim))]" + nl
 				+ "      axes.pop(index)" + nl
 				+ "  spatial = list('ZYX' if n_dim == 3 else 'YX')" + nl
 				+ "  if any(axis not in axes for axis in spatial):" + nl
 				+ "    raise ValueError('Expected %dD data but found axes %s and shape %s' % (n_dim, ''.join(axes), array.shape))" + nl
 				+ "  if is_mask and 'C' in axes:" + nl
 				+ "    channel = axes.index('C')" + nl
-				+ "    array = np.take(array, 0, axis=channel)" + nl
+				+ "    array = array[tuple(0 if i == channel else slice(None) for i in range(array.ndim))]" + nl
 				+ "    axes.pop(channel)" + nl
 				+ "  target = spatial + ([] if is_mask else ['C'])" + nl
 				+ "  if not is_mask and 'C' not in axes:" + nl
@@ -1991,6 +2045,9 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "    return None" + nl
 				+ "  try:" + nl
 				+ "    xml = _image_ome_metadata.get(str(Path(path).absolute()))" + nl
+				+ "    if not xml and _signature_format(Path(path)) == 'TIFF':" + nl
+				+ "      with TiffFile(str(path)) as tif:" + nl
+				+ "        xml = tif.ome_metadata" + nl
 				+ "    if not xml:" + nl
 				+ "      return None" + nl
 				+ "    pixels = next(element for element in ET.fromstring(xml).iter() if element.tag.endswith('Pixels'))" + nl
@@ -2007,28 +2064,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "  except Exception:" + nl
 				+ "    return None" + nl
 				+ "def _load_pairs(pairs):" + nl
-				+ "  X, Y = [], []" + nl
-				+ "  n_channels = int(config.get('n_channel_in', 1))" + nl
-				+ "  for img_path, mask_path in pairs:" + nl
-				+ "    raw_x, x_axes = _read_array(img_path)" + nl
-				+ "    raw_y, y_axes = _read_array(mask_path, is_mask=True)" + nl
-				+ "    x = _canonical_array(raw_x, x_axes, False)" + nl
-				+ "    y = _canonical_array(raw_y, y_axes, True).astype(np.int32, copy=False)" + nl
-				+ "    if n_channels == 1:" + nl
-				+ "      x = x[..., :1]" + nl
-				+ "    elif x.shape[-1] == 1:" + nl
-				+ "      x = np.repeat(x, n_channels, axis=-1)" + nl
-				+ "    elif x.shape[-1] == 2:" + nl
-				+ "      x = np.concatenate((x, np.zeros_like(x[..., :1])), axis=-1)" + nl
-				+ "    elif x.shape[-1] > n_channels:" + nl
-				+ "      x = x[..., :n_channels]" + nl
-				+ "    spatial_axes = tuple(range(n_dim))" + nl
-				+ "    empty_channels = np.all(x == 0, axis=spatial_axes)" + nl
-				+ "    x = normalize(x, 1, 99.8, axis=spatial_axes).astype(np.float32, copy=False)" + nl
-				+ "    x[..., empty_channels] = 0" + nl
-				+ "    X.append(x)" + nl
-				+ "    Y.append(y)" + nl
-				+ "  return X, Y" + nl
+				+ "  return storage.pairs(pairs)" + nl
 				+ "def _dataset():" + nl
 				+ "  root = Path(data_dir)" + nl
 				+ "  if 'gt_dir' in globals():" + nl
@@ -2051,7 +2087,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "    n_val = max(1, int(round(len(train_pairs) * " + validFraction + "))) if len(train_pairs) > 1 else 0" + nl
 				+ "    val_pairs = train_pairs[:n_val]" + nl
 				+ "    train_pairs = train_pairs[n_val:]" + nl
-				+ "  if not train_pairs or not val_pairs:" + nl
+				+ "  if not train_pairs or (not val_pairs and len(train_pairs) != 1):" + nl
 				+ "    raise ValueError('Could not find matching StarDist training/validation image-mask pairs in ' + data_dir)" + nl
 				+ "  return train_pairs, val_pairs" + nl
 				+ "def _valid_ratio(values):" + nl
@@ -2064,8 +2100,8 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "    return" + nl
 				+ "  extent_ratio = None" + nl
 				+ "  try:" + nl
-				+ "    extents = np.asarray(calculate_extents(labels), dtype=np.float64)" + nl
-				+ "    if extents.shape == (3,) and np.all(extents > 0):" + nl
+				+ "    extents = stardist_data.median_object_extents(labels)" + nl
+				+ "    if extents is not None and extents.shape == (3,) and np.all(extents > 0):" + nl
 				+ "      extent_ratio = tuple((np.max(extents) / extents).tolist())" + nl
 				+ "  except Exception:" + nl
 				+ "    extents = None" + nl
@@ -2092,24 +2128,16 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "  comparison = '' if extent_ratio is None else ', object_extent_ratio=' + str(tuple(round(v, 4) for v in extent_ratio))" + nl
 				+ "  _task_update(message='Resolved StarDist3D anisotropy from %s: %s%s; grid=%s.' % (source, tuple(round(v, 4) for v in anisotropy), comparison, tuple(config['grid'])), info={'type': 'configuration', 'anisotropy': list(anisotropy), 'anisotropy_source': source, 'grid': list(config['grid'])})" + nl
 				+ "def _measure_image_instances(label, image_index):" + nl
-				+ "  label = np.asarray(label)" + nl
-				+ "  ids, counts = np.unique(label, return_counts=True)" + nl
-				+ "  border_ids = set()" + nl
-				+ "  for axis in range(n_dim):" + nl
-				+ "    for edge in (0, label.shape[axis] - 1):" + nl
-				+ "      border_ids.update(int(value) for value in np.unique(np.take(label, edge, axis=axis)) if value > 0)" + nl
-				+ "  candidates = [int(value) for value, count in zip(ids, counts) if value > 0 and count >= 4 and int(value) not in border_ids]" + nl
+				+ "  objects = stardist_data.statistics(label)['objects']" + nl
+				+ "  candidates = [key for key, (count, lo, hi) in objects.items() if count >= 4 and np.all(lo > 0) and np.all(hi < label.shape)]" + nl
 				+ "  available = len(candidates)" + nl
 				+ "  if available > 21:" + nl
 				+ "    candidates = random.Random(5489 + image_index).sample(candidates, 21)" + nl
 				+ "  anisotropy = np.asarray(config.get('anisotropy', [1.0, 1.0, 1.0]), dtype=np.float64) if n_dim == 3 else None" + nl
 				+ "  diameters, extents = [], []" + nl
 				+ "  for instance_id in candidates:" + nl
-				+ "    coordinates = np.argwhere(label == instance_id)" + nl
-				+ "    if coordinates.size == 0:" + nl
-				+ "      continue" + nl
-				+ "    extent = coordinates.max(axis=0) - coordinates.min(axis=0) + 1" + nl
-				+ "    count = float(coordinates.shape[0])" + nl
+				+ "    count, lo, hi = objects[instance_id]" + nl
+				+ "    extent = hi - lo" + nl
 				+ "    diameter = (2.0 * np.sqrt(count / np.pi) if n_dim == 2 else 2.0 * (3.0 * count * np.prod(anisotropy) / (4.0 * np.pi)) ** (1.0 / 3.0))" + nl
 				+ "    diameters.append(float(diameter))" + nl
 				+ "    extents.append(extent.astype(np.float64))" + nl
@@ -2199,50 +2227,15 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "  return 'Adapted the first convolution from %d to %d channels.' % (source_channels, target_channels)" + nl
 				+ "def _baseline_validation(model_ref, X_val, Y_val):" + nl
 				+ "  try:" + nl
-				+ "    n_take = config.get('train_n_val_patches')" + nl
-				+ "    n_take = len(X_val) if n_take is None else min(int(n_take), len(X_val))" + nl
-				+ "    if n_dim == 3:" + nl
-				+ "      from stardist.models.model3d import StarDistData3D" + nl
-				+ "      from stardist.rays3d import rays_from_json" + nl
-				+ "      validation = StarDistData3D(X_val, Y_val, batch_size=n_take, length=1," + nl
-				+ "        rays=rays_from_json(model_ref.config.rays_json), patch_size=config['train_patch_size']," + nl
-				+ "        grid=config['grid'], anisotropy=config.get('anisotropy'), use_gpu=False," + nl
-				+ "        foreground_prob=config.get('train_foreground_only', 0.9)," + nl
-				+ "        n_classes=config.get('n_classes'), sample_ind_cache=config.get('train_sample_cache', True))[0]" + nl
-				+ "    else:" + nl
-				+ "      from stardist.models.model2d import StarDistData2D" + nl
-				+ "      validation = StarDistData2D(X_val, Y_val, batch_size=n_take, length=1," + nl
-				+ "        n_rays=config['n_rays'], patch_size=config['train_patch_size'], grid=config['grid']," + nl
-				+ "        shape_completion=config.get('train_shape_completion', False)," + nl
-				+ "        b=(config.get('train_completion_crop', 32) if config.get('train_shape_completion', False) else 0), use_gpu=False," + nl
-				+ "        foreground_prob=config.get('train_foreground_only', 0.9)," + nl
-				+ "        n_classes=config.get('n_classes'), sample_ind_cache=config.get('train_sample_cache', True))[0]" + nl
-				+ "    values = model_ref.keras_model.evaluate(validation[0], validation[1], verbose=0, return_dict=True)" + nl
+				+ "    rng = np.random.RandomState(42)" + nl
+				+ "    n_take = min(len(X_val), int(config['train_batch_size']))" + nl
+				+ "    plan = [(i, stardist_data.sample_start(Y_val[i], config['train_patch_size'], rng, True)) for i in range(n_take)]" + nl
+				+ "    inputs, targets, _ = stardist_validation.crop_batch(model_ref, X_val, Y_val, plan)" + nl
+				+ "    values = model_ref.keras_model.evaluate(inputs, targets, verbose=0, return_dict=True)" + nl
 				+ "    clean = _clean(values)" + nl
 				+ "    _task_update(message='Fine-tuning baseline validation: ' + json.dumps(clean, sort_keys=True), info={'type': 'baseline', 'metrics': clean})" + nl
 				+ "  except Exception as baseline_error:" + nl
 				+ "    _task_update(message='Could not calculate fine-tuning baseline validation: ' + str(baseline_error), info={'type': 'warning', 'message': str(baseline_error)})" + nl
-				+ "def _preview_region(image, label, full_volume):" + nl
-				+ "  if n_dim != 3 or full_volume:" + nl
-				+ "    return image, label" + nl
-				+ "  patch = tuple(int(value) for value in config.get('train_patch_size', label.shape))" + nl
-				+ "  coords = np.argwhere(label > 0)" + nl
-				+ "  center = np.asarray(label.shape, dtype=np.int64) // 2 if len(coords) == 0 else np.median(coords, axis=0).astype(np.int64)" + nl
-				+ "  slices = []" + nl
-				+ "  for axis, size in enumerate(patch):" + nl
-				+ "    size = min(int(size), int(label.shape[axis]))" + nl
-				+ "    start = max(0, min(int(center[axis]) - size // 2, int(label.shape[axis]) - size))" + nl
-				+ "    slices.append(slice(start, start + size))" + nl
-				+ "  return image[tuple(slices) + (slice(None),)], label[tuple(slices)]" + nl
-				+ "def _preview_tiles(image):" + nl
-				+ "  patch = tuple(int(value) for value in config.get('train_patch_size', image.shape[:n_dim]))" + nl
-				+ "  spatial = tuple(max(1, int(np.ceil(image.shape[axis] / float(patch[axis])))) for axis in range(n_dim))" + nl
-				+ "  return spatial + ((1,) if image.ndim > n_dim else ())" + nl
-				+ "def _initial_plane(label):" + nl
-				+ "  if n_dim != 3:" + nl
-				+ "    return 0" + nl
-				+ "  counts = np.count_nonzero(label > 0, axis=(1, 2))" + nl
-				+ "  return int(np.argmax(counts)) if np.any(counts) else int(label.shape[0] // 2)" + nl
 				+ "class JDLLProgressCallback(Callback):" + nl
 				+ "  def __init__(self, model_ref, X_val, Y_val):" + nl
 				+ "    super().__init__()" + nl
@@ -2285,7 +2278,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "    current_epoch = int(epoch) + 1" + nl
 				+ "    step = min(state['total_steps'], current_epoch * int(config.get('train_steps_per_epoch', 1)))" + nl
 				+ "    losses = _clean({'train/total_loss': logs.get('loss'), 'val/total_loss': logs.get('val_loss')})" + nl
-				+ "    metrics = _clean({'learning_rate': self._lr()})" + nl
+				+ "    metrics = _clean({'learning_rate': self._lr(), 'val/object_f1': logs.get('val_object_f1')})" + nl
 				+ "    info = {'type': 'progress', 'epoch': current_epoch, 'step': step, 'total_epochs': state['total_epochs'], 'total_steps': state['total_steps'], 'losses': losses, 'metrics': metrics}" + nl
 				+ "    _task_update(message='StarDist epoch %d/%d' % (current_epoch, state['total_epochs']), current=step, maximum=state['total_steps'], info=info)" + nl
 				+ "    print('epoch %03d/%d step=%d/%d loss=%s val_loss=%s lr=%s' % (current_epoch, state['total_epochs'], step, state['total_steps'], logs.get('loss'), logs.get('val_loss'), self._lr()), flush=True)" + nl
@@ -2295,41 +2288,17 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "      except Exception:" + nl
 				+ "        pass" + nl
 				+ "      return" + nl
-				+ "    samples = []" + nl
-				+ "    full_volume = n_dim == 3 and current_epoch == state['total_epochs']" + nl
-				+ "    for i, (source_image, source_label) in enumerate(zip(self.X_val[:preview_count], self.Y_val[:preview_count])):" + nl
-				+ "      image, label = _preview_region(source_image, source_label, full_volume)" + nl
-				+ "      image_path = preview_dir / ('preview_%03d_image.npy' % i)" + nl
-				+ "      label_path = preview_dir / ('preview_%03d_label.npy' % i)" + nl
-				+ "      pred_path = preview_dir / ('preview_%03d_prediction.npy' % i)" + nl
-				+ "      prob_path = preview_dir / ('preview_%03d_prob.npy' % i)" + nl
-				+ "      sample = {'index': i}" + nl
-				+ "      _atomic_npy_save(image_path, image)" + nl
-				+ "      _atomic_npy_save(label_path, np.asarray(label, dtype=np.int32))" + nl
-				+ "      sample['image_path'] = str(image_path)" + nl
-				+ "      sample['label_path'] = str(label_path)" + nl
-				+ "      sample['axes'] = str(config.get('axes', 'ZYXC' if n_dim == 3 else 'YXC'))" + nl
-				+ "      sample['initial_plane'] = {'axis': 'z', 'index': _initial_plane(label)} if n_dim == 3 else None" + nl
-				+ "      sample['full_volume'] = bool(full_volume)" + nl
-				+ "      try:" + nl
-				+ "        preview_tiles = _preview_tiles(image)" + nl
-				+ "        prediction, details = self.model_ref.predict_instances(image, axes=str(config.get('axes', 'YXC')), normalizer=None, n_tiles=preview_tiles, show_tile_progress=False)" + nl
-				+ "        _atomic_npy_save(pred_path, np.asarray(prediction, dtype=np.int32))" + nl
-				+ "        sample['prediction_path'] = str(pred_path)" + nl
-				+ "        prob, _dist = self.model_ref.predict(image, axes=str(config.get('axes', 'YXC')), normalizer=None, n_tiles=preview_tiles, show_tile_progress=False)" + nl
-				+ "        _atomic_npy_save(prob_path, prob)" + nl
-				+ "        sample['prob_path'] = str(prob_path)" + nl
-				+ "      except Exception:" + nl
-				+ "        pass" + nl
-				+ "      samples.append(sample)" + nl
-				+ "    if samples:" + nl
-				+ "      manifest = {'epoch': current_epoch, 'n_dim': n_dim, 'axes': str(config.get('axes')), 'anisotropy': config.get('anisotropy'), 'samples': samples}" + nl
-				+ "      with open(preview_manifest_path, 'w', encoding='utf-8') as f:" + nl
-				+ "        json.dump(manifest, f)" + nl
-				+ "      _task_update(message='StarDist validation preview epoch %d' % current_epoch, current=current_epoch, maximum=state['total_epochs'], info={'type': 'preview', 'epoch': current_epoch, 'preview_path': str(preview_manifest_path)})" + nl
+				+ TrainingCodeUtils.pythonModule("stardist_data", "python/stardist_data.py")
+				+ TrainingCodeUtils.pythonModule("validation_control", "python/validation_control.py")
+				+ TrainingCodeUtils.pythonModule("stardist_sampling", "python/stardist_sampling.py")
+				+ TrainingCodeUtils.pythonModule("stardist_validation", "python/stardist_validation.py")
+				+ "storage = stardist_data.DatasetStore(_read_array, _canonical_array, n_dim, config['n_channel_in'], data_options, _task_update, _cancel_requested)" + nl
 				+ "train_pairs, val_pairs = _dataset()" + nl
 				+ "X_train, Y_train = _load_pairs(train_pairs)" + nl
 				+ "X_val, Y_val = _load_pairs(val_pairs)" + nl
+				+ "if not val_pairs and len(train_pairs) == 1:" + nl
+				+ "  X_train, Y_train, X_val, Y_val = storage.spatial_split(X_train, Y_train, config['train_patch_size'], " + validFraction + ")" + nl
+				+ "  val_pairs = list(train_pairs)" + nl
 				+ "_resolve_anisotropy(train_pairs, Y_train)" + nl
 				+ "_save_object_statistics(Y_train)" + nl
 				+ "with open(stardist_log_path, 'a', encoding='utf-8') as stardist_log, contextlib.redirect_stdout(stardist_log), contextlib.redirect_stderr(stardist_log), tf.device(_jdll_tf_device):" + nl
@@ -2344,34 +2313,39 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "  if fine_tune_weights is not None:" + nl
 				+ "    _baseline_validation(model, X_val, Y_val)" + nl
 				+ "  model.callbacks.append(JDLLProgressCallback(model, X_val, Y_val))" + nl
+				+ "  validation = stardist_validation.PatchValidation(model, X_val, Y_val, output_dir," + nl
+				+ "    validation_options, preview_count, _task_update, _cancel_requested, _atomic_npy_save," + nl
+				+ "    source_paths=[str(pair[0]) for pair in val_pairs], request_path=full_validation_request)" + nl
 				+ "  best_path = output_dir / str(config.get('train_checkpoint', 'weights_best.h5'))" + nl
 				+ "  last_path = output_dir / str(config.get('train_checkpoint_last', 'weights_last.h5'))" + nl
-				+ "  if best_path.exists():" + nl
-				+ "    _task_update(message='Overwriting StarDist best checkpoint during training: ' + str(best_path), info={'type': 'checkpoint', 'kind': 'best', 'path': str(best_path), 'overwrite': True})" + nl
-				+ "  if last_path.exists():" + nl
-				+ "    _task_update(message='Overwriting StarDist last checkpoint during training: ' + str(last_path), info={'type': 'checkpoint', 'kind': 'last', 'path': str(last_path), 'overwrite': True})" + nl
-				+ "  history = model.train(X_train, Y_train, validation_data=(X_val, Y_val), epochs=int(config.get('train_epochs', 1)), steps_per_epoch=int(config.get('train_steps_per_epoch', 100)), workers=0)" + nl
+				+ "  history = stardist_validation.train_with_validation(model, X_train, Y_train, validation," + nl
+				+ "    int(config.get('train_epochs', 1)), int(config.get('train_steps_per_epoch', 100)))" + nl
 				+ "  if best_path.exists():" + nl
 				+ "    _task_update(message='StarDist best checkpoint: ' + str(best_path), info={'type': 'checkpoint', 'kind': 'best', 'path': str(best_path)})" + nl
 				+ "  if last_path.exists():" + nl
 				+ "    _task_update(message='StarDist last checkpoint: ' + str(last_path), info={'type': 'checkpoint', 'kind': 'last', 'path': str(last_path)})" + nl
-				+ "  if not _cancel_requested() and best_path.exists():" + nl
+				+ "  if not _cancel_requested() and best_path.exists() and n_dim == 2:" + nl
 				+ "    try:" + nl
 				+ "      model.keras_model.load_weights(str(best_path))" + nl
 				+ "      _task_update(message='Optimizing StarDist probability and NMS thresholds on validation data.', info={'type': 'thresholds', 'status': 'started'})" + nl
-				+ "      thresholds = model.optimize_thresholds(X_val, Y_val, save_to_json=True)" + nl
+				+ "      thresholds = validation.optimize_thresholds()" + nl
 				+ "      thresholds_path = output_dir / 'thresholds.json'" + nl
 				+ "      _task_update(message='Saved optimized StarDist thresholds at: ' + str(thresholds_path), info={'type': 'thresholds', 'status': 'finished', 'path': str(thresholds_path)})" + nl
 				+ "    except Exception as threshold_error:" + nl
 				+ "      _task_update(message='Could not optimize StarDist thresholds: ' + str(threshold_error), info={'type': 'warning', 'message': str(threshold_error)})" + nl
+				+ "  elif n_dim == 3 and not _cancel_requested():" + nl
+				+ "    with open(output_dir / 'thresholds.json', 'w', encoding='utf-8') as threshold_file:" + nl
+				+ "      json.dump(dict(model.thresholds._asdict()), threshold_file)" + nl
+				+ "    _task_update(message='Retained StarDist thresholds; automatic full-volume threshold optimization is disabled.', info={'type': 'thresholds'})" + nl
 				+ "_task_update(message='Exported/final StarDist model directory: ' + str(output_dir), info={'type': 'checkpoint', 'kind': 'final', 'path': str(output_dir)})" + nl
+				+ "storage.close()" + nl
 				+ "task.outputs['result'] = str(output_dir)" + nl;
 		}
 
 	private static void handleTrainingEvent(TaskEvent event,
 			Consumer<StardistTrainingProgress> progressConsumer,
 			Consumer<StardistValidationPreview> previewConsumer,
-			Consumer<String> logConsumer) {
+			Consumer<String> logConsumer, Consumer<Map<String, Object>> validationConsumer) {
 		if (!event.responseType.equals(ResponseType.UPDATE) || event.info == null) {
 			return;
 		}
@@ -2379,6 +2353,10 @@ public final class StarDist extends DLModelPytorchProtected {
 			logConsumer.accept(event.message);
 		}
 		Object type = event.info.get("type");
+		if (("full_validation".equals(type) || "validation_plan".equals(type)
+				|| "validation".equals(type) || "checkpoint".equals(type) || "preview".equals(type)) && validationConsumer != null) {
+			validationConsumer.accept(new LinkedHashMap<String, Object>(event.info));
+		}
 		if ("progress".equals(type) && progressConsumer != null) {
 			progressConsumer.accept(new StardistTrainingProgress(
 					TrainingCodeUtils.asInt(event.info.get("epoch"), (int) event.current),

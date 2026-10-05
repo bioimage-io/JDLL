@@ -23,6 +23,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import javax.swing.SwingUtilities;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Arrays;
 
 public class StardistTrainPanelTest {
 
@@ -37,5 +41,68 @@ public class StardistTrainPanelTest {
 
         assertTrue(panel.getBaseModelComboBox().isEnabled());
         assertFalse(panel.getScratchArchitectureComboBox().isEnabled());
+    }
+
+    @Test
+    public void fullValidationIsOptInAndOneShotDuringTraining() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            StardistTrainPanel panel = new StardistTrainPanel();
+            assertFalse(panel.getFullValidationButton().isVisible());
+            panel.setFullValidationAvailable(true);
+            panel.setFullValidationState(true, false);
+            assertFalse(panel.getFullValidationButton().isEnabled());
+            panel.setTrainingRunning(true);
+            assertFalse(panel.getFullValidationButton().isEnabled());
+            panel.setFullValidationState(true, false);
+            assertTrue(panel.getFullValidationButton().isEnabled());
+            panel.setFullValidationState(false, true);
+            assertTrue(panel.getFullValidationButton().isSelected());
+            assertFalse(panel.getFullValidationButton().isEnabled());
+            panel.setFullValidationState(true, false);
+            assertFalse(panel.getFullValidationButton().isSelected());
+            assertTrue(panel.getFullValidationButton().isEnabled());
+            panel.setSize(420, 650);
+            panel.doLayout();
+            assertTrue(panel.getFullValidationButton().getX() >= panel.getLogButton().getX()
+                    + panel.getLogButton().getWidth());
+            assertTrue(panel.getFullValidationButton().getX() + panel.getFullValidationButton().getWidth()
+                    <= panel.getWidth());
+            panel.setTrainingRunning(false);
+            assertFalse(panel.getFullValidationButton().isEnabled());
+            assertFalse(panel.getFullValidationButton().isSelected());
+        });
+    }
+
+    @Test
+    public void completingOldPassDoesNotDeselectNewRequest() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            BaseTrainPanel[] panels = {new StardistTrainPanel(),
+                    new io.bioimage.modelrunner.gui.custom.unet.UnetTrainPanel() { private static final long serialVersionUID = 1L; }};
+            for (BaseTrainPanel panel : panels) {
+                panel.setTrainingRunning(true);
+                Map<String, Object> event = new HashMap<>();
+                event.put("type", "full_validation");
+                event.put("status", "ready");
+                event.put("supported", true);
+                panel.handleValidationEvent(event);
+                assertTrue(panel.getFullValidationButton().isEnabled());
+                panel.fullValidationRequested("first");
+                assertTrue(panel.getFullValidationButton().isSelected());
+                event.put("status", "accepted");
+                event.put("request_ids", Arrays.asList("first"));
+                panel.handleValidationEvent(event);
+                assertTrue(panel.getFullValidationButton().isEnabled());
+                panel.fullValidationRequested("second");
+                event.put("status", "completed");
+                panel.handleValidationEvent(event);
+                assertTrue(panel.getFullValidationButton().isSelected());
+                assertFalse(panel.getFullValidationButton().isEnabled());
+                event.put("status", "closed");
+                panel.handleValidationEvent(event);
+                assertFalse(panel.getFullValidationButton().isSelected());
+                assertFalse(panel.getFullValidationButton().isEnabled());
+                panel.setTrainingRunning(false);
+            }
+        });
     }
 }

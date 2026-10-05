@@ -39,6 +39,7 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.SwingWorker;
 import javax.swing.border.LineBorder;
 
 import com.google.gson.JsonArray;
@@ -73,7 +74,7 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
     private static final String PREVIOUS_SYMBOL = "\u25C0";
     private static final String NEXT_SYMBOL = "\u25B6";
     private static final String WAITING_MESSAGE = "Validation examples available after the first epoch finishes";
-    private static final String ERROR_MESSAGE = "Could not load StarDist validation preview";
+    private static final String ERROR_MESSAGE = "Could not load validation preview";
 
     private final YoloImageDisplayPanel imagePanel = new PreviewImagePanel();
     private final TrainingStatusPanel statusPanel = new TrainingStatusPanel();
@@ -97,6 +98,8 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
     private RandomAccessibleInterval<?> currentPrediction;
     private RandomAccessibleInterval<?> currentProbability;
     private boolean updatingSliceControls;
+    private SwingWorker<RandomAccessibleInterval<?>[], Void> previewLoader;
+    private long previewLoadVersion;
 
     /**
      * Creates a new StardistValidationPreviewPanel instance.
@@ -144,6 +147,7 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         if (samples == null) {
             return;
         }
+        cancelPreviewLoad();
         samples.clear();
         currentIndex = 0;
         previewEpoch = 0;
@@ -170,6 +174,7 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         if (jsonPath == null || jsonPath.trim().isEmpty()) {
             return;
         }
+        cancelPreviewLoad();
         try {
             JsonObject root = readJson(jsonPath.trim());
             List<PreviewSample> loaded = parseSamples(root);
@@ -184,11 +189,12 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
                 imagePanel.clearImage();
             } else {
                 currentIndex = selectUpdatedIndex(selectedImage, selectedIndex, samples);
-                showSample(currentIndex);
+                showSample(currentIndex, true);
             }
             updateStatusPanel();
             updateButtons();
         } catch (Exception e) {
+            cancelPreviewLoad();
             samples.clear();
             imagePanel.setEmptyMessage(ERROR_MESSAGE, new Color(180, 30, 30));
             imagePanel.clearImage();
@@ -262,6 +268,18 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
     }
 
     private void showSample(int requestedIndex) {
+        showSample(requestedIndex, false);
+    }
+
+    private void cancelPreviewLoad() {
+        previewLoadVersion++;
+        if (previewLoader != null) {
+            previewLoader.cancel(true);
+            previewLoader = null;
+        }
+    }
+
+    private void showSample(int requestedIndex, boolean preserveSlice) {
         if (samples.isEmpty()) {
             imagePanel.setEmptyMessage(WAITING_MESSAGE);
             imagePanel.clearImage();
@@ -270,25 +288,56 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         }
         currentIndex = wrap(requestedIndex, samples.size());
         PreviewSample sample = samples.get(currentIndex);
-        try {
-            currentImage = DecodeNumpy.loadNpy(sample.imagePath);
-            currentPrediction = sample.predictionPath == null ? null : DecodeNumpy.loadNpy(sample.predictionPath);
-            currentProbability = sample.probPath == null ? null : DecodeNumpy.loadNpy(sample.probPath);
-            setSliceControlsVisible(sample.dimensions == 3 && currentImage.numDimensions() >= 3);
-            if (sliceSlider.isVisible()) {
-                updatingSliceControls = true;
-                planeCombo.setSelectedItem("XY");
-                updatingSliceControls = false;
-                configureSliceSlider(true);
-                sliceSlider.setValue(Math.max(sliceSlider.getMinimum(),
-                        Math.min(sliceSlider.getMaximum(), sample.initialPlane)));
+        boolean restoreSlice = preserveSlice && sliceSlider.isVisible();
+        String previousPlane = String.valueOf(planeCombo.getSelectedItem());
+        int previousSlice = sliceSlider.getValue();
+        cancelPreviewLoad();
+        final long loadVersion = previewLoadVersion;
+        currentImage = null;
+        currentPrediction = null;
+        currentProbability = null;
+        imagePanel.setEmptyMessage("Loading validation patch...");
+        imagePanel.clearImage();
+        setSliceControlsVisible(false);
+        previewLoader = new SwingWorker<RandomAccessibleInterval<?>[], Void>() {
+            @Override
+            protected RandomAccessibleInterval<?>[] doInBackground() throws Exception {
+                return new RandomAccessibleInterval<?>[] {
+                        channelsLast(DecodeNumpy.loadNpy(sample.imagePath), sample.channelsFirst, sample.contextSlices),
+                        sample.predictionPath == null ? null : DecodeNumpy.loadNpy(sample.predictionPath),
+                        sample.probPath == null ? null : probability(DecodeNumpy.loadNpy(sample.probPath), sample.channelsFirst)};
             }
-            renderCurrentSample();
-        } catch (Exception e) {
-            currentSampleUsesProbabilityOverlay = false;
-            imagePanel.setEmptyMessage(ERROR_MESSAGE, new Color(180, 30, 30));
-            imagePanel.clearImage();
-        }
+
+            @Override
+            protected void done() {
+                if (isCancelled() || loadVersion != previewLoadVersion) {
+                    return;
+                }
+                try {
+                    RandomAccessibleInterval<?>[] arrays = get();
+                    currentImage = arrays[0];
+                    currentPrediction = arrays[1];
+                    currentProbability = arrays[2];
+                    setSliceControlsVisible(sample.dimensions == 3 && currentImage.numDimensions() >= 3);
+                    if (sliceSlider.isVisible()) {
+                        updatingSliceControls = true;
+                        planeCombo.setSelectedItem(restoreSlice ? previousPlane : "XY");
+                        updatingSliceControls = false;
+                        configureSliceSlider(!restoreSlice);
+                        if (restoreSlice) {
+                            sliceSlider.setValue(Math.min(sliceSlider.getMaximum(), previousSlice));
+                        }
+                    }
+                    renderCurrentSample();
+                } catch (Exception e) {
+                    currentSampleUsesProbabilityOverlay = false;
+                    imagePanel.setEmptyMessage(ERROR_MESSAGE, new Color(180, 30, 30));
+                    imagePanel.clearImage();
+                }
+                updateStatusPanel();
+            }
+        };
+        previewLoader.execute();
         updateStatusPanel();
         updateButtons();
     }
@@ -333,7 +382,11 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         String plane = String.valueOf(planeCombo.getSelectedItem());
         int spatialAxis = "XY".equals(plane) ? 0 : "XZ".equals(plane) ? 1 : 2;
         int axis = Math.min(spatialAxis, source.numDimensions() - (image ? 2 : 1));
-        long index = Math.max(source.min(axis), Math.min(source.max(axis), sliceSlider.getValue()));
+        long slice = sliceSlider.getValue();
+        if (source == currentProbability && currentImage != null) {
+            slice = slice * source.dimension(axis) / currentImage.dimension(axis);
+        }
+        long index = Math.max(source.min(axis), Math.min(source.max(axis), slice));
         return Views.hyperSlice(source, axis, index);
     }
 
@@ -397,6 +450,7 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
 
     private static List<PreviewSample> parseSamples(JsonObject root) {
         JsonArray array = root == null ? null : root.getAsJsonArray("samples");
+        if (array == null && root != null) array = root.getAsJsonArray("items");
         if (array == null || array.size() == 0) {
             return Collections.emptyList();
         }
@@ -406,6 +460,21 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
                 continue;
             }
             JsonObject sample = element.getAsJsonObject();
+            if (sample.has("assets")) {
+                JsonObject assets = sample.getAsJsonObject("assets");
+                String image = assetPath(assets, "image");
+                if (image == null) continue;
+                PreviewSample entry = new PreviewSample(image, assetPath(assets, "target"),
+                        assetPath(assets, "prediction"), "multiclass_semantic".equals(getString(root, "task"))
+                                ? null : assetPath(assets, "probabilities"),
+                        "epoch " + getInt(root, "epoch", 0),
+                        "3d".equals(getString(root, "dimensions")) ? 3 : 2, getInt(sample, "z_index", 0));
+                entry.channelsFirst = true;
+                entry.contextSlices = "2.5d".equals(getString(root, "dimensions"))
+                        ? Math.max(1, getInt(sample, "context_slices", 1)) : 1;
+                result.add(entry);
+                continue;
+            }
             String imagePath = getExistingPath(sample, "image_path");
             if (imagePath == null) {
                 continue;
@@ -420,6 +489,29 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
                     getInitialPlane(sample)));
         }
         return result;
+    }
+
+    private static String assetPath(JsonObject assets, String name) {
+        JsonObject asset = assets.has(name) ? assets.getAsJsonObject(name) : null;
+        return asset == null ? null : getExistingPath(asset, "path");
+    }
+
+    private static RandomAccessibleInterval<?> channelsLast(RandomAccessibleInterval<?> image, boolean first, int context) {
+        if (first && context > 1) {
+            long[] min = image.minAsLongArray();
+            long[] max = image.maxAsLongArray();
+            min[0] += context / 2;
+            long[] step = new long[image.numDimensions()];
+            java.util.Arrays.fill(step, 1L);
+            step[0] = context;
+            image = Views.subsample(Views.zeroMin(Views.interval(image, min, max)), step);
+        }
+        if (first) for (int axis = 0; axis < image.numDimensions() - 1; axis++) image = Views.permute(image, axis, axis + 1);
+        return image;
+    }
+
+    private static RandomAccessibleInterval<?> probability(RandomAccessibleInterval<?> image, boolean first) {
+        return first ? Views.hyperSlice(image, 0, image.min(0)) : image;
     }
 
     private static int getInitialPlane(JsonObject sample) {
@@ -859,6 +951,8 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
     }
 
     private static final class PreviewSample {
+        private boolean channelsFirst;
+        private int contextSlices = 1;
         private final String imagePath;
         private final String labelPath;
         private final String predictionPath;

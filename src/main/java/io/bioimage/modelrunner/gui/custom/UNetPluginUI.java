@@ -163,6 +163,17 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         installInferenceSourceListeners();
         installTrainingScratchConfigListener();
         installTrainingDatasetReviewListener();
+        this.trainPanel.getFullValidationButton().addActionListener(e -> {
+            try {
+                String id = trainingService.requestFullValidation();
+                trainPanel.fullValidationRequested(id);
+                appendTrainingLog(id == null ? "Full validation is not available for this run."
+                        : "Full validation requested for the next epoch end.");
+            } catch (IOException error) {
+                trainPanel.fullValidationRequested(null);
+                appendTrainingLog("Could not request full validation: " + error.getMessage());
+            }
+        });
         installTabLifecycleListener();
 
         if (this.consumer == null) {
@@ -913,7 +924,9 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                                 handleTrainingPreview(preview);
                             }
                         }),
-                        logConsumer);
+                        logConsumer, event -> SwingUtilities.invokeLater(() -> {
+                            if (trainingRunId == trainingUiRunId && trainingRunning) trainPanel.handleValidationEvent(event);
+                        }));
                 if (trainingRunId == trainingUiRunId) {
                     appendTrainingLog("Training finished successfully.");
                     refreshModels();
@@ -949,6 +962,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         secondsPerStepSamples.clear();
         trainingRunning = true;
         trainPanel.setTrainingRunning(true);
+        trainPanel.setFullValidationAvailable(false);
         updateTabLocks();
         trainPanel.getLossGraphPanel().clearValues();
         trainPanel.getMetricGraphPanel().clearValues();

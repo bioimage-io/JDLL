@@ -86,7 +86,8 @@ public class UnetTrainingServiceTest {
                 + "\"empty_plane_fraction\":0.15}").getBytes(StandardCharsets.UTF_8));
         Map<String, Object> request = UnetTrainingService.toPythonConfig(
                 config(false, null, configFile.getAbsolutePath()), temporaryFolder.getRoot());
-        assertEquals(0.15d, (Double) request.get("empty_plane_fraction"), 0);
+        assertEquals(0.15d, (Double) request.get("max_empty_plane_fraction"), 0);
+        assertFalse(request.containsKey("empty_plane_fraction"));
         assertEquals(0.5d, (Double) request.get("max_padding_ratio"), 0);
         assertEquals(0.25d, (Double) request.get("validation_fraction"), 0);
         assertEquals(2, ((Number) ((Map<?, ?>) request.get("context")).get("stride")).intValue());

@@ -864,9 +864,7 @@ public final class StarDistCellcast extends DLModelPytorchProtected {
 		}
 
 		PixiEnvironmentSpec envSpec = resolvePytorchEnv();
-		Environment env = Appose.pixi()
-				.environment(envSpec.getSelectedEnvironment())
-				.wrap(envSpec.getEnvironmentDirectory());
+        Environment env = Appose.pixi().wrap(envSpec.getEnvironmentDirectory()).activate(envSpec.getSelectedEnvironment());
 		Service python = env.python();
 		python.init("import numpy as np");
 		if (logConsumer != null) {

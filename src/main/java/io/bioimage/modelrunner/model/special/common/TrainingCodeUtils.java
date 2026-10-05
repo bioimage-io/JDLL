@@ -30,6 +30,17 @@ import java.util.function.Consumer;
  */
 public final class TrainingCodeUtils {
 
+    /** Loads a bundled helper as a Python module without installing a separate package. */
+    public static String pythonModule(String name, String resource) {
+        String encoded = java.util.Base64.getEncoder().encodeToString(
+                io.bioimage.modelrunner.model.python.envs.PixiEnvironmentResolver
+                .readClasspathResourceAsString(resource).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return "import types, sys, base64\n" + name + " = types.ModuleType('" + name + "')\n"
+                + "sys.modules['" + name + "'] = " + name + "\n"
+                + "exec(compile(base64.b64decode('" + encoded + "'), 'jdll/" + resource
+                + "', 'exec'), " + name + ".__dict__)\n";
+    }
+
 	private TrainingCodeUtils() {
 		// Utility class.
 	}

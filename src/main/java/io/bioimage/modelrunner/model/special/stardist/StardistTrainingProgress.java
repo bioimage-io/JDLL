@@ -30,6 +30,7 @@ public final class StardistTrainingProgress {
 	public static final String TRAIN_DIST_LOSS = "train/dist_loss";
 	public static final String VAL_TOTAL_LOSS = "val/total_loss";
 	public static final String LEARNING_RATE = "learning_rate";
+	public static final String OBJECT_F1 = "val/object_f1";
 	public static final String STARDIST_TOTAL_LOSS_LABEL =
 			"StarDist loss = prob_loss + dist_loss";
 
@@ -139,6 +140,11 @@ public final class StardistTrainingProgress {
 	 */
 	public Double getLearningRate() {
 		return firstPresent(metrics, LEARNING_RATE);
+	}
+
+	/** Object-level F1 at IoU >= 0.5, using pooled TP/FP/FN across validation patches. */
+	public Double getObjectF1() {
+		return firstPresent(metrics, OBJECT_F1);
 	}
 
 	private static Map<String, Double> immutableCopy(Map<String, Double> map) {

@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JToggleButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -89,6 +90,9 @@ public abstract class BaseTrainPanel extends JPanel {
     protected final JButton metricButton = new JButton("Metric");
     protected final JButton validationPreviewButton = new JButton("Validation preview");
     protected final JButton logButton = new JButton("Log");
+    private final JToggleButton fullValidationButton = new JToggleButton("Full validation");
+    private final java.util.Set<String> pendingValidationRequests = new java.util.HashSet<String>();
+    private boolean fullValidationReady;
     protected final JPanel graphCardPanel = new JPanel(new CardLayout());
     protected final YoloGraphPlaceholderPanel lossGraphPanel = new YoloGraphPlaceholderPanel("Loss");
     protected final YoloGraphPlaceholderPanel metricGraphPanel = new YoloGraphPlaceholderPanel("Metric");
@@ -150,6 +154,10 @@ public abstract class BaseTrainPanel extends JPanel {
         YoloUiUtils.styleFlatSecondaryButton(metricButton);
         YoloUiUtils.styleFlatSecondaryButton(validationPreviewButton);
         YoloUiUtils.styleFlatSecondaryButton(logButton);
+        YoloUiUtils.styleFlatSecondaryButton(fullValidationButton);
+        fullValidationButton.setVisible(false);
+        fullValidationButton.setEnabled(false);
+        fullValidationButton.setToolTipText("Run full-volume validation at the next epoch end, once. This can take longer than patch validation.");
         trainActionPanel.getRunButton().setText("Train");
         trainActionPanel.getCancelButton().setEnabled(false);
 
@@ -184,6 +192,7 @@ public abstract class BaseTrainPanel extends JPanel {
         add(metricButton);
         add(validationPreviewButton);
         add(logButton);
+        add(fullValidationButton);
         add(graphCardPanel);
         add(trainActionPanel);
 
@@ -235,7 +244,60 @@ public abstract class BaseTrainPanel extends JPanel {
         datasetBrowseButton.setEnabled(!running);
         epochsField.setEnabled(!running);
         trainActionPanel.getCancelButton().setEnabled(running);
+        setFullValidationState(false, false);
         updateMode();
+    }
+
+    /** Opt-in control; backends without the request protocol keep their existing layout. */
+    public void setFullValidationAvailable(boolean available) {
+        pendingValidationRequests.clear();
+        fullValidationReady = false;
+        fullValidationButton.setVisible(available);
+        setFullValidationState(false, false);
+        revalidate();
+        repaint();
+    }
+
+    public void setFullValidationState(boolean ready, boolean pending) {
+        fullValidationButton.setSelected(pending);
+        fullValidationButton.setEnabled(fullValidationButton.isVisible() && trainingRunning && ready && !pending);
+        fullValidationButton.setText(pending ? "Validation queued" : "Full validation");
+    }
+
+    public JToggleButton getFullValidationButton() {
+        return fullValidationButton;
+    }
+
+    public void fullValidationRequested(String id) {
+        if (id != null) pendingValidationRequests.add(id);
+        setFullValidationState(fullValidationReady, !pendingValidationRequests.isEmpty());
+    }
+
+    /** An old pass completing must not clear a newer request queued while it ran. */
+    public void handleValidationEvent(java.util.Map<String, Object> event) {
+        String type = String.valueOf(event.get("type"));
+        if ("full_validation".equals(type)) {
+            String status = String.valueOf(event.get("status"));
+            if ("ready".equals(status)) {
+                setFullValidationAvailable(Boolean.TRUE.equals(event.get("supported")));
+                fullValidationReady = fullValidationButton.isVisible();
+            } else if ("pending".equals(status) && event.get("request_id") != null) {
+                pendingValidationRequests.add(event.get("request_id").toString());
+            } else if ("accepted".equals(status) && event.get("request_ids") instanceof Iterable) {
+                for (Object id : (Iterable<?>) event.get("request_ids")) pendingValidationRequests.remove(String.valueOf(id));
+            } else if ("closed".equals(status)) {
+                pendingValidationRequests.clear();
+                fullValidationReady = false;
+            }
+            setFullValidationState(fullValidationReady, !pendingValidationRequests.isEmpty());
+        }
+        if ("validation".equals(type) || "full_validation".equals(type)) {
+            Object current = event.containsKey("current") ? event.get("current") : event.get("completed");
+            Object maximum = event.containsKey("maximum") ? event.get("maximum") : event.get("total");
+            fullValidationButton.setToolTipText(type.replace('_', ' ') + ": " + event.get("status")
+                    + (current == null ? "" : " " + current + "/"
+                            + maximum + " " + event.getOrDefault("unit", "patches")));
+        }
     }
 
 	/**
@@ -331,12 +393,15 @@ public abstract class BaseTrainPanel extends JPanel {
         epochsErrorLabel.setBounds(epochsErrorX, y, Math.max(1, x + innerW - epochsErrorX), row5H);
         y += row5H + gap;
 
-        int totalSwitchW = 4 * switchBtnW + 3 * gap;
+        int switchCount = fullValidationButton.isVisible() ? 5 : 4;
+        switchBtnW = Math.min(switchBtnW, Math.max(1, (innerW - (switchCount - 1) * gap) / switchCount));
+        int totalSwitchW = switchCount * switchBtnW + (switchCount - 1) * gap;
         int switchX = x + Math.max(0, (innerW - totalSwitchW) / 2);
         lossButton.setBounds(switchX, y, switchBtnW, row6H);
         metricButton.setBounds(lossButton.getX() + switchBtnW + gap, y, switchBtnW, row6H);
         validationPreviewButton.setBounds(metricButton.getX() + switchBtnW + gap, y, switchBtnW, row6H);
         logButton.setBounds(validationPreviewButton.getX() + switchBtnW + gap, y, switchBtnW, row6H);
+        fullValidationButton.setBounds(logButton.getX() + switchBtnW + gap, y, switchBtnW, row6H);
 
         int graphX = x + (innerW - graphW) / 2;
         int actionW = graphW;
@@ -363,6 +428,7 @@ public abstract class BaseTrainPanel extends JPanel {
         YoloUiUtils.applyResponsiveText(metricButton, switchBtnW - 8, row6H);
         YoloUiUtils.applyResponsiveText(validationPreviewButton, switchBtnW - 8, row6H);
         YoloUiUtils.applyResponsiveText(logButton, switchBtnW - 8, row6H);
+        YoloUiUtils.applyResponsiveText(fullValidationButton, switchBtnW - 8, row6H);
         trainActionPanel.doLayout();
     }
 

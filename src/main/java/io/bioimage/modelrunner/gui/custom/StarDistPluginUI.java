@@ -124,8 +124,6 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     private int lastLoggedTrainEpoch;
     private int lastLoggedValidationEpoch;
     private int lastLoggedPreviewEpoch;
-    private double bestValidationScore;
-    private String bestValidationCheckpointPath;
     
     private Runnable cancelCallback;
     Thread workerThread;
@@ -149,6 +147,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         this.trainPanel.refreshScratchArchitectures(modelsDir);
         installProbabilityThresholdListener();
         installTrainingScratchConfigListener();
+        this.trainPanel.getFullValidationButton().addActionListener(e -> requestFullValidation());
         if (this.consumer == null) {
             return;
         }
@@ -908,8 +907,6 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
             try {
             	consumer.notifyParams(null);
                 StardistTrainingConfig config = readTrainingConfig();
-                bestValidationCheckpointPath = new File(config.getOutputModelDir(), "weights_best.h5")
-                        .getAbsolutePath();
                 trainPanel.getTrainingLogPanel().startDiskLog(new File(config.getOutputModelDir()));
                 File uiLog = trainPanel.getTrainingLogPanel().getLogFile();
                 if (uiLog != null) {
@@ -945,7 +942,12 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                                 logValidationPreview(preview.getEpoch(), preview.getPreviewJsonPath());
                             }
                         }),
-                        logConsumer);
+                        logConsumer, event -> SwingUtilities.invokeLater(() -> {
+                            if (trainingRunId != trainingUiRunId || !trainingRunning) {
+                                return;
+                            }
+                            trainPanel.handleValidationEvent(event);
+                        }));
                 if (trainingRunId == trainingUiRunId) {
                     appendTrainingLog("Training finished successfully.");
                     refreshStardistModels();
@@ -975,11 +977,10 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         lastLoggedTrainEpoch = 0;
         lastLoggedValidationEpoch = 0;
         lastLoggedPreviewEpoch = 0;
-        bestValidationScore = Double.NaN;
-        bestValidationCheckpointPath = null;
         secondsPerStepSamples.clear();
         trainingRunning = true;
         trainPanel.setTrainingRunning(true);
+        trainPanel.setFullValidationAvailable(false);
         updateTabLocks();
         trainPanel.getLossGraphPanel().clearValues();
         trainPanel.getMetricGraphPanel().clearValues();
@@ -1020,6 +1021,18 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         trainPanel.getTrainingLogPanel().closeDiskLog();
     }
 
+    private void requestFullValidation() {
+        try {
+            String id = trainingService.requestFullValidation();
+            trainPanel.fullValidationRequested(id);
+            appendTrainingLog(id != null ? "Full validation requested for the next epoch end."
+                    : "The training worker is not ready for full validation.");
+        } catch (IOException error) {
+            trainPanel.fullValidationRequested(null);
+            appendTrainingLog("Could not request full validation: " + errorMessage(error));
+        }
+    }
+
     private void finishCancelledTrainingUiState() {
         long runId = trainingUiRunId;
         appendTrainingLog("Training cancelled by user.");
@@ -1053,10 +1066,10 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                     progress.getEpoch(),
                     validationLoss);
         }
-        Double metric = progress.getLearningRate();
+        Double metric = progress.getObjectF1();
         if (metric != null) {
             trainPanel.getMetricGraphPanel().addValidationValue(
-                    StardistTrainingProgress.LEARNING_RATE,
+                    "Object F1 (IoU >= 0.5)",
                     progress.getStep(),
                     progress.getEpoch(),
                     metric);
@@ -1158,13 +1171,10 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
             lastLoggedValidationEpoch = epoch;
             String lr = progress.getLearningRate() == null ? ""
                     : ", learning_rate=" + formatNumber(progress.getLearningRate());
+            String metric = progress.getObjectF1() == null ? ""
+                    : ", object_F1@IoU0.5=" + formatNumber(progress.getObjectF1());
             appendTrainingLog("Validation of epoch " + epoch + ": loss="
-                    + formatNumber(validationLoss) + lr + ".");
-            if (Double.isNaN(bestValidationScore) || validationLoss.doubleValue() < bestValidationScore) {
-                bestValidationScore = validationLoss.doubleValue();
-                appendTrainingLog("New best validation model at epoch " + epoch + ": val_loss="
-                        + formatNumber(validationLoss) + ". Saved at: " + bestValidationCheckpointPath);
-            }
+                    + formatNumber(validationLoss) + metric + lr + ".");
         }
     }
 

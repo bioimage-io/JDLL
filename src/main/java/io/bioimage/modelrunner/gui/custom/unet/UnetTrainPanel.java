@@ -46,7 +46,7 @@ public class UnetTrainPanel extends BaseTrainPanel {
      * Creates a new UnetTrainPanel instance.
      */
     protected UnetTrainPanel() {
-        super();
+        super(new DenseValidationPreviewPanel());
         setScratchArchitectures(UnetModelRegistry.buildPlanarScratchArchitectureEntries());
         selectScratchArchitectureValue(UnetModelRegistry.defaultScratchArchitecture(false));
         scratchRadio.setSelected(true);

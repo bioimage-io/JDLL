@@ -91,8 +91,7 @@ public final class CrossGoose extends DLModelPytorchProtected {
             Consumer<String> logConsumer, Consumer<Service> serviceConsumer)
             throws IOException, BuildException, InterruptedException, TaskException {
         PixiEnvironmentSpec spec = resolvePytorchEnv();
-        Environment environment = Appose.pixi().environment(spec.getSelectedEnvironment())
-                .wrap(spec.getEnvironmentDirectory());
+        Environment environment = Appose.pixi().wrap(spec.getEnvironmentDirectory()).activate(spec.getSelectedEnvironment());
         Service python = environment.python();
         if (serviceConsumer != null) serviceConsumer.accept(python);
         try {

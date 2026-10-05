@@ -263,6 +263,7 @@ public class Yolo extends DLModelPytorchProtected {
 				+ ""
 				+ "box_tensor = " + UndoLetterboxProcessingBoundingBoxes.getMethodName() + "(box_tensor, meta)" + System.lineSeparator();
 		code += taskOutputsCode();
+		System.out.println(code);
 		return code;
 	}
 
@@ -397,9 +398,7 @@ public class Yolo extends DLModelPytorchProtected {
 		}
 
 		PixiEnvironmentSpec envSpec = resolvePytorchEnv();
-		Environment env = Appose.pixi()
-				.environment(envSpec.getSelectedEnvironment())
-				.wrap(envSpec.getEnvironmentDirectory());
+        Environment env = Appose.pixi().wrap(envSpec.getEnvironmentDirectory()).activate(envSpec.getSelectedEnvironment());
 		Service python = env.python();
 		if (serviceConsumer != null) {
 			serviceConsumer.accept(python);
@@ -463,9 +462,7 @@ public class Yolo extends DLModelPytorchProtected {
 		}
 
 		PixiEnvironmentSpec envSpec = resolvePytorchEnv();
-		Environment env = Appose.pixi()
-				.environment(envSpec.getSelectedEnvironment())
-				.wrap(envSpec.getEnvironmentDirectory());
+        Environment env = Appose.pixi().wrap(envSpec.getEnvironmentDirectory()).activate(envSpec.getSelectedEnvironment());
 		Service python = env.python();
 		YoloTrainingAttemptResult result = new YoloTrainingAttemptResult();
 		if (serviceConsumer != null) {

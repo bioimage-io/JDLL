@@ -36,6 +36,7 @@ import org.junit.rules.TemporaryFolder;
 
 import io.bioimage.modelrunner.gui.custom.stardist.StardistModelRegistry.FineTuneSource;
 import io.bioimage.modelrunner.model.special.stardist.StarDist;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentResolver;
 
 public class StardistFineTuneTest {
 
@@ -78,7 +79,7 @@ public class StardistFineTuneTest {
         assertTrue(code.contains("def _adapt_input_kernel"));
         assertTrue(code.contains("Adapted the first convolution"));
         assertTrue(code.contains("Fine-tuning baseline validation"));
-        assertTrue(code.contains("model.optimize_thresholds"));
+        assertTrue(code.contains("validation.optimize_thresholds()"));
         assertFalse(code.contains("model.keras_model.save_weights(str(last_path))"));
     }
 
@@ -118,9 +119,10 @@ public class StardistFineTuneTest {
         assertTrue(code.contains("dataset_statistics.json"));
         assertTrue(code.contains("model_metadata.json"));
         assertTrue(code.contains("equivalent_sphere_diameter"));
-        assertTrue(code.contains("StarDistData3D"));
-        assertTrue(code.contains("sample['initial_plane']"));
-        assertTrue(code.contains("n_tiles=preview_tiles"));
+        assertTrue(code.contains("stardist_validation.PatchValidation"));
+        String validation = PixiEnvironmentResolver.readClasspathResourceAsString("python/stardist_validation.py");
+        assertTrue(validation.contains("sample['initial_plane']"));
+        assertTrue(validation.contains("def _full_prediction"));
         assertFalse(code.contains("y = y[..., 0]"));
     }
 }

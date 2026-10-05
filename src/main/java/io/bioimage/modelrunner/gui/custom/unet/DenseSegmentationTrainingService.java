@@ -12,6 +12,7 @@
 package io.bioimage.modelrunner.gui.custom.unet;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
@@ -31,4 +32,13 @@ public interface DenseSegmentationTrainingService {
             throws IOException, ExecutionException, InterruptedException, BuildException, TaskException;
 
     void close();
+
+    default void train(DenseSegmentationTrainingConfig config,
+            Consumer<UnetTrainingProgress> progress, Consumer<UnetValidationPreview> preview,
+            Consumer<String> log, Consumer<Map<String, Object>> validation)
+            throws IOException, ExecutionException, InterruptedException, BuildException, TaskException {
+        train(config, progress, preview, log);
+    }
+
+    default String requestFullValidation() throws IOException { return null; }
 }

@@ -392,11 +392,9 @@ public class DLModelPytorchProtected extends BaseModel {
         final Environment env;
 
         try {
-	        env = Appose.pixi()
-	                .environment(environmentSpec.getSelectedEnvironment())
-	                .wrap(environmentSpec.getEnvironmentDirectory());
+    		env = Appose.pixi().wrap(environmentSpec.getEnvironmentDirectory()).activate(environmentSpec.getSelectedEnvironment());
+    		python = env.python();
 	
-	        python = env.python();
 	        python.debug(System.err::println);
         } catch (Exception ex) {
         	throw new LoadModelException(Messages.stackTrace(ex));
