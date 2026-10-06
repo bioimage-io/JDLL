@@ -331,7 +331,7 @@ public class DLModelPytorchProtected extends BaseModel {
 			@Override public String base() { return envPath; }
 			};
 		python = env.python();
-		python.debug(System.err::println);
+		python.debug(System.out::println);
 	}
 	
 	/**
