@@ -118,15 +118,15 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
 	
-	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy<2", "appose"});
+	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "appose"});
 	
 	private static final List<String> STARDIST_DEPS_PIP;
 	static {
 		if (PlatformDetection.isMacOS() 
 				&& (PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64) || PlatformDetection.isUsingRosseta()))
-			STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow-macos<2.11"});
+			STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow-macos<2.11", "numpy<2"});
 		else
-			STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow<2.11"});
+			STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow<2.11", "numpy<2"});
 	}
 	
 	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "default"});

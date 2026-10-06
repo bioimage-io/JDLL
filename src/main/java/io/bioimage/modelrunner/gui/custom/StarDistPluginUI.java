@@ -28,6 +28,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
+import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.EnvironmentInstaller;
@@ -398,13 +400,10 @@ public class StarDistPluginUI extends StarDistGUI implements ActionListener {
     		INSTALLED_WEIGHTS.put(CUSTOM_STR, true);
     		return true;
     	}
-    	try {
-			Stardist2D pretrained = Stardist2D.fromPretained(model, consumer.getModelsDir(), false);
-			if (pretrained == null)
-				return false;
-		} catch (Exception e) {
+		ModelDescriptor md = ModelDescriptorFactory.getModelsAtLocalRepo(consumer.getModelsDir()).stream()
+				.filter(mm ->mm.getName().equals(model)).findFirst().orElse(null);
+		if (md == null)
 			return false;
-		}
 		INSTALLED_WEIGHTS.put(model, true);
     	return true;
     }
