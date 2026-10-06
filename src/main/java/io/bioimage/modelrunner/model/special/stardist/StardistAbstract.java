@@ -118,7 +118,7 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
 	
-	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy", "appose"});
+	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "numpy<2", "appose"});
 	
 	private static final List<String> STARDIST_DEPS_PIP;
 	static {
@@ -448,14 +448,17 @@ public abstract class StardistAbstract extends BaseModel {
 		try {
 			RandomAccessibleInterval<T> in = Utils.convertToAxesOrder(inTensors.get(0).getData(), inTensors.get(0).getAxesOrderString(), this.axes);
 			Map<String, RandomAccessibleInterval<R>> outputs = run(in);
+			RandomAccessibleInterval<R> outMaks = outputs.get(OUTPUT_MASK_KEY);
+			outMaks = Utils.convertToAxesOrder(outMaks, axes, inTensors.get(0).getAxesOrderString());
+
 			for (Tensor<R> tensor : outTensors) {
 				Entry<String, RandomAccessibleInterval<R>> entry = outputs.entrySet().stream()
 						.filter(ee -> tensor.getName().equals(ee.getKey())
 								&& Arrays.equals(tensor.getData().dimensionsAsLongArray(), ee.getValue().dimensionsAsLongArray()))
 						.findFirst().orElse(null);
 				if (entry == null 
-						&& Arrays.equals(tensor.getData().dimensionsAsLongArray(), outputs.get(OUTPUT_MASK_KEY).dimensionsAsLongArray()))
-					tensor.setData(outputs.get(OUTPUT_MASK_KEY));
+						&& Arrays.equals(tensor.getData().dimensionsAsLongArray(), outMaks.dimensionsAsLongArray()))
+					tensor.setData(outMaks);
 				else if (entry != null)
 					tensor.setData(entry.getValue());
 			}
