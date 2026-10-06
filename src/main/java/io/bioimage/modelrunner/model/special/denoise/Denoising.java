@@ -237,7 +237,6 @@ public final class Denoising extends DLModelPytorchProtected {
         if (configured != null && new File(configured).isDirectory()) {
             return new File(configured).getAbsolutePath();
         }
-        File development = new File("/home/carlos/hack_git/jdll-denoise");
-        return development.isDirectory() ? development.getAbsolutePath() : "";
+        return "";
     }
 }

@@ -53,11 +53,9 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
 /**
- * JDLL UNet model backed by the local {@code jdll-unet} Python package.
+ * JDLL UNet model backed by the installed {@code jdll-unet} Python package.
  */
 public final class Unet extends DLModelPytorchProtected {
-
-    private static final String DEFAULT_UNET_SOURCE_DIR = "/home/carlos/hack_git/jdll-unet";
 
     private final String modelPath;
     private final Map<String, Object> config;
@@ -486,7 +484,7 @@ public final class Unet extends DLModelPytorchProtected {
         if (fromEnv != null && !fromEnv.trim().isEmpty()) {
             return fromEnv.trim();
         }
-        return DEFAULT_UNET_SOURCE_DIR;
+        return "";
     }
 
     private static void validateTrainingConfig(Map<String, Object> config) {

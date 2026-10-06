@@ -18,6 +18,9 @@ python = "==3.10"
 pip = "*"
 
 [pypi-dependencies]
+# Pin backend APIs; update these revisions together in all biapy manifests.
+jdll-unet = { git = "https://github.com/carlosuc3m/jdll-unet.git", rev = "d19046c269a1cb43baba5f8f5d8215b8c7f05e5b", extras = ["region-reading"] }
+jdll-denoise = { git = "https://github.com/carlosuc3m/jdll-denoise.git", rev = "e502bbfd4865f08d1a0b6cba41aab1865f596d61", extras = ["bm"] }
 timm = "==1.0.14"
 pytorch-msssim = "==1.0.0"
 torchmetrics = "==1.4.3"
