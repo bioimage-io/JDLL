@@ -355,10 +355,14 @@ public abstract class StardistAbstract extends BaseModel {
 	}	
 	
 	private void createPythonService() throws IOException {
+		String envDir = new Mamba(INSTALLATION_DIR).getEnvsDir() + File.separator + "stardist";
 		Environment env = new Environment() {
-			@Override public String base() { return new Mamba(INSTALLATION_DIR).getEnvsDir() + File.separator + "stardist"; }
+			@Override public String base() { return envDir; }
 			};
 		python = env.python();
+		if (PlatformDetection.isWindows()) {
+			python.setEnvVar("PATH", envDir + "\\Library\\bin");
+		}
 		python.debug(System.out::println);
 	}
 	
