@@ -1029,7 +1029,10 @@ public class DLModelPytorchProtected extends BaseModel {
 		}
 		if (!biapyPythonInstalled) {
 			// TODO add logging for environment installation
-			mamba.create(COMMON_PYTORCH_ENV_NAME, true, new ArrayList<String>(), BIAPY_CONDA_DEPS);
+			List<String> condaArgs = new ArrayList<String>(Arrays.asList(
+					"--override-channels", "--channel-priority", "flexible", "-c", "conda-forge"));
+			condaArgs.addAll(BIAPY_CONDA_DEPS);
+			mamba.create(COMMON_PYTORCH_ENV_NAME, true, condaArgs.toArray(new String[condaArgs.size()]));
 			ArrayList<String> args = new ArrayList<String>(BIAPY_PIP_ARGS);
 			args.addAll(BIAPY_PIP_DEPS_TORCH);
 			mamba.pipInstallIn(COMMON_PYTORCH_ENV_NAME, args.toArray(new String[args.size()]));

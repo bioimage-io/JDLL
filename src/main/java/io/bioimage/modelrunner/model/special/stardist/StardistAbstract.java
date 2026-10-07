@@ -129,7 +129,7 @@ public abstract class StardistAbstract extends BaseModel {
 			STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow<2.11", "numpy<2"});
 	}
 	
-	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "default"});
+	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "defaults"});
 
 	
 	private static final String OUTPUT_MASK_KEY = "mask";
@@ -842,9 +842,17 @@ public abstract class StardistAbstract extends BaseModel {
 			mamba.installMicromamba();
 		}
 		if (!stardistPythonInstalled) {
-			mamba.create("stardist", true, STARDIST_CHANNELS, STARDIST_DEPS.stream()
-					.map(dd -> dd.contains("<") | dd.contains(">") ? "\"" + dd + "\"": dd)
-					.collect(Collectors.toList()));
+			List<String> args = new ArrayList<String>(Arrays.asList(
+					"--override-channels", "--channel-priority", "flexible"));
+			for (String channel : STARDIST_CHANNELS) {
+				args.add("-c");
+				args.add(channel);
+			}
+			for (String dependency : STARDIST_DEPS) {
+				args.add(dependency.contains("<") || dependency.contains(">")
+						? "\"" + dependency + "\"" : dependency);
+			}
+			mamba.create("stardist", true, args.toArray(new String[args.size()]));
 			mamba.pipInstallIn("stardist", STARDIST_DEPS_PIP.stream()
 					.map(dd -> (PlatformDetection.isWindows() && (dd.contains("<") | dd.contains(">"))) ? "\"" + dd + "\"": dd)
 					.collect(Collectors.toList()).toArray(new String[STARDIST_DEPS_PIP.size()]));
