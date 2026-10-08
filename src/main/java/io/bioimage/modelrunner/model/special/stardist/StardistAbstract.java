@@ -454,6 +454,7 @@ public abstract class StardistAbstract extends BaseModel {
 			Map<String, RandomAccessibleInterval<R>> outputs = run(in);
 			RandomAccessibleInterval<R> outMaks = outputs.get(OUTPUT_MASK_KEY);
 			outMaks = Utils.convertToAxesOrder(outMaks, axes, inTensors.get(0).getAxesOrderString());
+			outputs.put(OUTPUT_MASK_KEY, outMaks);
 
 			for (Tensor<R> tensor : outTensors) {
 				Entry<String, RandomAccessibleInterval<R>> entry = outputs.entrySet().stream()
