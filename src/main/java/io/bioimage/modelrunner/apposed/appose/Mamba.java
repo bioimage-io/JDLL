@@ -257,6 +257,11 @@ public class Mamba {
 	private ProcessBuilder getBuilder( final boolean isInheritIO )
 	{
 		final ProcessBuilder builder = new ProcessBuilder().directory( new File( rootdir ) );
+		if ( PlatformDetection.isWindows() ) {
+			// Share a shorter cache across Appose environments without changing their prefixes.
+			builder.environment().put("CONDA_PKGS_DIRS", Paths.get(System.getProperty("user.home"),
+					".local", "share", "appose", "pkgs").toString());
+		}
 		if ( isInheritIO )
 			builder.inheritIO();
 		return builder;
