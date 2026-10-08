@@ -373,7 +373,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     	return noExtension + "_" + tensorName + extension;
     }
     
-    private void installCellpose() {
+    protected void installCellpose() {
     	startModelInstallation(true);
     	boolean envInstalled = Cellpose.isInstalled();
     	boolean wwInstalled = weightsInstalled();
