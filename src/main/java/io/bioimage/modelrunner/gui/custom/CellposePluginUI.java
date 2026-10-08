@@ -375,13 +375,17 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     
     protected void installCellpose() {
     	startModelInstallation(true);
-    	boolean envInstalled = Cellpose.isInstalled();
+        boolean envInstalled = INSTALLED_ENV = Cellpose.isInstalled();
     	boolean wwInstalled = weightsInstalled();
     	if (envInstalled && wwInstalled) {
         	startModelInstallation(false);
     		return;
     	}
     	installCellpose(wwInstalled, envInstalled);
+    }
+
+    protected boolean cellposeInstallationReady() {
+        return INSTALLED_ENV && weightsInstalled();
     }
     
     private void installCellpose(boolean wwInstalled, boolean envInstalled) {
@@ -455,11 +459,13 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 		installerFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
     	Consumer<Boolean> callback = (bool) -> {
     		INSTALLED_ENV = bool;
+            // Publish the result before releasing the caller waiting for installation.
+            latch.countDown();
     		checkModelInstallationFinished(latch);
     		if (installerFrame.isVisible())
     			installerFrame.dispose();
     	};
-    	InstallEnvWorker worker = new InstallEnvWorker("Cellpose", latch, callback);
+        InstallEnvWorker worker = new InstallEnvWorker("Cellpose", new CountDownLatch(1), callback);
 		EnvironmentInstaller installerPanel = EnvironmentInstaller.create(worker);
 		Consumer<String> cons = (s) ->{
 			installerPanel.updateText(s, Color.black);
@@ -483,7 +489,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     		startModelInstallation(false);
     }
     
-    private void startModelInstallation(boolean isStarting) {
+    protected void startModelInstallation(boolean isStarting) {
     	SwingUtilities.invokeLater(() -> {
         	footer.getButtons().getRunButton().setEnabled(!isStarting);
         	footer.getButtons().getInstallButton().setEnabled(!isStarting);
