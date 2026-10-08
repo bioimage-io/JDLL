@@ -1774,6 +1774,8 @@ public class Mamba {
 	private static String resolveAliases(String dep) {
 		if (dep.equals("pytorch"))
 			return "torch";
+		else if (dep.equals("tensorflow-macos"))
+			return "tensorflow";
 		else if (dep.equals("opencv-python"))
 			return "cv2";
 		else if (dep.equals("SAM-2"))

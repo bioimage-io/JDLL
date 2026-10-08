@@ -124,7 +124,7 @@ public class DLModelPytorchProtected extends BaseModel {
 		if (PlatformDetection.isMacOS()
 				&& PlatformDetection.getArch().equals(PlatformDetection.ARCH_X86_64) && !PlatformDetection.isUsingRosseta())
 			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.2.2", 
-					"torchvision==0.17.2", "torchaudio==2.2.2", "numba==0.61.2", "llvmlite==0.44.0"});
+					"torchvision==0.17.2", "torchaudio==2.2.2"});
 		else if (PlatformDetection.isWindows())
 			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.4.1", 
 					"torchvision==0.19.1", "torchaudio==2.4.1"});
@@ -136,22 +136,30 @@ public class DLModelPytorchProtected extends BaseModel {
 	private static final List<String> BIAPY_PIP_DEPS;
 	static {
 		if (PlatformDetection.isWindows())
-			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14",
+			BIAPY_PIP_DEPS = new ArrayList<>(Arrays.asList(new String[] {"timm==1.0.14",
 					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
-					"careamics", "biapy==3.5.10", "appose"});
+					"careamics==0.0.11", "biapy==3.5.10", "appose"}));
 		else if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
-			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14",
+			BIAPY_PIP_DEPS = new ArrayList<>(Arrays.asList(new String[] {"timm==1.0.14",
 					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "torch-fidelity==0.3.0",
-					"careamics", "pooch>=1.8.1", "numpy<2", "imagecodecs>=2024.1.1", "bioimageio.core==0.7.0",
-					"h5py>=3.9.0","torchinfo>=1.8.0", "pandas>=1.5.3", "xarray==2025.1.2",
-					"fill-voids>=2.0.6", "edt>=2.3.2", "tqdm>=4.66.1", "yacs>=0.1.8", "zarr>=2.16.1",
-					"pydot>=1.4.2", "matplotlib>=3.7.1", "imgaug>=0.4.0", "scipy==1.15.2",
-					"tensorboardX>=2.6.2.2", "scikit-learn>=1.4.0", "opencv-python>=4.8.0.76", "scikit-image>=0.21.0",
-					"appose"});
+					"careamics==0.0.11", "pooch==1.9.0", "imagecodecs==2025.3.30", "bioimageio.core==0.7.0",
+					"h5py==3.16.0", "torchinfo==1.8.0", "pandas==2.3.3", "xarray==2025.1.2",
+					"fill-voids==2.1.2", "edt==3.1.2", "tqdm==4.70.1", "yacs==0.1.8", "zarr==2.18.3",
+					"pydot==4.0.1", "matplotlib==3.10.1", "imgaug==0.4.0", "scipy==1.15.2",
+					"tensorboardX==2.6.5", "scikit-learn==1.7.2",
+					"opencv-python==" + (PlatformDetection.getOSVersion().getMajor() < 13 ? "4.8.0.76" : "4.11.0.86"),
+					"scikit-image==0.25.2",
+					"appose"}));
 		else
-			BIAPY_PIP_DEPS = Arrays.asList(new String[] {"timm==1.0.14",
+			BIAPY_PIP_DEPS = new ArrayList<>(Arrays.asList(new String[] {"timm==1.0.14",
 					"pytorch-msssim==1.0.0", "torchmetrics==1.4.3", "cellpose==3.1.1.1", "scipy==1.15.2", "torch-fidelity==0.3.0",
-					"careamics", "biapy==3.5.10", "appose"});
+					"careamics==0.0.11", "biapy==3.5.10", "appose"}));
+		// Intel macOS needs older wheels; keep the installed numerical versions elsewhere.
+		boolean intelMac = PlatformDetection.isMacOS()
+				&& PlatformDetection.getArch().equals(PlatformDetection.ARCH_X86_64) && !PlatformDetection.isUsingRosseta();
+		BIAPY_PIP_DEPS.addAll(Arrays.asList("numpy==1.26.4",
+				"numba==" + (intelMac ? "0.61.2" : "0.68.0"),
+				"llvmlite==" + (intelMac ? "0.44.0" : "0.50.0")));
 	}
 	
 	private static final List<String> BIAPY_PIP_ARGS;
@@ -1020,10 +1028,11 @@ public class DLModelPytorchProtected extends BaseModel {
 		boolean biapyPythonInstalled = false;
 		try {
 			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_CONDA_DEPS);
-			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS_TORCH);
-			biapyPythonInstalled = mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS);
+			biapyPythonInstalled = biapyPythonInstalled
+					&& mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS_TORCH)
+					&& mamba.checkAllDependenciesInEnv(COMMON_PYTORCH_ENV_NAME, BIAPY_PIP_DEPS);
 			if (PlatformDetection.isMacOS() && PlatformDetection.getOSVersion().getMajor() < 14)
-				biapyPythonInstalled = mamba.checkDependencyInEnv(COMMON_PYTORCH_ENV_NAME, "biapy==3.5.10");
+				biapyPythonInstalled = biapyPythonInstalled && mamba.checkDependencyInEnv(COMMON_PYTORCH_ENV_NAME, "biapy==3.5.10");
 		} catch (MambaInstallException e) {
 			mamba.installMicromamba();
 		}

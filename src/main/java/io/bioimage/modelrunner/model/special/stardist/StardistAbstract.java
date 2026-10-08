@@ -118,15 +118,22 @@ public abstract class StardistAbstract extends BaseModel {
 	
 	private static String INSTALLATION_DIR = Mamba.BASE_PATH;
 	
-	private static final List<String> STARDIST_DEPS = Arrays.asList(new String[] {"python=3.10", "stardist", "appose"});
+	private static final List<String> STARDIST_DEPS;
 	
 	private static final List<String> STARDIST_DEPS_PIP;
 	static {
+		boolean intelMac = PlatformDetection.isMacOS()
+				&& PlatformDetection.getArch().equals(PlatformDetection.ARCH_X86_64) && !PlatformDetection.isUsingRosseta();
+		STARDIST_DEPS = Arrays.asList("python=3.10", "numpy=1.26.4", "appose",
+				"numba=" + (intelMac ? "0.61.2" : "0.67.0"),
+				"llvmlite=" + (intelMac ? "0.44.0" : "0.49.0"));
 		if (PlatformDetection.isMacOS() 
 				&& (PlatformDetection.getArch().equals(PlatformDetection.ARCH_ARM64) || PlatformDetection.isUsingRosseta()))
-			STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow-macos<2.11", "numpy<2"});
+			STARDIST_DEPS_PIP = Arrays.asList("tensorflow-macos==2.10.0", "numpy==1.26.4",
+					"stardist==0.9.2", "csbdeep==0.8.2", "scipy==1.15.2");
 		else
-			STARDIST_DEPS_PIP = Arrays.asList(new String[] {"tensorflow<2.11", "numpy<2"});
+			STARDIST_DEPS_PIP = Arrays.asList("tensorflow==2.10.1", "numpy==1.26.4",
+					"stardist==0.9.2", "csbdeep==0.8.2", "scipy==1.15.2");
 	}
 	
 	private static final List<String> STARDIST_CHANNELS = Arrays.asList(new String[] {"conda-forge", "defaults"});
@@ -835,10 +842,8 @@ public abstract class StardistAbstract extends BaseModel {
 		}
 		boolean stardistPythonInstalled = false;
 		try {
-			List<String> deps = new ArrayList<String>();
-			for (String dd : STARDIST_DEPS)
-				deps.add(dd.equals("tensorflow-macos<2.11") ? dd.replace("-macos", "") : dd);
-			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", deps);
+			stardistPythonInstalled = mamba.checkAllDependenciesInEnv("stardist", STARDIST_DEPS)
+					&& mamba.checkAllDependenciesInEnv("stardist", STARDIST_DEPS_PIP);
 		} catch (MambaInstallException e) {
 			mamba.installMicromamba();
 		}
