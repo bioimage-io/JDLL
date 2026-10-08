@@ -124,7 +124,7 @@ public class DLModelPytorchProtected extends BaseModel {
 		if (PlatformDetection.isMacOS()
 				&& PlatformDetection.getArch().equals(PlatformDetection.ARCH_X86_64) && !PlatformDetection.isUsingRosseta())
 			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.2.2", 
-					"torchvision==0.17.2", "torchaudio==2.2.2"});
+					"torchvision==0.17.2", "torchaudio==2.2.2", "numba==0.61.2", "llvmlite==0.44."});
 		else if (PlatformDetection.isWindows())
 			BIAPY_PIP_DEPS_TORCH = Arrays.asList(new String[] {"torch==2.4.1", 
 					"torchvision==0.19.1", "torchaudio==2.4.1"});
