@@ -116,6 +116,7 @@ public class YoloImageDisplayPanel extends JPanel {
     private Color emptyMessageColor = HELP_TEXT;
     private Color boxColor = BOX_COLOR;
     private Color titleColor = HELP_TEXT;
+    private boolean titleBackground;
     private final JButton expandButton = new JButton(EXPAND_SYMBOL);
     private final Timer hintFadeTimer;
     private long hintShownAt;
@@ -517,6 +518,12 @@ public class YoloImageDisplayPanel extends JPanel {
         repaint();
     }
 
+    /** Keeps preview names readable independently of image and annotation colors. */
+    public void setTitleBackground(boolean enabled) {
+        titleBackground = enabled;
+        repaint();
+    }
+
     /**
      * Sets the title.
      *
@@ -689,8 +696,19 @@ public class YoloImageDisplayPanel extends JPanel {
         g2.setClip(null);
 
         if (title != null && !title.isEmpty()) {
-            g2.setColor(titleColor);
-            g2.drawString(title, imageDrawArea.x + 6, imageDrawArea.y + 16);
+            Graphics2D label = (Graphics2D) g2.create();
+            label.clip(imageDrawArea);
+            int x = imageDrawArea.x + 6;
+            int y = imageDrawArea.y + 16;
+            if (titleBackground) {
+                FontMetrics metrics = label.getFontMetrics();
+                label.setColor(new Color(20, 24, 32, 170));
+                label.fillRoundRect(x - 4, y - metrics.getAscent() - 3,
+                        metrics.stringWidth(title) + 8, metrics.getHeight() + 6, 6, 6);
+            }
+            label.setColor(titleBackground ? Color.WHITE : titleColor);
+            label.drawString(title, x, y);
+            label.dispose();
         }
         paintHintOverlay(g2);
         g2.dispose();

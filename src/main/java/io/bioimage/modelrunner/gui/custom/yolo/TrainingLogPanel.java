@@ -84,6 +84,10 @@ public class TrainingLogPanel extends JPanel {
     private boolean followTail = true;
     private boolean adjustingScroll;
     private boolean suppressScrollTracking;
+    private boolean scrollToBottomPending;
+    private int previousScrollValue;
+    private int previousScrollMaximum;
+    private int previousScrollExtent;
     private boolean trainingActive;
     private boolean placeholderVisible;
     private int activityLineStart = -1;
@@ -145,8 +149,19 @@ public class TrainingLogPanel extends JPanel {
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.getVerticalScrollBar().addAdjustmentListener(e -> {
-            if (!adjustingScroll && !suppressScrollTracking) {
+            JScrollBar bar = scrollPane.getVerticalScrollBar();
+            boolean rangeChanged = bar.getMaximum() != previousScrollMaximum
+                    || bar.getVisibleAmount() != previousScrollExtent;
+            boolean moved = bar.getValue() != previousScrollValue;
+            // Appending text and resizing change the range, not the user's follow preference.
+            if (!adjustingScroll && !suppressScrollTracking && moved && !rangeChanged) {
                 followTail = isAtBottom();
+            }
+            previousScrollValue = bar.getValue();
+            previousScrollMaximum = bar.getMaximum();
+            previousScrollExtent = bar.getVisibleAmount();
+            if (rangeChanged && followTail) {
+                scrollToBottom();
             }
         });
 
@@ -187,7 +202,6 @@ public class TrainingLogPanel extends JPanel {
         String line = "[" + timestamp + "] " + message.trim();
         String diskError = writeDiskLine(line);
         Runnable append = () -> {
-            boolean shouldFollow = followTail && isAtBottom();
             withScrollTrackingSuppressed(() -> {
                 String trimmedMessage = message.trim();
                 appendUiLine(timestamp, trimmedMessage, styleForMessage(trimmedMessage));
@@ -197,10 +211,8 @@ public class TrainingLogPanel extends JPanel {
                             messageStyle);
                 }
             });
-            if (shouldFollow) {
+            if (followTail) {
                 scrollToBottom();
-            } else {
-                followTail = false;
             }
         };
         if (SwingUtilities.isEventDispatchThread()) {
@@ -215,11 +227,14 @@ public class TrainingLogPanel extends JPanel {
      */
     public void clearLog() {
         Runnable clear = () -> {
-            clearVisibleDocument();
-            uiLineCount = 0;
-            followTail = true;
-            showPlaceholder();
-            setTrainingStatus(false, 0, 0, 0, 0L, Double.NaN);
+            withScrollTrackingSuppressed(() -> {
+                clearVisibleDocument();
+                uiLineCount = 0;
+                followTail = true;
+                showPlaceholder();
+                setTrainingStatus(false, 0, 0, 0, 0L, Double.NaN);
+            });
+            scrollToBottom();
         };
         if (SwingUtilities.isEventDispatchThread()) {
             clear.run();
@@ -384,7 +399,18 @@ public class TrainingLogPanel extends JPanel {
                 return;
             }
             try {
-                document.remove(0, root.getElement(0).getEndOffset());
+                int end = root.getElement(0).getEndOffset();
+                int removedHeight = 0;
+                if (!followTail) {
+                    java.awt.geom.Rectangle2D first = textPane.modelToView2D(0);
+                    java.awt.geom.Rectangle2D next = textPane.modelToView2D(end);
+                    if (first != null && next != null) removedHeight = (int) (next.getY() - first.getY());
+                }
+                int scrollValue = scrollPane.getVerticalScrollBar().getValue();
+                document.remove(0, end);
+                if (!followTail) {
+                    scrollPane.getVerticalScrollBar().setValue(Math.max(0, scrollValue - removedHeight));
+                }
                 uiLineCount--;
             } catch (BadLocationException e) {
                 return;
@@ -472,23 +498,21 @@ public class TrainingLogPanel extends JPanel {
         if (activityTimer.isRunning()) {
             activityTimer.stop();
         }
-        removeActivityLine();
+        withScrollTrackingSuppressed(this::removeActivityLine);
+        if (followTail) scrollToBottom();
     }
 
     private void updateActivityLine() {
         if (!trainingActive) {
             return;
         }
-        boolean shouldFollow = followTail && isAtBottom();
         activityDots = activityDots % 3 + 1;
         withScrollTrackingSuppressed(() -> {
             removeActivityLine();
             appendActivityLine();
         });
-        if (shouldFollow) {
+        if (followTail) {
             scrollToBottom();
-        } else {
-            followTail = false;
         }
     }
 
@@ -542,21 +566,24 @@ public class TrainingLogPanel extends JPanel {
         try {
             runnable.run();
         } finally {
-            if (!previous) {
-                SwingUtilities.invokeLater(() -> suppressScrollTracking = false);
-            } else {
-                suppressScrollTracking = true;
-            }
+            suppressScrollTracking = previous;
         }
     }
 
     private void scrollToBottom() {
-        adjustingScroll = true;
+        if (scrollToBottomPending) return;
+        scrollToBottomPending = true;
         SwingUtilities.invokeLater(() -> {
+            scrollToBottomPending = false;
             JScrollBar bar = scrollPane.getVerticalScrollBar();
-            bar.setValue(bar.getMaximum());
-            followTail = true;
-            adjustingScroll = false;
+            // A user scroll after this update was queued must take precedence.
+            if (!followTail || bar.getValueIsAdjusting()) return;
+            adjustingScroll = true;
+            try {
+                bar.setValue(bar.getMaximum());
+            } finally {
+                adjustingScroll = false;
+            }
         });
     }
 

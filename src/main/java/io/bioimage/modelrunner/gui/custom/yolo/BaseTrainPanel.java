@@ -238,6 +238,9 @@ public abstract class BaseTrainPanel extends JPanel {
      * @param running the running.
      */
     public void setTrainingRunning(boolean running) {
+        if (trainingRunning != running) {
+            showGraph("log");
+        }
         this.trainingRunning = running;
         modelNameField.setEnabled(!running);
         datasetField.setEnabled(!running);

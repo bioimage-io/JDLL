@@ -80,6 +80,7 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
     private final TrainingStatusPanel statusPanel = new TrainingStatusPanel();
     private final JButton previousButton = new JButton(PREVIOUS_SYMBOL);
     private final JButton nextButton = new JButton(NEXT_SYMBOL);
+    private final JButton annotationColorButton = createAnnotationColorButton(PREDICTION_COLOR, this::setAnnotationColor);
     private final JComboBox<String> planeCombo = new JComboBox<String>(new String[] {"XY", "XZ", "YZ"});
     private final JSlider sliceSlider = new JSlider();
     private final JLabel sliceLabel = new JLabel();
@@ -94,6 +95,8 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
     private long elapsedMillis;
     private double secondsPerIteration = Double.NaN;
     private boolean currentSampleUsesProbabilityOverlay;
+    private Color predictionColor = PREDICTION_COLOR;
+    private Color probabilityColor = PROBABILITY_COLOR;
     private RandomAccessibleInterval<?> currentImage;
     private RandomAccessibleInterval<?> currentPrediction;
     private RandomAccessibleInterval<?> currentProbability;
@@ -112,6 +115,9 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         setBorder(new LineBorder(new Color(205, 210, 221)));
 
         imagePanel.setEmptyMessage(WAITING_MESSAGE);
+        imagePanel.setTitleBackground(true);
+        imagePanel.add(annotationColorButton);
+        imagePanel.setComponentZOrder(annotationColorButton, 0);
         statusPanel.setOpaque(false);
         YoloUiUtils.styleFlatSecondaryButton(previousButton);
         YoloUiUtils.styleFlatSecondaryButton(nextButton);
@@ -156,6 +162,7 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         currentImage = null;
         currentPrediction = null;
         currentProbability = null;
+        annotationColorButton.setVisible(false);
         setSliceControlsVisible(false);
         updateStatusPanel();
         updateButtons();
@@ -244,6 +251,7 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
         int y = OUTER_PAD;
 
         imagePanel.setBounds(OUTER_PAD, y, innerW, imageH);
+        layoutAnnotationColorButton(annotationColorButton, imagePanel);
         y += imageH + VIEWER_TO_ARROWS_GAP;
 
         if (volume) {
@@ -272,6 +280,7 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
     }
 
     private void cancelPreviewLoad() {
+        annotationColorButton.setVisible(false);
         previewLoadVersion++;
         if (previewLoader != null) {
             previewLoader.cancel(true);
@@ -350,7 +359,8 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
             currentSampleUsesProbabilityOverlay = false;
             BufferedImage image = buildOverlay();
             imagePanel.setBufferedImage(image, buildImageTitle(samples.get(currentIndex)), false);
-            imagePanel.setTitleColor(Color.WHITE);
+            annotationColorButton.setForeground(currentSampleUsesProbabilityOverlay ? probabilityColor : predictionColor);
+            annotationColorButton.setVisible(currentPrediction != null || currentProbability != null);
             updateSliceLabel();
         } catch (Exception e) {
             imagePanel.setEmptyMessage(ERROR_MESSAGE, new Color(180, 30, 30));
@@ -365,14 +375,23 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
             RandomAccessibleInterval<?> prediction = currentSlice(currentPrediction, false);
             hasPrediction = hasPositiveValues(prediction);
             if (hasPrediction) {
-                drawMaskContours(image, prediction, PREDICTION_COLOR);
+                drawMaskContours(image, prediction, predictionColor);
             }
         }
         if (!hasPrediction && currentProbability != null) {
-            drawProbabilityOverlay(image, currentSlice(currentProbability, false), PROBABILITY_COLOR);
+            drawProbabilityOverlay(image, currentSlice(currentProbability, false), probabilityColor);
             currentSampleUsesProbabilityOverlay = true;
         }
         return image;
+    }
+
+    private void setAnnotationColor(Color color) {
+        if (color == null) return;
+        if (currentSampleUsesProbabilityOverlay) probabilityColor = color;
+        else predictionColor = color;
+        YoloImageDisplayPanel.Viewport viewport = imagePanel.getViewport();
+        renderCurrentSample();
+        imagePanel.setViewport(viewport);
     }
 
     private RandomAccessibleInterval<?> currentSlice(RandomAccessibleInterval<?> source, boolean image) {
@@ -429,7 +448,7 @@ public class StardistValidationPreviewPanel extends YoloValidationPreviewPanel {
 
     private String buildImageTitle(PreviewSample sample) {
         return sample.title + " --- " + (currentIndex + 1) + "/" + samples.size()
-                + (currentSampleUsesProbabilityOverlay ? " | probability orange" : " | prediction magenta");
+                + (currentSampleUsesProbabilityOverlay ? " | probability" : " | prediction");
     }
 
     private String getSelectedImagePath() {
