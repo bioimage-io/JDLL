@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JButton;
+import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
@@ -35,6 +36,47 @@ import io.bioimage.modelrunner.gui.custom.unet.UnetTrainPanel;
 import net.imglib2.img.array.ArrayImgs;
 
 public class TrainingUiTest {
+    @Test
+    public void trainingViewButtonsHighlightOnlyTheVisibleView() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            for (BaseTrainPanel panel : new BaseTrainPanel[] {new YoloTrainPanel(), new StardistTrainPanel(),
+                    new UnetTrainPanel() { private static final long serialVersionUID = 1L; }}) {
+                assertSelectedView(panel, panel.lossButton);
+                for (JButton button : new JButton[] {panel.metricButton, panel.validationPreviewButton,
+                        panel.logButton, panel.lossButton}) {
+                    button.doClick();
+                    assertSelectedView(panel, button);
+                    button.doClick();
+                    assertSelectedView(panel, button);
+                }
+                panel.setTrainingRunning(true);
+                assertSelectedView(panel, panel.logButton);
+                panel.validationPreviewButton.doClick();
+                panel.setTrainingRunning(true);
+                assertSelectedView(panel, panel.validationPreviewButton);
+                panel.setFullValidationAvailable(true);
+                panel.setFullValidationState(true, true);
+                assertSelectedView(panel, panel.validationPreviewButton);
+                panel.setTrainingRunning(false);
+                assertSelectedView(panel, panel.logButton);
+            }
+        });
+    }
+
+    private static void assertSelectedView(BaseTrainPanel panel, JButton selected) {
+        JButton[] buttons = {panel.lossButton, panel.metricButton, panel.validationPreviewButton, panel.logButton};
+        JPanel[] views = {panel.lossGraphPanel, panel.metricGraphPanel, panel.validationPreviewPanel, panel.trainingLogPanel};
+        for (int i = 0; i < buttons.length; i++) {
+            boolean active = buttons[i] == selected;
+            assertEquals(buttons[i].getText(), active, buttons[i].isSelected());
+            assertEquals(buttons[i].getText(), active, views[i].isVisible());
+            assertEquals(active ? YoloUiUtils.TOGGLE_ACTIVE_BUTTON_BG : YoloUiUtils.SECONDARY_BUTTON_BG,
+                    buttons[i].getBackground());
+            assertEquals(active ? YoloUiUtils.PRIMARY_BUTTON_FG : YoloUiUtils.SECONDARY_BUTTON_FG,
+                    buttons[i].getForeground());
+        }
+    }
+
     @Test
     public void startingTrainingRestoresLogCaretAndFollowing() throws Exception {
         BaseTrainPanel[] panels = new BaseTrainPanel[3];

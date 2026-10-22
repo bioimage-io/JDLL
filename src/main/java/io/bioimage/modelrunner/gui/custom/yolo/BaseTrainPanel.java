@@ -150,10 +150,6 @@ public abstract class BaseTrainPanel extends JPanel {
 
         YoloUiUtils.styleFlatSecondaryButton(datasetBrowseButton);
         YoloUiUtils.styleFlatSecondaryButton(baseModelBrowseButton);
-        YoloUiUtils.styleFlatSecondaryButton(lossButton);
-        YoloUiUtils.styleFlatSecondaryButton(metricButton);
-        YoloUiUtils.styleFlatSecondaryButton(validationPreviewButton);
-        YoloUiUtils.styleFlatSecondaryButton(logButton);
         YoloUiUtils.styleFlatSecondaryButton(fullValidationButton);
         fullValidationButton.setVisible(false);
         fullValidationButton.setEnabled(false);
@@ -171,6 +167,7 @@ public abstract class BaseTrainPanel extends JPanel {
         metricButton.addActionListener(e -> showGraph("metric"));
         validationPreviewButton.addActionListener(e -> showGraph("validationPreview"));
         logButton.addActionListener(e -> showGraph("log"));
+        showGraph("loss");
         datasetBrowseButton.addActionListener(e -> browseDataset());
         baseModelBrowseButton.addActionListener(e -> browseBaseModel());
 
@@ -204,6 +201,10 @@ public abstract class BaseTrainPanel extends JPanel {
     private void showGraph(String name) {
         CardLayout layout = (CardLayout) graphCardPanel.getLayout();
         layout.show(graphCardPanel, name);
+        YoloUiUtils.styleToggleButton(lossButton, "loss".equals(name));
+        YoloUiUtils.styleToggleButton(metricButton, "metric".equals(name));
+        YoloUiUtils.styleToggleButton(validationPreviewButton, "validationPreview".equals(name));
+        YoloUiUtils.styleToggleButton(logButton, "log".equals(name));
     }
 
     private static void styleErrorLabel(JLabel label) {
