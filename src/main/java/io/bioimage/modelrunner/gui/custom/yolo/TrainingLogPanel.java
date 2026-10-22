@@ -222,6 +222,15 @@ public class TrainingLogPanel extends JPanel {
         }
     }
 
+    /** Moves to the end of the log and follows new output until the user scrolls up. */
+    public void followLatestOutput() {
+        // Let pending caret/layout changes from the previous view finish first.
+        SwingUtilities.invokeLater(() -> {
+            followTail = true;
+            scrollToBottom();
+        });
+    }
+
     /**
      * Clears the log.
      */
@@ -580,6 +589,7 @@ public class TrainingLogPanel extends JPanel {
             if (!followTail || bar.getValueIsAdjusting()) return;
             adjustingScroll = true;
             try {
+                textPane.setCaretPosition(logDocument.getLength());
                 bar.setValue(bar.getMaximum());
             } finally {
                 adjustingScroll = false;

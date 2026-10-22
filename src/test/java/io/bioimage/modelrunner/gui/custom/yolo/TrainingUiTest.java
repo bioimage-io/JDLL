@@ -36,6 +36,69 @@ import net.imglib2.img.array.ArrayImgs;
 
 public class TrainingUiTest {
     @Test
+    public void startingTrainingRestoresLogCaretAndFollowing() throws Exception {
+        BaseTrainPanel[] panels = new BaseTrainPanel[3];
+        SwingUtilities.invokeAndWait(() -> {
+            panels[0] = new YoloTrainPanel();
+            panels[1] = new StardistTrainPanel();
+            panels[2] = new UnetTrainPanel() { private static final long serialVersionUID = 1L; };
+        });
+        for (BaseTrainPanel panel : panels) {
+            TrainingLogPanel log = panel.trainingLogPanel;
+            JScrollPane scroll = (JScrollPane) field(log, "scrollPane");
+            JTextPane text = (JTextPane) field(log, "textPane");
+            SwingUtilities.invokeAndWait(() -> {
+                log.setSize(440, 240);
+                for (int i = 0; i < 100; i++) log.appendLine("Previous log " + i);
+            });
+            settle(log, scroll, text);
+            SwingUtilities.invokeAndWait(() -> {
+                scroll.getVerticalScrollBar().setValue(50);
+                text.setCaretPosition(0);
+                panel.lossButton.doClick();
+                panel.setTrainingRunning(true);
+                assertTrue(log.isVisible());
+                log.appendLine("Starting training");
+            });
+            settle(log, scroll, text);
+            SwingUtilities.invokeAndWait(() -> {
+                assertBottom(scroll);
+                assertEquals(text.getDocument().getLength(), text.getCaretPosition());
+            });
+            // Backend callbacks can append off the event dispatch thread.
+            log.appendLine("Next training step");
+            settle(log, scroll, text);
+            SwingUtilities.invokeAndWait(() -> {
+                assertBottom(scroll);
+                assertEquals(text.getDocument().getLength(), text.getCaretPosition());
+            });
+
+            AtomicInteger position = new AtomicInteger();
+            SwingUtilities.invokeAndWait(() -> {
+                scroll.getVerticalScrollBar().setValue(50);
+                position.set(scroll.getVerticalScrollBar().getValue());
+                panel.setTrainingRunning(true);
+                log.appendLine("Reading earlier messages during training");
+            });
+            settle(log, scroll, text);
+            SwingUtilities.invokeAndWait(() -> {
+                assertEquals(position.get(), scroll.getVerticalScrollBar().getValue());
+                panel.setTrainingRunning(false);
+                panel.metricButton.doClick();
+                panel.setTrainingRunning(true);
+                assertTrue(log.isVisible());
+                log.appendLine("Another training run");
+            });
+            settle(log, scroll, text);
+            SwingUtilities.invokeAndWait(() -> {
+                assertBottom(scroll);
+                assertEquals(text.getDocument().getLength(), text.getCaretPosition());
+                panel.setTrainingRunning(false);
+            });
+        }
+    }
+
+    @Test
     public void logLifecycleAndFollowingRespectUserNavigation() throws Exception {
         TrainingLogPanel[] holder = new TrainingLogPanel[1];
         SwingUtilities.invokeAndWait(() -> {
