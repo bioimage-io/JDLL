@@ -38,6 +38,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apposed.appose.BuildException;
+import org.apposed.appose.Service.ResponseType;
+import org.apposed.appose.Service.Task;
+
+import com.google.gson.Gson;
 
 import io.bioimage.modelrunner.bioimageio.BioimageioRepo;
 import io.bioimage.modelrunner.bioimageio.description.ModelDescriptor;
@@ -45,6 +49,8 @@ import io.bioimage.modelrunner.bioimageio.description.ModelDescriptorFactory;
 import io.bioimage.modelrunner.bioimageio.description.weights.ModelWeight;
 import io.bioimage.modelrunner.bioimageio.description.weights.WeightFormat;
 import io.bioimage.modelrunner.model.tiling.TileCalculator;
+import io.bioimage.modelrunner.model.tiling.merger.Merger;
+import io.bioimage.modelrunner.model.tiling.merger.NoTileMerger;
 import io.bioimage.modelrunner.download.MultiFileDownloader;
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
@@ -75,6 +81,9 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	protected int[] channels;
 
 	private Float diameter;
+	private volatile Float resolvedDiameter;
+	private boolean includeIntermediateOutputs = true;
+	private Consumer<String> logConsumer;
 
 	protected String setDiameterCode = "";
 
@@ -145,7 +154,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			+ "  _jdll_cellpose_gpu = False" + System.lineSeparator()
 			+ "device = _jdll_cellpose_device" + System.lineSeparator()
 			+ "task.export(device=device)" + System.lineSeparator()
-			+ MODEL_VAR_NAME + " = denoise.CellposeDenoiseModel(gpu=_jdll_cellpose_gpu, pretrained_model=r'%s', device=device)" + System.lineSeparator()
+			+ MODEL_VAR_NAME + " = denoise.CellposeDenoiseModel(gpu=_jdll_cellpose_gpu, pretrained_model=%s, device=device)" + System.lineSeparator()
 			+ "task.export(" + MODEL_VAR_NAME + "=" + MODEL_VAR_NAME +")" + System.lineSeparator();
 
 	protected static final String PATH_TO_RDF = "special_models/cellpose/rdf.yaml";
@@ -184,15 +193,10 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * @param channels the channels.
 	 */
 	public void setChannels(int[] channels) {
-		/**
-		 * TODO remove
-		if (channels.length != 2)
-			throw new IllegalArgumentException("The channels arrays can only be [0, 0], [2, 3] or [2, 1]."
-					+ " For grayscale images [0, 0], for 3 channels images where the cytoplasm is in the second channel "
-					+ "(green) and the nuclei are in the first channel (red), [2, 1]; and when the nuclei are in the "
-					+ "third channel (blue), [2, 3].");
-		 */
-		this.channels = channels;
+		if (channels == null || channels.length != 2
+				|| channels[0] < 0 || channels[0] > 3 || channels[1] < 0 || channels[1] > 3)
+			throw new IllegalArgumentException("Cellpose expects two channel indices between 0 and 3.");
+		this.channels = channels.clone();
 	}
 
 	/**
@@ -203,6 +207,12 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * @param diameter the diameter.
 	 */
 	public void setDiameter(float diameter) {
+		if (!Float.isFinite(diameter) || diameter < 0)
+			throw new IllegalArgumentException("Diameter must be finite and non-negative (0 means auto).");
+		if (diameter == 0) {
+			clearDiameter();
+			return;
+		}
 		this.diameter = diameter;
 		setDiameterCode = "diameter=" + diameter;
 	}
@@ -212,6 +222,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 */
 	public void clearDiameter() {
 		this.diameter = null;
+		this.resolvedDiameter = null;
 		setDiameterCode = "diameter=None";
 	}
 
@@ -221,6 +232,45 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 */
 	public Float getDiameter() {
 		return this.diameter;
+	}
+
+	public Float getResolvedDiameter() {
+		return resolvedDiameter;
+	}
+
+	public void setIncludeIntermediateOutputs(boolean include) {
+		includeIntermediateOutputs = include;
+	}
+
+	public void setLogConsumer(Consumer<String> consumer) {
+		logConsumer = consumer;
+	}
+
+	@Override
+	protected void configureTask(Task task) {
+		task.listen(event -> {
+			if (event.responseType != ResponseType.UPDATE || event.info == null
+					|| !"cellpose_diameter".equals(event.info.get("type"))) return;
+			Object value = event.info.get("diameter");
+			if (value instanceof Number) resolvedDiameter = ((Number) value).floatValue();
+			if (logConsumer != null && event.message != null) logConsumer.accept(event.message);
+		});
+	}
+
+	@Override
+	protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+	Merger<Tensor<T>, Tensor<R>> getTileMaker(List<Tensor<T>> inputs) {
+		if (isBMZ) return super.getTileMaker(inputs);
+		// Cellpose tiles its network internally and reconstructs instance IDs globally.
+		NoTileMerger<T, R> merger = new NoTileMerger<>();
+		merger.configure(inputs);
+		return merger;
+	}
+
+	@Override
+	protected String getOutputTensorAxes(int index) {
+		if (isBMZ) return super.getOutputTensorAxes(index);
+		return new String[] {"xy", "xyc", "cxy", "xy", "i", "xyc"}[index];
 	}
 
 	private static <T extends RealType<T> & NativeType<T>> boolean isRedChannelEmpty(RandomAccessibleInterval<T> image) {
@@ -264,10 +314,12 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	@Override
 	public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
 	List<Tensor<R>> inference(final Tensor<T>... inputs) throws RunModelException {
-		if (inputs.length > 1)
+		if (inputs.length != 1)
 			throw new IllegalArgumentException(String.format("Cellpose has 1 positional arguemnt, %s were given", inputs.length));
-		createCustomDescriptor(inputs[0]);
-		return super.inference(inputs);
+		if (isBMZ) return super.inference(inputs);
+		List<Tensor<T>> checked = checkInputTensors(new ArrayList<>(Arrays.asList(inputs)));
+		resolvedDiameter = null;
+		return super.inference(checked.get(0));
 	}
 
 	/**
@@ -336,10 +388,12 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			return super.buildModelCode();
 		String code = String.format(LOAD_MODEL_CODE_ABSTRACT,
 				this.device,
-				this.weightsPath);
-		code += ""
-				+ "diameter = None" + System.lineSeparator()
-				+ "task.export(diameter=diameter)" + System.lineSeparator();
+				new Gson().toJson(this.weightsPath));
+		try (InputStream in = Cellpose.class.getClassLoader().getResourceAsStream("python/cellpose_inference.py")) {
+			if (in == null) throw new IOException("Missing Cellpose inference helper");
+			code += new String(in.readAllBytes(), StandardCharsets.UTF_8) + System.lineSeparator();
+		}
+		code += "task.export(resolve_cellpose_diameter=resolve_cellpose_diameter)" + System.lineSeparator();
 		return code;
 	}
 
@@ -355,8 +409,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	String createInputsCode(List<Tensor<T>> inRais, List<String> names) {
 		if (this.isBMZ)
 			return super.createInputsCode(inRais, names);
-		String code = setDiameterCode + System.lineSeparator();
-		setDiameterCode = "";
+		String code = "diameter = " + (diameter == null ? "None" : diameter.toString()) + System.lineSeparator();
 		code += "created_shms.clear()" + System.lineSeparator();
 		code += "task.outputs.clear()" + System.lineSeparator();
 		code += SHM_NAMES_KEY + " = []" + System.lineSeparator();
@@ -377,12 +430,13 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		channelList += "]";
 		code += createDiamCode(nameList, channelList);
 		code += "_jdll_masks, _jdll_flows, _jdll_styles, _jdll_imgs_dn = " + MODEL_VAR_NAME + ".eval("
-				+ nameList + ", channels=" + channelList + ", diameter=diameter)" + System.lineSeparator();
+				+ nameList + ", channels=" + channelList + ", channel_axis=-1, diameter=diameter)" + System.lineSeparator();
 		code += "def _jdll_first(value):" + System.lineSeparator();
 		code += "  return value[0] if isinstance(value, (list, tuple)) else value" + System.lineSeparator();
 		code += "_jdll_flows0 = _jdll_first(_jdll_flows)" + System.lineSeparator();
-		code += OUTPUT_LIST_KEY + " = [_jdll_first(_jdll_masks), _jdll_flows0[0], _jdll_flows0[1], "
-				+ "_jdll_flows0[2], _jdll_first(_jdll_styles), _jdll_first(_jdll_imgs_dn)]" + System.lineSeparator();
+		code += OUTPUT_LIST_KEY + (includeIntermediateOutputs
+				? " = [_jdll_first(_jdll_masks), _jdll_flows0[0], _jdll_flows0[1], _jdll_flows0[2], _jdll_first(_jdll_styles), _jdll_first(_jdll_imgs_dn)]"
+				: " = [_jdll_first(_jdll_masks)]") + System.lineSeparator();
 		code += String.format("handle_output_list(%s, %s, %s, %s, %s)", OUTPUT_LIST_KEY,
 				SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY)  + System.lineSeparator();
 		code += taskOutputsCode();
@@ -423,18 +477,8 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * @return the resulting string.
 	 */
 	protected String createDiamCode(String nameList, String channelList) {
-		String code = ""
-				+ "if diameter is None:" + System.lineSeparator()
-				+ "  from cellpose.models import SizeModel" + System.lineSeparator()
-				+ "  from pathlib import Path" + System.lineSeparator()
-				+ "  p = Path(r'" + this.modelFolder + "')" + System.lineSeparator()
-				+ "  pretrained_list = [f for f in p.glob(\"size_*.npy\") if f.is_file()]" + System.lineSeparator()
-				+ "  if len(pretrained_list) > 0:" + System.lineSeparator()
-				+ String.format("    sz = SizeModel(pretrained_size=pretrained_list[0], cp_model=%s.cp)", MODEL_VAR_NAME) + System.lineSeparator()
-				+ "    diameter = sz.eval(";
-
-		code += nameList + ", channels=" + channelList +")[0]" + System.lineSeparator();
-		return code;
+		return "diameter = resolve_cellpose_diameter(" + MODEL_VAR_NAME + ", " + nameList + ", "
+				+ channelList + ", diameter, " + new Gson().toJson(weightsPath) + ", task)" + System.lineSeparator();
 	}
 
 	/**

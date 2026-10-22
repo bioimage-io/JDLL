@@ -33,12 +33,11 @@ public class CellposeOptionsPanel extends JPanel {
 
     private static final long serialVersionUID = -1274330030238886907L;
     private static final int GAP = 6;
-    private static final String[] CHANNELS = {"gray", "red", "green", "blue"};
 
-    private final JLabel cytoplasmLabel = new JLabel("Cytoplasm color");
-    private final JComboBox<String> cytoplasmComboBox = new JComboBox<String>(CHANNELS);
-    private final JLabel nucleiLabel = new JLabel("Nuclei color");
-    private final JComboBox<String> nucleiComboBox = new JComboBox<String>(CHANNELS);
+    private final JLabel cytoplasmLabel = new JLabel("Cytoplasm channel");
+    private final JComboBox<String> cytoplasmComboBox = new JComboBox<String>();
+    private final JLabel nucleiLabel = new JLabel("Nuclei channel");
+    private final JComboBox<String> nucleiComboBox = new JComboBox<String>();
     private final JCheckBox displayIntermediateOutputs =
             new JCheckBox("Display intermediate outputs");
 
@@ -46,6 +45,7 @@ public class CellposeOptionsPanel extends JPanel {
      * Creates the Cellpose options panel.
      */
     public CellposeOptionsPanel() {
+        CellposeChannels.configure(cytoplasmComboBox, nucleiComboBox, 1);
         setLayout(null);
         setOpaque(false);
         YoloUiUtils.alignLabel(cytoplasmLabel);

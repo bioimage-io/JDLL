@@ -32,188 +32,162 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-/**
- * Maintains the Cellpose Python service and joins frame-wise outputs.
- */
+/** Maintains the Python service; a Run owns immutable settings for one image/stack/folder. */
 public class CellposeInferenceService {
-
     private final CellposeInstaller installer;
     private volatile Cellpose model;
     private String loadedModelPath;
     private String loadedDevice;
 
-    public CellposeInferenceService(CellposeInstaller installer) {
-        this.installer = installer;
-    }
+    public static final class Run {
+        private final String modelSelection;
+        private final int[] channels;
+        private final String device;
+        private final boolean intermediates;
+        private final Float diameter;
+        private boolean diameterLogged;
 
-    public <T extends RealType<T> & NativeType<T>,
-            R extends RealType<R> & NativeType<R>>
-    List<Tensor<R>> run(String modelSelection, RandomAccessibleInterval<T> image,
-            int[] channels, Float diameter, String device, Consumer<String> logConsumer)
-            throws Exception {
-        String modelPath = installer.installAndResolve(modelSelection, logConsumer);
-        ensureLoaded(modelPath, device, logConsumer);
-        model.setChannels(channels);
-        if (diameter == null) {
-            model.clearDiameter();
-        } else {
-            model.setDiameter(diameter.floatValue());
+        public Run(String modelSelection, int[] channels, Float diameter, String device, boolean intermediates) {
+            if (modelSelection == null || modelSelection.trim().isEmpty())
+                throw new IllegalArgumentException("Please select a Cellpose model.");
+            CellposeChannels.validate(channels, Integer.MAX_VALUE);
+            if (diameter != null && (!Float.isFinite(diameter) || diameter <= 0))
+                throw new IllegalArgumentException("Diameter must be finite and positive.");
+            this.modelSelection = modelSelection;
+            this.channels = channels.clone();
+            this.diameter = diameter;
+            this.device = device;
+            this.intermediates = intermediates;
         }
-        boolean grayscaleChannels = channels[0] == 0 && channels[1] == 0;
-        int inputChannels = !grayscaleChannels || hasExplicitRgbAxis(image) ? 3 : 1;
-        int denoisedChannels = channels[0] == 0 ? 1 : 2;
-        return runFrames(image, inputChannels, denoisedChannels, diameter, logConsumer);
+
+        public Float getDiameter() { return diameter; }
     }
 
-    private synchronized void ensureLoaded(String modelPath, String device, Consumer<String> logConsumer)
-            throws Exception {
-        if (model != null && (!modelPath.equals(loadedModelPath) || !device.equals(loadedDevice))) {
+    public CellposeInferenceService(CellposeInstaller installer) { this.installer = installer; }
+
+    /** Legacy convenience call: each invocation is a separate run. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    List<Tensor<R>> run(String modelSelection, RandomAccessibleInterval<T> image,
+            int[] channels, Float diameter, String device, Consumer<String> log) throws Exception {
+        return (List) run(new Run(modelSelection, channels, diameter, device, true), image, log);
+    }
+
+    /** Inputs have explicit X,Y,C,Z,T axes, with trailing singleton axes optional. */
+    public <T extends RealType<T> & NativeType<T>> List<Tensor<FloatType>> run(
+            Run run, RandomAccessibleInterval<T> image, Consumer<String> log) throws Exception {
+        RandomAccessibleInterval<T> input = canonicalInput(image);
+        CellposeChannels.validate(run.channels, input.dimension(2));
+        String path = installer.installAndResolve(run.modelSelection, log);
+        ensureLoaded(path, run.device, log);
+        Cellpose active = model;
+        active.setChannels(new int[] {1, run.channels[1] == 0 ? 0 : 2});
+        active.setIncludeIntermediateOutputs(run.intermediates);
+        active.setLogConsumer(message -> {
+            if (run.diameter == null || !run.diameterLogged) accept(log, message);
+        });
+        try {
+            return runFrames(active, run, input, log);
+        } finally {
+            active.setLogConsumer(null);
+        }
+    }
+
+    protected Cellpose createModel(String path, String device) throws Exception {
+        return Cellpose.init(path, device);
+    }
+
+    private synchronized void ensureLoaded(String path, String device, Consumer<String> log) throws Exception {
+        if (model != null && (!path.equals(loadedModelPath) || !device.equals(loadedDevice))) {
             model.close();
             model = null;
         }
         if (model == null || !model.isLoaded()) {
-            accept(logConsumer, "Loading Cellpose model.");
-            model = Cellpose.init(modelPath, device);
+            accept(log, "Loading Cellpose model.");
+            model = createModel(path, device);
             model.loadModel();
-            loadedModelPath = modelPath;
+            loadedModelPath = path;
             loadedDevice = device;
-            accept(logConsumer, "Cellpose model loaded.");
+            accept(log, "Cellpose model loaded.");
         }
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
-    List<Tensor<R>> runFrames(RandomAccessibleInterval<T> image, int inputChannels,
-            int denoisedChannels, Float diameter, Consumer<String> logConsumer)
-            throws RunModelException {
-        RandomAccessibleInterval<T> input = addDimsToInput(image, inputChannels);
-        long[] dimensions = input.dimensionsAsLongArray();
-        int frames = Math.toIntExact(dimensions[3]);
-        RandomAccessibleInterval<UnsignedShortType> labels =
-                ArrayImgs.unsignedShorts(dimensions[0], dimensions[1], frames);
-        RandomAccessibleInterval<UnsignedByteType> flowRgb =
-                ArrayImgs.unsignedBytes(dimensions[0], dimensions[1], 3, frames);
-        RandomAccessibleInterval<FloatType> flowVectors =
-                ArrayImgs.floats(2, dimensions[0], dimensions[1], frames);
-        RandomAccessibleInterval<FloatType> probability =
-                ArrayImgs.floats(dimensions[0], dimensions[1], frames);
-        RandomAccessibleInterval<FloatType> denoised =
-                ArrayImgs.floats(dimensions[0], dimensions[1], denoisedChannels, frames);
-
-        for (int frame = 0; frame < frames; frame++) {
-            if (Thread.currentThread().isInterrupted()) {
-                throw new RunModelException("Cellpose inference cancelled.");
+    private <T extends RealType<T> & NativeType<T>> List<Tensor<FloatType>> runFrames(
+            Cellpose model, Run run, RandomAccessibleInterval<T> input, Consumer<String> log) throws RunModelException {
+        long depth = input.dimension(3), frames = input.dimension(4);
+        List<Tensor<FloatType>> result = new ArrayList<>();
+        int[] indices = run.intermediates ? new int[] {0, 1, 2, 3, 5} : new int[] {0};
+        String[] names = {"labels", "flows_0", "flows_1", "flows_2", "image_dn"};
+        String[] axes = {"xy", "xyc", "cxy", "xy", "xyc"};
+        for (long t = 0; t < frames; t++) {
+            for (long z = 0; z < depth; z++) {
+                if (Thread.currentThread().isInterrupted()) throw new RunModelException("Cellpose inference cancelled.");
+                accept(log, "Running plane " + (t * depth + z + 1) + "/" + (depth * frames) + ".");
+                if (run.diameter == null) model.clearDiameter();
+                else model.setDiameter(run.diameter);
+                RandomAccessibleInterval<T> plane = Views.hyperSlice(Views.hyperSlice(input, 4, t), 3, z);
+                List<Tensor<FloatType>> outputs = model.inference(
+                        Tensor.build("input", "xyc", CellposeChannels.pack(plane, run.channels)));
+                if (outputs.size() != (run.intermediates ? 6 : 1))
+                    throw new IllegalArgumentException("Unexpected Cellpose output count: " + outputs.size());
+                run.diameterLogged = true;
+                for (int i = 0; i < indices.length; i++) {
+                    RandomAccessibleInterval<FloatType> source = outputs.get(indices[i]).getData();
+                    if (result.size() <= i) {
+                        long[] shape = Arrays.copyOf(source.dimensionsAsLongArray(), source.numDimensions() + 2);
+                        // Cellpose omits the auxiliary denoised channel when that plane is constant.
+                        if (i == 4 && run.channels[1] != 0) shape[2] = 2;
+                        shape[shape.length - 2] = depth;
+                        shape[shape.length - 1] = frames;
+                        result.add(Tensor.build(names[i], axes[i] + "zt", ArrayImgs.floats(shape)));
+                    }
+                    RandomAccessibleInterval<FloatType> target = result.get(i).getData();
+                    target = Views.hyperSlice(Views.hyperSlice(target, target.numDimensions() - 1, t),
+                            target.numDimensions() - 2, z);
+                    if (i == 4 && source.dimension(2) == 1 && target.dimension(2) == 2)
+                        target = Views.interval(target, new long[] {0, 0, 0},
+                                new long[] {target.dimension(0) - 1, target.dimension(1) - 1, 0});
+                    copy(source, target);
+                }
             }
-            accept(logConsumer, "Running image " + (frame + 1) + "/" + frames + ".");
-            if (diameter != null) {
-                model.setDiameter(diameter.floatValue());
-            }
-            List<Tensor<R>> outputs = model.inference(
-                    Tensor.build("input", "xyc", Views.hyperSlice(input, 3, frame)));
-            copyOutputs(outputs, labels, flowRgb, flowVectors, probability, denoised, frame);
         }
-
-        List<Tensor<R>> outputs = new ArrayList<Tensor<R>>();
-        outputs.add((Tensor<R>) (Tensor) Tensor.build("labels", "xyb", labels));
-        outputs.add((Tensor<R>) (Tensor) Tensor.build("flows_0", "xycb", flowRgb));
-        outputs.add((Tensor<R>) (Tensor) Tensor.build("flows_1", "cxyb", flowVectors));
-        outputs.add((Tensor<R>) (Tensor) Tensor.build("flows_2", "xyb", probability));
-        outputs.add((Tensor<R>) (Tensor) Tensor.build("image_dn", "xycb", denoised));
-        return outputs;
+        return result;
     }
 
-    private static <T extends RealType<T> & NativeType<T>> void copyOutputs(
-            List<Tensor<T>> outputs, RandomAccessibleInterval<UnsignedShortType> labels,
-            RandomAccessibleInterval<UnsignedByteType> flowRgb,
-            RandomAccessibleInterval<FloatType> flowVectors,
-            RandomAccessibleInterval<FloatType> probability,
-            RandomAccessibleInterval<FloatType> denoised, int frame) {
-        if (outputs.size() != 6) {
-            throw new IllegalArgumentException(
-                    "Cellpose returned " + outputs.size() + " outputs instead of 6.");
-        }
-        copy(outputs.get(0).getData(), Views.hyperSlice(labels, 2, frame));
-        copy(outputs.get(1).getData(), Views.hyperSlice(flowRgb, 3, frame));
-        copy(outputs.get(2).getData(), Views.hyperSlice(flowVectors, 3, frame));
-        copy(outputs.get(3).getData(), Views.hyperSlice(probability, 2, frame));
-        copy(outputs.get(5).getData(), Views.hyperSlice(denoised, 3, frame));
-    }
-
-    private static <S extends RealType<S> & NativeType<S>,
-            T extends RealType<T> & NativeType<T>>
+    static <S extends RealType<S> & NativeType<S>, T extends RealType<T> & NativeType<T>>
     void copy(RandomAccessibleInterval<S> source, RandomAccessibleInterval<T> target) {
-        if (!Arrays.equals(source.dimensionsAsLongArray(), target.dimensionsAsLongArray())) {
+        if (!Arrays.equals(source.dimensionsAsLongArray(), target.dimensionsAsLongArray()))
             throw new IllegalArgumentException("Cellpose output dimensions do not match: "
-                    + Arrays.toString(source.dimensionsAsLongArray()) + " vs "
-                    + Arrays.toString(target.dimensionsAsLongArray()));
-        }
-        Cursor<S> sourceCursor = Views.flatIterable(source).cursor();
-        Cursor<T> targetCursor = Views.flatIterable(target).cursor();
-        while (sourceCursor.hasNext()) {
-            targetCursor.next().setReal(sourceCursor.next().getRealDouble());
-        }
+                    + Arrays.toString(source.dimensionsAsLongArray()) + " vs " + Arrays.toString(target.dimensionsAsLongArray()));
+        Cursor<S> from = Views.flatIterable(source).cursor();
+        Cursor<T> to = Views.flatIterable(target).cursor();
+        while (from.hasNext()) to.next().setReal(from.next().getRealDouble());
     }
 
-    private static <T extends RealType<T> & NativeType<T>>
-    RandomAccessibleInterval<T> addDimsToInput(RandomAccessibleInterval<T> image, int channels) {
-        long[] dimensions = image.dimensionsAsLongArray();
-        if (dimensions.length == 2 && channels == 1) {
-            return Views.addDimension(Views.addDimension(image, 0, 0), 0, 0);
-        }
-        if (dimensions.length == 2) {
-            throw new IllegalArgumentException("RGB Cellpose channels require a three-channel image.");
-        }
-        if (dimensions.length == 3 && dimensions[2] == channels) {
-            return Views.addDimension(image, 0, 0);
-        }
-        if (dimensions.length == 3 && channels == 1) {
-            return Views.permute(Views.addDimension(image, 0, 0), 2, 3);
-        }
-        if (dimensions.length == 4 && dimensions[2] == channels) {
-            return image;
-        }
-        if (dimensions.length == 5 && dimensions[2] == channels && dimensions[4] != 1) {
-            return Views.hyperSlice(image, 3, 0);
-        }
-        if (dimensions.length == 5 && dimensions[2] == channels && dimensions[4] == 1) {
-            return Views.hyperSlice(Views.permute(image, 3, 4), 3, 0);
-        }
-        if (dimensions.length == 4 && channels == 1) {
-            RandomAccessibleInterval<T> firstChannel = Views.hyperSlice(image, 2, image.min(2));
-            return Views.permute(Views.addDimension(firstChannel, 0, 0), 2, 3);
-        }
-        throw new IllegalArgumentException("Unsupported image dimensions for the selected Cellpose channels.");
-    }
-
-    private static <T extends RealType<T> & NativeType<T>>
-    boolean hasExplicitRgbAxis(RandomAccessibleInterval<T> image) {
-        return image.numDimensions() >= 4 && image.dimension(2) == 3;
+    static <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> canonicalInput(
+            RandomAccessibleInterval<T> image) {
+        if (image.numDimensions() < 2 || image.numDimensions() > 5)
+            throw new IllegalArgumentException("Expected X,Y,C,Z,T axes, with optional trailing singleton axes.");
+        RandomAccessibleInterval<T> result = Views.zeroMin(image);
+        while (result.numDimensions() < 5) result = Views.addDimension(result, 0, 0);
+        return result;
     }
 
     public void cancelCurrentInference() {
-        Cellpose activeModel = model;
-        if (activeModel != null) {
-            activeModel.cancelCurrentInference();
-        }
+        Cellpose active = model;
+        if (active != null) active.cancelCurrentInference();
     }
 
     public synchronized void close() {
-        if (model != null) {
-            model.close();
-            model = null;
-        }
+        if (model != null) { model.close(); model = null; }
         loadedModelPath = null;
         loadedDevice = null;
     }
 
     private static void accept(Consumer<String> consumer, String message) {
-        if (consumer != null) {
-            consumer.accept(message);
-        }
+        if (consumer != null) consumer.accept(message);
     }
 }
