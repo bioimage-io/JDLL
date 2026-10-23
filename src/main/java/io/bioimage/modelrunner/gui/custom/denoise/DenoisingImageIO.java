@@ -42,13 +42,35 @@ import com.google.gson.GsonBuilder;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageFiles;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.converter.Converters;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Util;
+import net.imglib2.view.Views;
 
 /** Minimal dependency-free filesystem image bridge for denoising. */
 public final class DenoisingImageIO {
     private DenoisingImageIO() {}
+
+    /** Use host-decoded pixels; float conversion is a view, not a second volume allocation. */
+    public static <T extends RealType<T> & NativeType<T>> ImageData fromImage(
+            File file, RandomAccessibleInterval<T> image) throws IOException {
+        if (image == null || image.numDimensions() != 5) {
+            throw new IOException("The host image loader must return X,Y,C,Z,T data: " + file);
+        }
+        for (int axis = 0; axis < 5; axis++) {
+            if (image.dimension(axis) < 1) throw new IOException("Empty image: " + file);
+        }
+        int channels = Math.toIntExact(image.dimension(2));
+        int pages = Math.toIntExact(Math.multiplyExact(image.dimension(3), image.dimension(4)));
+        int bits = Util.getTypeFromInterval(image).getBitsPerPixel();
+        RandomAccessibleInterval<FloatType> floats = Converters.convert(Views.zeroMin(image),
+                (source, target) -> target.setReal(source.getRealDouble()), new FloatType());
+        return new ImageData(floats, "xyczt", bits, channels, pages, extension(file));
+    }
 
     public static ImageData read(File file) throws IOException {
         try (ImageInputStream stream = ImageIO.createImageInputStream(file)) {
@@ -213,11 +235,15 @@ public final class DenoisingImageIO {
         WritableRaster raster = buffered.getRaster();
         RandomAccess<? extends FloatType> access = image.randomAccess();
         double max = source.bits >= 31 ? Integer.MAX_VALUE : (1L << source.bits) - 1L;
+        int zAxis = source.axes.indexOf('z');
+        int tAxis = source.axes.indexOf('t');
+        int depth = source.getDepth();
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 access.setPosition(x, 0); access.setPosition(y, 1);
                 if (source.channels > 1) access.setPosition(0, 2);
-                if (source.pages > 1) access.setPosition(z, 3);
+                if (zAxis >= 0) access.setPosition(z % depth, zAxis);
+                if (tAxis >= 0) access.setPosition(z / depth, tAxis);
                 if (source.channels == 1) {
                     raster.setSample(x, y, 0, clamp(access.get().getRealDouble(), max));
                 } else {
@@ -321,6 +347,14 @@ public final class DenoisingImageIO {
         public String getAxes() { return axes; }
         public int getChannels() { return channels; }
         public int getPages() { return pages; }
+        public int getDepth() {
+            int axis = axes.indexOf('z');
+            return axis < 0 ? 1 : Math.toIntExact(image.dimension(axis));
+        }
+        public int getFrames() {
+            int axis = axes.indexOf('t');
+            return axis < 0 ? 1 : Math.toIntExact(image.dimension(axis));
+        }
         public int getBits() { return bits; }
     }
 }

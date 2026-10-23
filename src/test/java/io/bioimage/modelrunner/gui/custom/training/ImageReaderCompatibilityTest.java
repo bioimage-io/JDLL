@@ -11,53 +11,81 @@
 package io.bioimage.modelrunner.gui.custom.training;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 import javax.imageio.ImageIO;
+import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import io.bioimage.modelrunner.gui.custom.CellposePluginUI;
+import io.bioimage.modelrunner.gui.custom.ConsumerInterface;
+import io.bioimage.modelrunner.gui.custom.CrossGoosePluginUI;
 import io.bioimage.modelrunner.gui.custom.StarDistPluginUI;
 import io.bioimage.modelrunner.gui.custom.UNetPluginUI;
 import io.bioimage.modelrunner.gui.custom.YOLOPluginUI;
-import io.bioimage.modelrunner.gui.custom.denoise.DenoisingImageIO;
+import io.bioimage.modelrunner.model.detection.Detection;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.view.Views;
 
 /** Test the actual disk-entry readers without constructing a GUI or loading a model. */
 public class ImageReaderCompatibilityTest {
     @Rule public TemporaryFolder folder = new TemporaryFolder();
 
     @Test
-    public void inferenceReadersDecodeByContentsRatherThanExtension() throws Exception {
-        for (String format : new String[] {"png", "tiff", "jpeg", "bmp"}) {
-            File original = new File(folder.getRoot(), "original." + format);
-            BufferedImage image = new BufferedImage(12, 11, BufferedImage.TYPE_3BYTE_BGR);
-            image.setRGB(5, 4, 0x123456);
-            assertTrue(ImageIO.write(image, format, original));
-            for (String extension : new String[] {"png", "tif", "bmp", "jpg"}) {
-                File renamed = new File(folder.getRoot(), format + "-renamed." + extension);
-                Files.copy(original.toPath(), renamed.toPath());
-                for (Class<?> ui : new Class<?>[] {CellposePluginUI.class, StarDistPluginUI.class,
-                        UNetPluginUI.class, YOLOPluginUI.class}) {
-                    Method read = ui.getDeclaredMethod("readImageFileAsRai", File.class);
-                    read.setAccessible(true);
-                    assertSamePixels((RandomAccessibleInterval<?>) read.invoke(null, original),
-                            (RandomAccessibleInterval<?>) read.invoke(null, renamed));
+    public void inferenceReadersDelegateWithoutConvertingPixelsOrDroppingCztAxes() throws Exception {
+        ImageConsumer consumer = new ImageConsumer();
+        Object[] interfaces = new Object[5];
+        SwingUtilities.invokeAndWait(() -> {
+            interfaces[0] = new CellposePluginUI(consumer, null);
+            interfaces[1] = new StarDistPluginUI(consumer, null);
+            interfaces[2] = new UNetPluginUI(consumer, null);
+            interfaces[3] = new CrossGoosePluginUI(consumer, null);
+            interfaces[4] = new YOLOPluginUI(consumer, null);
+        });
+        try {
+            for (Object ui : interfaces) {
+                Class<?> owner = ui instanceof CrossGoosePluginUI ? UNetPluginUI.class : ui.getClass();
+                Method read = owner.getDeclaredMethod("readImageFileAsRai", File.class);
+                read.setAccessible(true);
+                File source = new File(folder.getRoot(), "host-decoded.ome.tif");
+                for (RandomAccessibleInterval<?> image : new RandomAccessibleInterval<?>[] {
+                        ArrayImgs.unsignedShorts(new short[] {1000, 1001, 2000, 2001, 3000, 3001}, 2, 1, 3, 1, 1),
+                        ArrayImgs.doubles(3, 2, 4, 5, 6)}) {
+                    consumer.image = image;
+                    int previous = consumer.calls;
+                    assertSame(image, read.invoke(ui, source));
+                    assertSame(source, consumer.file);
+                    assertEquals(previous + 1, consumer.calls);
+                    assertEquals(image.dimension(2), consumer.getImageFileChannels(source));
                 }
-                assertSamePixels(DenoisingImageIO.read(original).getImage(),
-                        DenoisingImageIO.read(renamed).getImage());
+                consumer.error = new IOException("Host could not decode this image");
+                try {
+                    read.invoke(ui, source);
+                    fail("Host read failure must not trigger a fallback RGB reader");
+                } catch (InvocationTargetException error) {
+                    assertSame(consumer.error, error.getCause());
+                } finally {
+                    consumer.error = null;
+                }
             }
+        } finally {
+            for (Object ui : interfaces) ui.getClass().getMethod("close").invoke(ui);
         }
     }
 
@@ -86,12 +114,36 @@ public class ImageReaderCompatibilityTest {
         }
     }
 
-    private static void assertSamePixels(RandomAccessibleInterval<?> expected, RandomAccessibleInterval<?> actual) {
-        assertEquals(expected.numDimensions(), actual.numDimensions());
-        for (int d = 0; d < expected.numDimensions(); d++) assertEquals(expected.dimension(d), actual.dimension(d));
-        Iterator<?> values = Views.flatIterable(expected).iterator();
-        for (Object value : Views.flatIterable(actual)) {
-            assertEquals(((RealType<?>) values.next()).getRealDouble(), ((RealType<?>) value).getRealDouble(), 0);
+    private class ImageConsumer extends ConsumerInterface {
+        RandomAccessibleInterval<?> image;
+        File file;
+        IOException error;
+        int calls;
+
+        @Override @SuppressWarnings("unchecked")
+        public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> openImageAsRai(File source)
+                throws IOException {
+            file = source;
+            calls++;
+            if (error != null) throw error;
+            return (RandomAccessibleInterval<T>) image;
         }
+
+        @Override public String getModelsDir() { return folder.getRoot().getAbsolutePath(); }
+        @Override public void updateGUI() {}
+        @Override public void setComponents(List<JComponent> components) {}
+        @Override public void setVarNames(List<String> names) {}
+        @Override public void notifyParams(LinkedHashMap<String, String> args) {}
+        @Override public Object getFocusedImage() { return null; }
+        @Override public String getFocusedImageName() { return null; }
+        @Override public Integer getFocusedImageChannels() { return 1; }
+        @Override public Integer getFocusedImageSlices() { return 1; }
+        @Override public Integer getFocusedImageFrames() { return 1; }
+        @Override public Integer getFocusedImageWidth() { return 1; }
+        @Override public Integer getFocusedImageHeight() { return 1; }
+        @Override public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> getFocusedImageAsRai() { return null; }
+        @Override public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> convertIntoRai(Object image) { return null; }
+        @Override public <T extends RealType<T> & NativeType<T>> void displayImage(RandomAccessibleInterval<T> image, String axes, String name) {}
+        @Override public void displayDetections(List<Detection> detections) {}
     }
 }

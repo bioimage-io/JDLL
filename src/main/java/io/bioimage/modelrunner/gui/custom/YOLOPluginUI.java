@@ -27,7 +27,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.imageio.ImageIO;
 
 import org.apposed.appose.BuildException;
 
@@ -62,7 +61,6 @@ import java.awt.event.FocusEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -76,8 +74,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
 
 public class YOLOPluginUI extends YoloGUI implements ActionListener {
 
@@ -539,7 +535,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         consumer.displayDetections(detections);
     }
 
-    private void runYOLOOnSystemImage(String modelPath)
+    private <T extends RealType<T> & NativeType<T>> void runYOLOOnSystemImage(String modelPath)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
         File source = selectedSystemPath == null ? selectedSystemImageFile : selectedSystemPath;
@@ -569,7 +565,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                 final int totalImages = images.size();
                 final boolean[] emittedPatchProgress = new boolean[] {false};
                 try {
-                    RandomAccessibleInterval<UnsignedByteType> rai = readImageFileAsRai(imageFile);
+                    RandomAccessibleInterval<T> rai = readImageFileAsRai(imageFile);
                     List<Detection> detections = inferenceService.runWithProgress(modelPath, rai, progress -> {
                         if (progress == null) {
                             return;
@@ -630,24 +626,10 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         return Collections.emptyList();
     }
 
-    private static RandomAccessibleInterval<UnsignedByteType> readImageFileAsRai(File imageFile) throws IOException {
-        BufferedImage image = ImageIO.read(imageFile);
-        if (image == null) {
-            throw new IOException("Unsupported image file: " + imageFile);
-        }
-        int width = image.getWidth();
-        int height = image.getHeight();
-        byte[] pixels = new byte[width * height * 3];
-        int offset = 0;
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int rgb = image.getRGB(x, y);
-                pixels[offset++] = (byte) ((rgb >> 16) & 0xff);
-                pixels[offset++] = (byte) ((rgb >> 8) & 0xff);
-                pixels[offset++] = (byte) (rgb & 0xff);
-            }
-        }
-        return ArrayImgs.unsignedBytes(pixels, width, height, 3);
+    private <T extends RealType<T> & NativeType<T>>
+    RandomAccessibleInterval<T> readImageFileAsRai(File imageFile) throws IOException {
+        if (consumer == null) throw new IOException("Filesystem inference requires a host image loader.");
+        return consumer.openImageAsRai(imageFile);
     }
 
     private static String imageProgressBar(int imageIndex, int totalImages) {

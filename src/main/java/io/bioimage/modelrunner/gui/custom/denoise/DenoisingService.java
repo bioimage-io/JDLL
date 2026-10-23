@@ -29,6 +29,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.view.Views;
 
 /** Owns the persistent Appose process and current denoising task. */
 public final class DenoisingService {
@@ -46,14 +47,37 @@ public final class DenoisingService {
     RandomAccessibleInterval<FloatType> run(DenoisingConfig config, RandomAccessibleInterval<T> input,
             boolean preview, Consumer<DenoisingProgress> progressConsumer, Consumer<String> installConsumer)
             throws BuildException, InterruptedException, LoadModelException, RunModelException {
-        ensureLoaded(config, progressConsumer, installConsumer);
+        Tensor<T> prepared = prepareInput(config, input);
+        ensureLoaded(config.withAxes(prepared.getAxesOrderString()), progressConsumer, installConsumer);
         Denoising active = model;
         active.setPreview(preview);
-        List<Tensor<FloatType>> outputs = active.inference(Tensor.build("input", config.getAxes(), input));
+        List<Tensor<FloatType>> outputs = active.inference(prepared);
         if (outputs.size() != 1) {
             throw new RunModelException("The denoising backend returned " + outputs.size() + " outputs; expected one.");
         }
-        return outputs.get(0).getData();
+        return restoreAxes(outputs.get(0).getData(), prepared.getAxesOrderString(), config.getAxes());
+    }
+
+    static <T extends RealType<T> & NativeType<T>> Tensor<T> prepareInput(
+            DenoisingConfig config, RandomAccessibleInterval<T> input) {
+        String axes = config.getAxes();
+        int z = axes.indexOf('z');
+        // A host's singleton Z axis is not a volume for BM3D or StructN2V.
+        if (z >= 0 && input.dimension(z) == 1) {
+            input = Views.hyperSlice(input, z, input.min(z));
+            axes = axes.substring(0, z) + axes.substring(z + 1);
+        }
+        return Tensor.build("input", axes, input);
+    }
+
+    static <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> restoreAxes(
+            RandomAccessibleInterval<T> image, String preparedAxes, String originalAxes) {
+        if (preparedAxes.equals(originalAxes)) return image;
+        image = Views.addDimension(image, 0, 0);
+        for (int axis = image.numDimensions() - 1; axis > originalAxes.indexOf('z'); axis--) {
+            image = Views.permute(image, axis, axis - 1);
+        }
+        return image;
     }
 
     public Map<String, Object> getMetadata() {

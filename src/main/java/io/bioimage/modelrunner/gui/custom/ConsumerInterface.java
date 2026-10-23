@@ -19,6 +19,8 @@
  */
 package io.bioimage.modelrunner.gui.custom;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -159,6 +161,33 @@ public abstract class ConsumerInterface {
 	 * @return the focused image as RAI.
 	 */
 	public abstract < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval<T> getFocusedImageAsRai();
+
+	/**
+	 * Opens a file with the host application's image loader, without displaying it.
+	 * Returns zero-min X,Y,C,Z,T data, including singleton axes, with the original
+	 * numeric type and pixel values (not display/LUT values). The returned pixels
+	 * must remain usable after this call; the host must release temporary readers
+	 * without invalidating them. Do not change the selected/open host image.
+	 *
+	 * @param <T> native pixel type, determined by the source image.
+	 * @param imageFile image to open; multi-series hosts use the first series.
+	 * @return non-null five-dimensional image.
+	 * @throws IOException if the file cannot be decoded.
+	 */
+	public abstract <T extends RealType<T> & NativeType<T>>
+	RandomAccessibleInterval<T> openImageAsRai(File imageFile) throws IOException;
+
+	/**
+	 * Channel count for file-source controls. Hosts should override this with a
+	 * metadata-only query; the default uses their image loader off the UI thread.
+	 *
+	 * @param imageFile image to inspect, using the same series as openImageAsRai.
+	 * @return number of channels.
+	 * @throws IOException if the image cannot be inspected.
+	 */
+	public int getImageFileChannels(File imageFile) throws IOException {
+		return Math.toIntExact(openImageAsRai(imageFile).dimension(2));
+	}
 	
 	/**
 	 * Performs display image.

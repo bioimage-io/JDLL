@@ -79,6 +79,11 @@ public final class DenoisingConfig {
         return seed;
     }
 
+    public DenoisingConfig withAxes(String value) {
+        return builder().method(method).effort(effort).device(device).dimensions(dimensions)
+                .axes(value).noiseStructure(noiseStructure).seed(seed).build();
+    }
+
     public Map<String, Object> toMap() {
         Map<String, Object> config = new LinkedHashMap<String, Object>();
         config.put("method", method);

@@ -12,6 +12,7 @@
 package io.bioimage.modelrunner.gui.custom.denoise;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.awt.image.BufferedImage;
@@ -24,7 +25,10 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import net.imglib2.RandomAccess;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.view.Views;
 
 public class DenoisingImageIOTest {
     @Rule public TemporaryFolder folder = new TemporaryFolder();
@@ -46,6 +50,40 @@ public class DenoisingImageIOTest {
         assertEquals("sample_denoised.tif", first.getName());
         assertTrue(first.createNewFile());
         assertEquals("sample_denoised-1.tif", DenoisingImageIO.outputFile(input).getName());
+    }
+
+    @Test
+    public void hostPixelsPreserveBitDepthChannelsAndAllZtPlanesWithoutAnEagerFloatCopy() throws Exception {
+        short[] pixels = new short[2 * 2 * 3 * 2 * 2];
+        for (int i = 0; i < pixels.length; i++) pixels[i] = (short) (1000 + i);
+        net.imglib2.RandomAccessibleInterval<UnsignedShortType> image =
+                ArrayImgs.unsignedShorts(pixels, 2, 2, 3, 2, 2);
+        File input = new File(folder.getRoot(), "source.tif");
+        DenoisingImageIO.ImageData data = DenoisingImageIO.fromImage(input, image);
+        assertEquals("xyczt", data.getAxes());
+        assertEquals(16, data.getBits());
+        assertEquals(3, data.getChannels());
+        assertEquals(2, data.getDepth());
+        assertEquals(2, data.getFrames());
+        assertEquals(4, data.getPages());
+        assertArrayEquals(image.dimensionsAsLongArray(), data.getImage().dimensionsAsLongArray());
+        pixels[0] = 2345;
+        assertEquals(2345, data.getImage().randomAccess().get().getRealDouble(), 0);
+
+        File output = new File(folder.getRoot(), "roundtrip.tif");
+        DenoisingImageIO.write(output, data.getImage(), data);
+        DenoisingImageIO.ImageData restored = DenoisingImageIO.read(output);
+        assertEquals(4, restored.getPages());
+        int index = 0;
+        for (FloatType value : Views.flatIterable(restored.getImage())) {
+            assertEquals(pixels[index++], value.getRealDouble(), 0);
+        }
+        assertEquals(pixels.length, index);
+    }
+
+    @Test(expected = java.io.IOException.class)
+    public void hostInputMustSpecifyCztEvenForSinglePlanes() throws Exception {
+        DenoisingImageIO.fromImage(new File("input.tif"), ArrayImgs.floats(2, 2));
     }
 
     @Test

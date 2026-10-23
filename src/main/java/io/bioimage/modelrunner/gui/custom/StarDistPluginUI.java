@@ -28,9 +28,7 @@ import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
 import javax.imageio.ImageWriter;
-import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
 import org.apposed.appose.BuildException;
@@ -81,8 +79,6 @@ import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.type.numeric.real.FloatType;
 
 public class StarDistPluginUI extends StardistGUI implements ActionListener {
 
@@ -587,7 +583,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                 final int totalImages = images.size();
                 final boolean[] emittedPatchProgress = new boolean[] {false};
                 try {
-                    RandomAccessibleInterval<FloatType> rai = readImageFileAsRai(imageFile);
+                    RandomAccessibleInterval<T> rai = readImageFileAsRai(imageFile);
                     List<Tensor<T>> outputs = inferenceService.runWithProgress(modelPath, rai, progress -> {
                         if (progress == null) {
                             return;
@@ -711,48 +707,10 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         return Collections.emptyList();
     }
 
-    private static RandomAccessibleInterval<FloatType> readImageFileAsRai(File imageFile) throws IOException {
-        try (ImageInputStream input = ImageIO.createImageInputStream(imageFile)) {
-            Iterator<ImageReader> readers = input == null
-                    ? Collections.<ImageReader>emptyList().iterator()
-                    : ImageIO.getImageReaders(input);
-            if (!readers.hasNext()) {
-                throw new IOException("Unsupported image file: " + imageFile);
-            }
-            ImageReader reader = readers.next();
-            try {
-                reader.setInput(input, false, true);
-                int depth = Math.max(1, reader.getNumImages(true));
-                BufferedImage first = reader.read(0);
-                int width = first.getWidth();
-                int height = first.getHeight();
-                int channels = first.getRaster().getNumBands() == 1 ? 1 : 3;
-                float[] pixels = new float[Math.multiplyExact(
-                        Math.multiplyExact(width, height), Math.multiplyExact(channels, depth))];
-                for (int z = 0; z < depth; z++) {
-                    BufferedImage plane = z == 0 ? first : reader.read(z);
-                    if (plane.getWidth() != width || plane.getHeight() != height) {
-                        throw new IOException("TIFF planes have inconsistent dimensions: " + imageFile);
-                    }
-                    for (int y = 0; y < height; y++) {
-                        for (int x = 0; x < width; x++) {
-                            int base = x + width * (y + height * channels * z);
-                            if (channels == 1) {
-                                pixels[base] = plane.getRaster().getSampleFloat(x, y, 0);
-                            } else {
-                                int rgb = plane.getRGB(x, y);
-                                pixels[base] = (rgb >> 16) & 0xff;
-                                pixels[base + width * height] = (rgb >> 8) & 0xff;
-                                pixels[base + 2 * width * height] = rgb & 0xff;
-                            }
-                        }
-                    }
-                }
-                return ArrayImgs.floats(pixels, width, height, channels, depth);
-            } finally {
-                reader.dispose();
-            }
-        }
+    private <T extends RealType<T> & NativeType<T>>
+    RandomAccessibleInterval<T> readImageFileAsRai(File imageFile) throws IOException {
+        if (consumer == null) throw new IOException("Filesystem inference requires a host image loader.");
+        return consumer.openImageAsRai(imageFile);
     }
 
     private static File maskOutputFileFor(File imageFile) {

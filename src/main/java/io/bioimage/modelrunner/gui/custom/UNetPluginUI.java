@@ -74,10 +74,8 @@ import io.bioimage.modelrunner.model.special.unet.UnetValidationPreview;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
 
 public class UNetPluginUI extends UnetGUI implements ActionListener {
 
@@ -669,7 +667,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                 final int totalImages = images.size();
                 final boolean[] emittedPatchProgress = new boolean[] {false};
                 try {
-                    RandomAccessibleInterval<UnsignedByteType> rai = readImageFileAsRai(imageFile);
+                    RandomAccessibleInterval<T> rai = readImageFileAsRai(imageFile);
                     List<Tensor<T>> outputs = inferenceService.runWithProgress(modelPath, rai, progress -> {
                         if (progress == null) {
                             return;
@@ -733,24 +731,10 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         return Collections.emptyList();
     }
 
-    private static RandomAccessibleInterval<UnsignedByteType> readImageFileAsRai(File imageFile) throws IOException {
-        BufferedImage image = ImageIO.read(imageFile);
-        if (image == null) {
-            throw new IOException("Unsupported image file: " + imageFile);
-        }
-        int width = image.getWidth();
-        int height = image.getHeight();
-        byte[] pixels = new byte[width * height * 3];
-        int offset = 0;
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int rgb = image.getRGB(x, y);
-                pixels[offset++] = (byte) ((rgb >> 16) & 0xff);
-                pixels[offset++] = (byte) ((rgb >> 8) & 0xff);
-                pixels[offset++] = (byte) (rgb & 0xff);
-            }
-        }
-        return ArrayImgs.unsignedBytes(pixels, width, height, 3);
+    private <T extends RealType<T> & NativeType<T>>
+    RandomAccessibleInterval<T> readImageFileAsRai(File imageFile) throws IOException {
+        if (consumer == null) throw new IOException("Filesystem inference requires a host image loader.");
+        return consumer.openImageAsRai(imageFile);
     }
 
     private File maskOutputFileFor(File imageFile) {

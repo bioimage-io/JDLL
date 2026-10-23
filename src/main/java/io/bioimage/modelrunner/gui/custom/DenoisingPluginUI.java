@@ -235,7 +235,7 @@ public final class DenoisingPluginUI extends DenoisingGUI {
         appendLog("Loading source preview: " + preview.getAbsolutePath());
         Thread loader = new Thread(() -> {
             try {
-                ImageData data = DenoisingImageIO.read(preview);
+                ImageData data = readImageFile(preview);
                 RandomAccessibleInterval<FloatType> plane = representativePlane(data);
                 SwingUtilities.invokeLater(() -> {
                     if (preview.equals(selectedSystemPreview)) {
@@ -306,7 +306,7 @@ public final class DenoisingPluginUI extends DenoisingGUI {
 
     private void runPreview() throws Exception {
         if (usesSystemSource()) {
-            ImageData data = DenoisingImageIO.read(selectedSystemPreview);
+            ImageData data = readImageFile(selectedSystemPreview);
             RandomAccessibleInterval<FloatType> original = representativePlane(data);
             String key = cacheKey(fileCacheId(selectedSystemPreview), "xy");
             RandomAccessibleInterval<FloatType> denoised = service.run(config("xy"), original, true,
@@ -360,7 +360,7 @@ public final class DenoisingPluginUI extends DenoisingGUI {
                 final int index = i + 1;
                 SwingUtilities.invokeLater(() -> getStatusPanel().setProgress(index - 1, files.size()));
                 appendLog("Processing image " + index + "/" + files.size() + ": " + source.getName());
-                ImageData data = DenoisingImageIO.read(source);
+                ImageData data = readImageFile(source);
                 DenoisingConfig config = config(data.getAxes());
                 String key = cacheKey(fileCacheId(source), data.getAxes());
                 RandomAccessibleInterval<FloatType> denoised = cacheIsCompleteInput && key.equals(cacheKey)
@@ -597,9 +597,9 @@ public final class DenoisingPluginUI extends DenoisingGUI {
     }
 
     private static String filePlaneInfo(File file, ImageData data) {
-        long z = data.getPages() > 1 ? data.getPages() / 2L + 1L : 1L;
+        long z = data.getDepth() / 2L + 1L;
         return file.getName() + " | C 1/" + data.getChannels() + " | Z " + z + "/"
-                + data.getPages() + " | T 1/1";
+                + data.getDepth() + " | T 1/" + data.getFrames();
     }
 
     private String openPlaneInfo(Object image, RandomAccessibleInterval<?> rai, String axes) {
@@ -623,8 +623,14 @@ public final class DenoisingPluginUI extends DenoisingGUI {
     }
 
     private static RandomAccessibleInterval<FloatType> representativePlane(ImageData data) {
-        long z = data.getPages() > 1 ? data.getPages() / 2L : 0L;
+        long z = data.getDepth() / 2L;
         return DenoisingImages.previewPlane(data.getImage(), data.getAxes(), 0L, z, 0L);
+    }
+
+    private <T extends RealType<T> & NativeType<T>> ImageData readImageFile(File file) throws IOException {
+        if (consumer == null) throw new IOException("Filesystem inference requires a host image loader.");
+        RandomAccessibleInterval<T> image = consumer.openImageAsRai(file);
+        return DenoisingImageIO.fromImage(file, image);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
