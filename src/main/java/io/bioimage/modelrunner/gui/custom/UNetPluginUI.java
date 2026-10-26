@@ -912,11 +912,12 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                             if (trainingRunId == trainingUiRunId && trainingRunning) trainPanel.handleValidationEvent(event);
                         }));
                 if (trainingRunId == trainingUiRunId) {
-                    appendTrainingLog("Training finished successfully.");
+                    appendTrainingLog("Training completed successfully.");
                     refreshModels();
                 }
             } catch (Exception | Error ex) {
                 if (trainingRunId == trainingUiRunId && !cancelled) {
+                    appendTrainingLog("Training failed.");
                     appendTrainingLog(TrainingLogUtils.failureStatus(ex) + ": " + errorMessage(ex));
                     ex.printStackTrace();
                 }
@@ -990,7 +991,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
 
     private void finishCancelledTrainingUiState() {
         long runId = trainingUiRunId;
-        appendTrainingLog("Training cancelled by user.");
+        appendTrainingLog("Training stopped by user.");
         finishTrainingUiState(runId);
         trainingUiRunId++;
     }

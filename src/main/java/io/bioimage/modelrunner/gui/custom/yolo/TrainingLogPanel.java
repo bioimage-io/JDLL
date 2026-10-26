@@ -51,6 +51,7 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.Element;
+import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
@@ -79,6 +80,9 @@ public class TrainingLogPanel extends JPanel {
     private final Style timestampStyle;
     private final Style messageStyle;
     private final Style bestValidationStyle;
+    private final Style successStyle;
+    private final Style cancelledStyle;
+    private final Style failureStyle;
     private final Style placeholderStyle;
     private final Style activityStyle;
     private boolean followTail = true;
@@ -126,6 +130,10 @@ public class TrainingLogPanel extends JPanel {
         StyleConstants.setFontSize(bestValidationStyle, 12);
         StyleConstants.setBold(bestValidationStyle, true);
         StyleConstants.setForeground(bestValidationStyle, new Color(93, 64, 142));
+
+        successStyle = createOutcomeStyle("success", new Color(43, 115, 75), new Color(237, 247, 240));
+        cancelledStyle = createOutcomeStyle("cancelled", new Color(153, 105, 28), new Color(255, 248, 232));
+        failureStyle = createOutcomeStyle("failure", new Color(168, 49, 60), new Color(253, 239, 241));
 
         placeholderStyle = logDocument.addStyle("placeholder", null);
         StyleConstants.setFontFamily(placeholderStyle, Font.MONOSPACED);
@@ -382,8 +390,13 @@ public class TrainingLogPanel extends JPanel {
             if (placeholderVisible) {
                 clearVisibleDocument();
             }
-            logDocument.insertString(logDocument.getLength(), "[" + timestamp + "] ", timestampStyle);
+            int lineStart = logDocument.getLength();
+            logDocument.insertString(lineStart, "[" + timestamp + "] ", timestampStyle);
             logDocument.insertString(logDocument.getLength(), message + System.lineSeparator(), style);
+            SimpleAttributeSet paragraph = new SimpleAttributeSet();
+            boolean outcome = style == successStyle || style == cancelledStyle || style == failureStyle;
+            StyleConstants.setSpaceAbove(paragraph, outcome ? 8f : 0f);
+            logDocument.setParagraphAttributes(lineStart, 0, paragraph, false);
             uiLineCount++;
             trimUiLog();
             appendActivityLine();
@@ -393,9 +406,21 @@ public class TrainingLogPanel extends JPanel {
     }
 
     private AttributeSet styleForMessage(String message) {
+        if ("Training completed successfully.".equals(message)) return successStyle;
+        if ("Training stopped by user.".equals(message)) return cancelledStyle;
+        if ("Training failed.".equals(message)) return failureStyle;
         return message != null && message.startsWith(BEST_VALIDATION_PREFIX)
                 ? bestValidationStyle
                 : messageStyle;
+    }
+
+    private Style createOutcomeStyle(String name, Color foreground, Color background) {
+        Style style = logDocument.addStyle(name, messageStyle);
+        StyleConstants.setBold(style, true);
+        StyleConstants.setFontSize(style, Math.round(StyleConstants.getFontSize(messageStyle) * 1.2f));
+        StyleConstants.setForeground(style, foreground);
+        StyleConstants.setBackground(style, background);
+        return style;
     }
 
     private void trimUiLog() {

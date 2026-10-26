@@ -907,11 +907,12 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                             trainPanel.handleValidationEvent(event);
                         }));
                 if (trainingRunId == trainingUiRunId) {
-                    appendTrainingLog("Training finished successfully.");
+                    appendTrainingLog("Training completed successfully.");
                     refreshStardistModels();
                 }
             } catch (Exception | Error e) {
                 if (trainingRunId == trainingUiRunId && !cancelled) {
+                    appendTrainingLog("Training failed.");
                     appendTrainingLog(TrainingLogUtils.failureStatus(e) + ": " + errorMessage(e));
                     e.printStackTrace();
                 }
@@ -993,7 +994,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
 
     private void finishCancelledTrainingUiState() {
         long runId = trainingUiRunId;
-        appendTrainingLog("Training cancelled by user.");
+        appendTrainingLog("Training stopped by user.");
         finishTrainingUiState(runId);
         trainingUiRunId++;
     }
