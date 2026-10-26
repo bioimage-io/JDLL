@@ -177,6 +177,25 @@ public abstract class ConsumerInterface {
 	public abstract <T extends RealType<T> & NativeType<T>>
 	RandomAccessibleInterval<T> openImageAsRai(File imageFile) throws IOException;
 
+    /**
+     * Opens native XYC preview pixels at the first Z/time position, off the EDT.
+     * Hosts should override this to avoid decoding an entire stack for a preview.
+     */
+    public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> openImagePreviewAsRai(File imageFile)
+            throws IOException {
+        return openImageAsRai(imageFile);
+    }
+
+    /**
+     * Opens a lazy preview session for series zero, off the EDT. The host provides
+     * Z/T metadata, native pyramid access and display colors without loading the
+     * stack. JDLL serializes reads, caches RGB tiles and closes stale sessions off
+     * the EDT. Returning null preserves the legacy ImageIO/first-plane fallback.
+     */
+    public PreviewReader openPreviewReader(File imageFile) throws IOException {
+        return null;
+    }
+
 	/**
 	 * Channel count for file-source controls. Hosts should override this with a
 	 * metadata-only query; the default uses their image loader off the UI thread.

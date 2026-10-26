@@ -169,6 +169,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
      */
     public void close() {
         cancelled = true;
+        inferencePanel.getImageDisplayPanel().clearImage();
         trainingService.close();
     	inferenceService.close();
         if (workerThread != null && workerThread.isAlive()) {
@@ -403,7 +404,8 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
 
     private void showSystemPreviewImage(File imageFile) {
         try {
-            inferencePanel.getImageDisplayPanel().setImageFile(imageFile, imageFile.getName(), true);
+            inferencePanel.getImageDisplayPanel().setPreviewFileConsumer(file -> selectedSystemImageFile = file);
+            inferencePanel.getImageDisplayPanel().setImageFiles(systemInferenceImages(selectedSystemPath), imageFile, consumer);
             selectedSystemImageFile = imageFile;
             inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(true);
         } catch (IOException e) {

@@ -188,6 +188,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
      */
     public void close() {
         cancelled = true;
+        inferencePanel.getImageDisplayPanel().clearImage();
         datasetReviewRunId++;
         trainingService.close();
         inferenceService.close();
@@ -535,7 +536,8 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
 
     private void showSystemPreviewImage(File imageFile) {
         try {
-            inferencePanel.getImageDisplayPanel().setImageFile(imageFile, imageFile.getName(), true);
+            inferencePanel.getImageDisplayPanel().setPreviewFileConsumer(file -> selectedSystemImageFile = file);
+            inferencePanel.getImageDisplayPanel().setImageFiles(systemInferenceImages(selectedSystemPath), imageFile, consumer);
             selectedSystemImageFile = imageFile;
             inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(true);
         } catch (IOException e) {

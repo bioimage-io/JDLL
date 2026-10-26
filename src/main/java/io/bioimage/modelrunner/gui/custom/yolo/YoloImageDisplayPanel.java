@@ -36,6 +36,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -48,10 +49,13 @@ import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import javax.swing.border.LineBorder;
 
+import io.bioimage.modelrunner.gui.custom.ConsumerInterface;
+import io.bioimage.modelrunner.gui.custom.PreviewReader;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
@@ -85,16 +89,19 @@ public class YoloImageDisplayPanel extends JPanel {
     private static final String DEFAULT_HINT_LINE_1 = "Ctrl + wheel for zooming in/out";
     private static final String DEFAULT_HINT_LINE_2 = "Click and move the mouse for panning";
 
-    private PreviewSource previewSource;
+    private volatile PreviewSource previewSource;
     private BufferedImage renderedViewport;
     private RenderRequest renderedRequest;
     private RenderRequest pendingRequest;
+    private RenderRequest failedRequest;
+    private String renderError;
     private SwingWorker<RenderResult, Void> renderWorker;
     private BufferedImage overviewImage;
+    private boolean overviewFailed;
     private SwingWorker<BufferedImage, Void> overviewWorker;
-    private long sourceVersion;
-    private long renderVersion;
-    private long overviewVersion;
+    private volatile long sourceVersion;
+    private volatile long renderVersion;
+    private volatile long overviewVersion;
     private String title;
     private double zoom = 1.0;
     private boolean expandedToFill;
@@ -118,6 +125,19 @@ public class YoloImageDisplayPanel extends JPanel {
     private Color titleColor = HELP_TEXT;
     private boolean titleBackground;
     private final JButton expandButton = new JButton(EXPAND_SYMBOL);
+    private final JButton previousFileButton = new JButton("\u2039");
+    private final JButton nextFileButton = new JButton("\u203a");
+    private final JScrollBar zScrollBar = new JScrollBar(JScrollBar.HORIZONTAL);
+    private final JScrollBar timeScrollBar = new JScrollBar(JScrollBar.HORIZONTAL);
+    private final Timer planeSelectionTimer;
+    private List<File> previewFiles = Collections.emptyList();
+    private int previewFileIndex, selectedZ, selectedTime;
+    private boolean updatingNavigation;
+    private ConsumerInterface previewHost;
+    private Consumer<File> previewFileConsumer;
+    private SwingWorker<PreviewSource, Void> metadataWorker;
+    private SwingWorker<Void, Void> prefetchWorker;
+    private volatile long metadataVersion;
     private final Timer hintFadeTimer;
     private long hintShownAt;
     private float hintAlpha;
@@ -139,6 +159,29 @@ public class YoloImageDisplayPanel extends JPanel {
         expandButton.setToolTipText("Expand image to fill preview");
         expandButton.addActionListener(e -> setExpandedToFill(!expandedToFill));
         add(expandButton);
+        planeSelectionTimer = new Timer(100, e -> selectPreviewPlane());
+        planeSelectionTimer.setRepeats(false);
+        for (JScrollBar bar : new JScrollBar[] {zScrollBar, timeScrollBar}) {
+            bar.setVisible(false);
+            bar.setUnitIncrement(1);
+            bar.addAdjustmentListener(e -> {
+                if (updatingNavigation || previewSource == null) return;
+                cancelPrefetch();
+                if (e.getValueIsAdjusting()) planeSelectionTimer.restart();
+                else { planeSelectionTimer.stop(); selectPreviewPlane(); }
+            });
+            add(bar);
+        }
+        YoloUiUtils.styleFlatSecondaryButton(previousFileButton);
+        YoloUiUtils.styleFlatSecondaryButton(nextFileButton);
+        previousFileButton.setToolTipText("Previous inference file");
+        nextFileButton.setToolTipText("Next inference file");
+        previousFileButton.addActionListener(e -> navigateFile(-1));
+        nextFileButton.addActionListener(e -> navigateFile(1));
+        previousFileButton.setVisible(false);
+        nextFileButton.setVisible(false);
+        add(previousFileButton);
+        add(nextFileButton);
         hintFadeTimer = new Timer(HINT_TIMER_DELAY_MS, e -> updateHintAlpha());
         hintFadeTimer.setRepeats(true);
 
@@ -322,6 +365,8 @@ public class YoloImageDisplayPanel extends JPanel {
      * Performs clear image.
      */
     public void clearImage() {
+        resetFileNavigation();
+        releaseSource(previewSource);
         cancelRenderWorker();
         cancelOverviewWorker();
         this.previewSource = null;
@@ -341,6 +386,7 @@ public class YoloImageDisplayPanel extends JPanel {
         this.boxes.clear();
         this.hintAlpha = 0.0f;
         this.hintFadeTimer.stop();
+        updateNavigation();
         repaint();
     }
 
@@ -375,12 +421,16 @@ public class YoloImageDisplayPanel extends JPanel {
      * @param title the title.
      */
     public <T extends RealType<T> & NativeType<T>> void setImage(RandomAccessibleInterval<T> rai, String title) {
+        resetFileNavigation();
+        releaseSource(previewSource);
         cancelRenderWorker();
         cancelOverviewWorker();
         this.previewSource = rai == null ? null : new RaiPreviewSource<T>(rai);
         clearRenderedViewport();
         clearOverview();
         this.sourceVersion++;
+        selectedZ = selectedTime = 0;
+        updateNavigation();
         requestOverviewRender();
         this.title = title;
         this.zoom = 1.0;
@@ -430,13 +480,46 @@ public class YoloImageDisplayPanel extends JPanel {
      * @throws IOException if an I/O error occurs.
      */
     public void setImageFile(File imageFile, String title, boolean showHint) throws IOException {
+        setImageFile(imageFile, title, showHint, null);
+    }
+
+    /** Uses the host decoder if ImageIO cannot render the image. */
+    public void setImageFile(File imageFile, String title, boolean showHint, ConsumerInterface host) throws IOException {
+        setImageFiles(imageFile == null ? Collections.emptyList() : Collections.singletonList(imageFile),
+                imageFile, host, title, showHint);
+    }
+
+    /** Navigates exactly the ordered files that the inference workflow will process. */
+    public void setImageFiles(List<File> files, File selected, ConsumerInterface host) throws IOException {
+        setImageFiles(files, selected, host, selected == null ? "" : selected.getName(), true);
+    }
+
+    private void setImageFiles(List<File> files, File selected, ConsumerInterface host, String title, boolean showHint)
+            throws IOException {
+        if (selected != null && !selected.isFile()) throw new IOException("Image file does not exist: " + selected);
+        resetFileNavigation();
+        previewFiles = new ArrayList<>(files);
+        previewFileIndex = Math.max(0, previewFiles.indexOf(selected));
+        previewHost = host;
+        loadPreviewFile(selected, title, showHint);
+    }
+
+    public File getPreviewFile() { return previewFiles.isEmpty() ? null : previewFiles.get(previewFileIndex); }
+    public int getPreviewZ() { return selectedZ; }
+    public int getPreviewTime() { return selectedTime; }
+    public void setPreviewFileConsumer(Consumer<File> consumer) { previewFileConsumer = consumer; }
+
+    private void loadPreviewFile(File imageFile, String title, boolean showHint) {
+        cancelMetadata();
         cancelRenderWorker();
         cancelOverviewWorker();
-        this.previewSource = imageFile == null ? null : new FilePreviewSource(imageFile);
+        releaseSource(previewSource);
+        this.previewSource = null;
         clearRenderedViewport();
         clearOverview();
         this.sourceVersion++;
-        requestOverviewRender();
+        selectedZ = selectedTime = 0;
+        updateNavigation();
         this.title = title;
         this.zoom = 1.0;
         this.expandedToFill = false;
@@ -453,7 +536,42 @@ public class YoloImageDisplayPanel extends JPanel {
         this.emptyMessageColor = HELP_TEXT;
         updateToolTip();
         updateExpandButtonState();
-        updateHintVisibility(imageFile != null && showHint);
+        hideHint();
+        if (imageFile != null) {
+            emptyMessage = "Reading image metadata...";
+            long version = metadataVersion;
+            ConsumerInterface host = previewHost;
+            metadataWorker = new SwingWorker<PreviewSource, Void>() {
+                private volatile PreviewSource opened;
+                @Override protected PreviewSource doInBackground() throws IOException {
+                    PreviewReader reader = host == null ? null : host.openPreviewReader(imageFile);
+                    opened = reader == null ? new FilePreviewSource(imageFile, host)
+                            : new PyramidPreviewSource(new PreviewTileCache(reader), 0, 0);
+                    if (isCancelled() || version != metadataVersion) { releaseSource(opened); return null; }
+                    return opened;
+                }
+                @Override protected void done() {
+                    if (isCancelled() || version != metadataVersion) { releaseSource(opened); return; }
+                    try {
+                        previewSource = get();
+                        updateNavigation();
+                        requestOverviewRender();
+                        updateHintVisibility(showHint);
+                        if (previewFileConsumer != null) previewFileConsumer.accept(imageFile);
+                    } catch (InterruptedException error) {
+                        Thread.currentThread().interrupt();
+                    } catch (ExecutionException | CancellationException error) {
+                        releaseSource(opened);
+                        emptyMessage = "Could not open image preview.";
+                        Throwable cause = error.getCause() == null ? error : error.getCause();
+                        setToolTipText(cause.getMessage());
+                    }
+                    revalidate();
+                    repaint();
+                }
+            };
+            metadataWorker.execute();
+        }
         repaint();
     }
 
@@ -465,12 +583,16 @@ public class YoloImageDisplayPanel extends JPanel {
      * @param showHint the show hint.
      */
     public void setBufferedImage(BufferedImage image, String title, boolean showHint) {
+        resetFileNavigation();
+        releaseSource(previewSource);
         cancelRenderWorker();
         cancelOverviewWorker();
         this.previewSource = image == null ? null : new BufferedImagePreviewSource(image);
         clearRenderedViewport();
         clearOverview();
         this.sourceVersion++;
+        selectedZ = selectedTime = 0;
+        updateNavigation();
         requestOverviewRender();
         this.title = title;
         this.zoom = 1.0;
@@ -640,6 +762,104 @@ public class YoloImageDisplayPanel extends JPanel {
         expandButton.setToolTipText(expandedToFill ? "Contract image to fit preview" : "Expand image to fill preview");
     }
 
+    private int navigationHeight() { return Math.max(12, (int) Math.round(getHeight() * 0.05)); }
+
+    private void updateNavigation() {
+        updatingNavigation = true;
+        try {
+            int depth = previewSource == null ? 1 : previewSource.depth();
+            int frames = previewSource == null ? 1 : previewSource.frames();
+            zScrollBar.setValues(selectedZ, 1, 0, depth);
+            timeScrollBar.setValues(selectedTime, 1, 0, frames);
+            zScrollBar.setVisible(depth > 1);
+            timeScrollBar.setVisible(frames > 1);
+            zScrollBar.setToolTipText("Z " + (selectedZ + 1) + "/" + depth);
+            timeScrollBar.setToolTipText("Time " + (selectedTime + 1) + "/" + frames);
+            previousFileButton.setVisible(previewFiles.size() > 1);
+            nextFileButton.setVisible(previewFiles.size() > 1);
+            previousFileButton.setEnabled(previewFileIndex > 0);
+            nextFileButton.setEnabled(previewFileIndex + 1 < previewFiles.size());
+        } finally { updatingNavigation = false; }
+        revalidate();
+        doLayout();
+    }
+
+    private String navigationTitle() {
+        String prefix = previewFiles.size() > 1 ? (previewFileIndex + 1) + "/" + previewFiles.size() + " | " : "";
+        if (previewSource != null && previewSource.depth() > 1)
+            prefix += "Z " + (selectedZ + 1) + "/" + previewSource.depth() + " | ";
+        if (previewSource != null && previewSource.frames() > 1)
+            prefix += "T " + (selectedTime + 1) + "/" + previewSource.frames() + " | ";
+        return prefix + (title == null ? "" : title);
+    }
+
+    private void selectPreviewPlane() {
+        if (previewSource == null || (selectedZ == zScrollBar.getValue() && selectedTime == timeScrollBar.getValue())) return;
+        cancelRenderWorker();
+        cancelOverviewWorker();
+        clearRenderedViewport();
+        clearOverview();
+        selectedZ = zScrollBar.getValue();
+        selectedTime = timeScrollBar.getValue();
+        previewSource = previewSource.plane(selectedZ, selectedTime);
+        sourceVersion++;
+        updateNavigation();
+        requestOverviewRender();
+        repaint();
+    }
+
+    private void navigateFile(int delta) {
+        int index = previewFileIndex + delta;
+        if (index < 0 || index >= previewFiles.size()) return;
+        planeSelectionTimer.stop();
+        previewFileIndex = index;
+        File file = getPreviewFile();
+        boolean drawing = drawEnabled;
+        loadPreviewFile(file, file.getName(), false);
+        setDrawEnabled(drawing);
+    }
+
+    private void resetFileNavigation() {
+        cancelMetadata();
+        planeSelectionTimer.stop();
+        previewFiles = Collections.emptyList();
+        previewFileIndex = selectedZ = selectedTime = 0;
+        previewHost = null;
+    }
+
+    private void cancelMetadata() {
+        metadataVersion++;
+        if (metadataWorker != null) metadataWorker.cancel(true);
+        metadataWorker = null;
+    }
+
+    private static void releaseSource(PreviewSource source) {
+        if (source == null) return;
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try { source.close(); } catch (IOException error) { /* A stale preview must still be released. */ }
+        });
+    }
+
+    private void cancelPrefetch() {
+        if (prefetchWorker != null) prefetchWorker.cancel(true);
+        prefetchWorker = null;
+    }
+
+    private void startPrefetch(PreviewSource source, RenderRequest request) {
+        if (!(source instanceof PyramidPreviewSource)) return;
+        cancelPrefetch();
+        long version = renderVersion;
+        prefetchWorker = new SwingWorker<Void, Void>() {
+            @Override protected Void doInBackground() throws IOException {
+                PyramidPreviewSource pyramid = (PyramidPreviewSource) source;
+                pyramid.cache.prefetch(pyramid.z, pyramid.t, request.sourceRect, request.targetW, request.targetH,
+                        () -> isCancelled() || version != renderVersion || source != previewSource);
+                return null;
+            }
+        };
+        prefetchWorker.execute();
+    }
+
     /**
      * Performs do layout.
      */
@@ -650,6 +870,15 @@ public class YoloImageDisplayPanel extends JPanel {
         expandButton.setBounds(getWidth() - VIEW_PAD - size, VIEW_PAD, size, size);
         expandButton.setFont(expandButton.getFont().deriveFont((float) Math.max(YoloUiUtils.MIN_FONT_SIZE,
                 Math.min(YoloUiUtils.MAX_CONTROL_FONT_SIZE - 2, size * 0.42f))));
+        previousFileButton.setBounds(VIEW_PAD + 2, VIEW_PAD, size, size);
+        nextFileButton.setBounds(VIEW_PAD + size + 3, VIEW_PAD, size, size);
+        int barHeight = navigationHeight();
+        int y = getHeight() - VIEW_PAD - barHeight * ((zScrollBar.isVisible() ? 1 : 0) + (timeScrollBar.isVisible() ? 1 : 0));
+        if (zScrollBar.isVisible()) {
+            zScrollBar.setBounds(VIEW_PAD, y, Math.max(1, getWidth() - 2 * VIEW_PAD), barHeight);
+            y += barHeight;
+        }
+        if (timeScrollBar.isVisible()) timeScrollBar.setBounds(VIEW_PAD, y, Math.max(1, getWidth() - 2 * VIEW_PAD), barHeight);
     }
 
     /**
@@ -688,7 +917,7 @@ public class YoloImageDisplayPanel extends JPanel {
             } else if (!drawOverviewFallback(g2, renderGeometry)) {
                 requestOverviewRender();
                 g2.setColor(HELP_TEXT);
-                drawCenteredMessage(g2, "Rendering preview...");
+                drawCenteredMessage(g2, renderError == null ? "Rendering preview..." : renderError);
             } else {
                 requestOverviewRender();
             }
@@ -699,16 +928,20 @@ public class YoloImageDisplayPanel extends JPanel {
         if (title != null && !title.isEmpty()) {
             Graphics2D label = (Graphics2D) g2.create();
             label.clip(imageDrawArea);
-            int x = imageDrawArea.x + 6;
+            int x = previewFiles.size() > 1 ? nextFileButton.getX() + nextFileButton.getWidth() + 6 : imageDrawArea.x + 6;
             int y = imageDrawArea.y + 16;
+            String displayedTitle = navigationTitle();
+            int available = Math.max(0, expandButton.getX() - x - 8);
+            while (displayedTitle.length() > 3 && label.getFontMetrics().stringWidth(displayedTitle) > available)
+                displayedTitle = displayedTitle.substring(0, displayedTitle.length() - 4) + "...";
             if (titleBackground) {
                 FontMetrics metrics = label.getFontMetrics();
                 label.setColor(new Color(20, 24, 32, 170));
                 label.fillRoundRect(x - 4, y - metrics.getAscent() - 3,
-                        metrics.stringWidth(title) + 8, metrics.getHeight() + 6, 6, 6);
+                        metrics.stringWidth(displayedTitle) + 8, metrics.getHeight() + 6, 6, 6);
             }
             label.setColor(titleBackground ? Color.WHITE : titleColor);
-            label.drawString(title, x, y);
+            label.drawString(displayedTitle, x, y);
             label.dispose();
         }
         paintHintOverlay(g2);
@@ -826,8 +1059,9 @@ public class YoloImageDisplayPanel extends JPanel {
 
     private Rectangle computeImageDrawArea() {
         int panelW = Math.max(1, getWidth() - 2 * VIEW_PAD);
-        int panelH = Math.max(1, getHeight() - 2 * VIEW_PAD);
-        return new Rectangle((getWidth() - panelW) / 2, (getHeight() - panelH) / 2, panelW, panelH);
+        int controls = navigationHeight() * ((zScrollBar.isVisible() ? 1 : 0) + (timeScrollBar.isVisible() ? 1 : 0));
+        int panelH = Math.max(1, getHeight() - 2 * VIEW_PAD - controls);
+        return new Rectangle(VIEW_PAD, VIEW_PAD, panelW, panelH);
     }
 
     private Rectangle computeCurrentImageRect(Rectangle area) {
@@ -981,13 +1215,17 @@ public class YoloImageDisplayPanel extends JPanel {
         renderedViewport = null;
         renderedRequest = null;
         pendingRequest = null;
+        failedRequest = null;
+        renderError = null;
     }
 
     private void clearOverview() {
         overviewImage = null;
+        overviewFailed = false;
     }
 
     private void cancelRenderWorker() {
+        cancelPrefetch();
         renderVersion++;
         if (renderWorker != null && !renderWorker.isDone()) {
             renderWorker.cancel(true);
@@ -1023,7 +1261,7 @@ public class YoloImageDisplayPanel extends JPanel {
     }
 
     private void requestOverviewRender() {
-        if (previewSource == null || overviewImage != null
+        if (previewSource == null || overviewImage != null || overviewFailed
                 || (overviewWorker != null && !overviewWorker.isDone())) {
             return;
         }
@@ -1038,7 +1276,7 @@ public class YoloImageDisplayPanel extends JPanel {
              * @return the resulting buffered image.
              */
             @Override
-            protected BufferedImage doInBackground() {
+            protected BufferedImage doInBackground() throws IOException {
                 return source.render(new Rectangle2D.Double(0.0, 0.0, source.width(), source.height()),
                         size[0], size[1], () -> isCancelled() || workerVersion != overviewVersion
                                 || sourceSnapshot != sourceVersion);
@@ -1055,10 +1293,12 @@ public class YoloImageDisplayPanel extends JPanel {
                 }
                 try {
                     overviewImage = get();
+                    overviewFailed = overviewImage == null;
                     repaint();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 } catch (CancellationException | ExecutionException e) {
+                    overviewFailed = true;
                     // Exact viewport rendering still works if the overview cannot be built.
                 }
             }
@@ -1083,11 +1323,13 @@ public class YoloImageDisplayPanel extends JPanel {
         if (request == null || previewSource == null) {
             return;
         }
-        if (request.equals(renderedRequest) || request.equals(pendingRequest)) {
+        if (request.equals(renderedRequest) || request.equals(pendingRequest) || request.equals(failedRequest)) {
             return;
         }
         cancelRenderWorker();
         pendingRequest = request;
+        failedRequest = null;
+        renderError = null;
         final long workerVersion = renderVersion;
         final PreviewSource source = previewSource;
         final RenderRequest workerRequest = request;
@@ -1098,7 +1340,7 @@ public class YoloImageDisplayPanel extends JPanel {
              * @return the resulting render result.
              */
             @Override
-            protected RenderResult doInBackground() {
+            protected RenderResult doInBackground() throws IOException {
                 BufferedImage image = source.render(workerRequest.sourceRect, workerRequest.targetW,
                         workerRequest.targetH, () -> isCancelled() || workerVersion != renderVersion);
                 return image == null ? null : new RenderResult(workerRequest, image);
@@ -1114,18 +1356,31 @@ public class YoloImageDisplayPanel extends JPanel {
                 }
                 try {
                     RenderResult result = get();
-                    if (result == null || !result.request.equals(pendingRequest)) {
+                    if (result == null) {
+                        failedRequest = workerRequest;
+                        pendingRequest = null;
+                        renderError = "Could not render image preview.";
+                        repaint();
+                        return;
+                    }
+                    if (!result.request.equals(pendingRequest)) {
                         return;
                     }
                     renderedViewport = result.image;
                     renderedRequest = result.request;
                     pendingRequest = null;
+                    startPrefetch(source, workerRequest);
                     repaint();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 } catch (CancellationException | ExecutionException e) {
                     if (workerVersion == renderVersion) {
                         pendingRequest = null;
+                        failedRequest = workerRequest;
+                        renderError = "Could not render image preview.";
+                        Throwable cause = e.getCause() == null ? e : e.getCause();
+                        setToolTipText("Preview failed: " + cause.getMessage());
+                        repaint();
                     }
                 }
             }
@@ -1170,6 +1425,10 @@ public class YoloImageDisplayPanel extends JPanel {
     }
 
     private interface PreviewSource {
+        default int depth() { return 1; }
+        default int frames() { return 1; }
+        default PreviewSource plane(int z, int t) { return this; }
+        default void close() throws IOException {}
         /**
          * Returns the preview width.
          *
@@ -1193,7 +1452,22 @@ public class YoloImageDisplayPanel extends JPanel {
          * @param abortCheck the abort check callback.
          * @return the rendered image.
          */
-        BufferedImage render(Rectangle2D.Double sourceRect, int targetW, int targetH, RenderAbortCheck abortCheck);
+        BufferedImage render(Rectangle2D.Double sourceRect, int targetW, int targetH, RenderAbortCheck abortCheck)
+                throws IOException;
+    }
+
+    private static final class PyramidPreviewSource implements PreviewSource {
+        private final PreviewTileCache cache;
+        private final int z, t;
+        PyramidPreviewSource(PreviewTileCache cache, int z, int t) { this.cache = cache; this.z = z; this.t = t; }
+        @Override public int width() { return cache.info().width; }
+        @Override public int height() { return cache.info().height; }
+        @Override public int depth() { return cache.info().depth; }
+        @Override public int frames() { return cache.info().frames; }
+        @Override public PreviewSource plane(int z, int t) { return new PyramidPreviewSource(cache, z, t); }
+        @Override public void close() throws IOException { cache.close(); }
+        @Override public BufferedImage render(Rectangle2D.Double region, int width, int height, RenderAbortCheck abort)
+                throws IOException { return cache.render(z, t, region, width, height, abort::shouldAbort); }
     }
 
     private static final class BufferedImagePreviewSource implements PreviewSource {
@@ -1255,9 +1529,13 @@ public class YoloImageDisplayPanel extends JPanel {
         private final File file;
         private final int width;
         private final int height;
+        private final ConsumerInterface host;
+        private volatile PreviewSource hostPreview;
+        private volatile boolean imageIoFailed;
 
-        private FilePreviewSource(File file) throws IOException {
+        private FilePreviewSource(File file, ConsumerInterface host) throws IOException {
             this.file = file;
+            this.host = host;
             ReaderHandle handle = openReader(file);
             try {
                 this.width = Math.max(1, handle.reader.getWidth(0));
@@ -1298,10 +1576,11 @@ public class YoloImageDisplayPanel extends JPanel {
          */
         @Override
         public BufferedImage render(Rectangle2D.Double sourceRect, int targetW, int targetH,
-                RenderAbortCheck abortCheck) {
+                RenderAbortCheck abortCheck) throws IOException {
             if (abortCheck.shouldAbort()) {
                 return null;
             }
+            if (imageIoFailed) return hostPreview().render(sourceRect, targetW, targetH, abortCheck);
             ReaderHandle handle = null;
             try {
                 handle = openReader(file);
@@ -1320,9 +1599,10 @@ public class YoloImageDisplayPanel extends JPanel {
                     return null;
                 }
                 BufferedImage read = handle.reader.read(0, param);
-                if (abortCheck.shouldAbort() || read == null) {
+                if (abortCheck.shouldAbort()) {
                     return null;
                 }
+                if (read == null) throw new IOException("Image reader returned no pixels.");
                 if (read.getWidth() == targetW && read.getHeight() == targetH
                         && read.getType() == BufferedImage.TYPE_INT_RGB) {
                     return read;
@@ -1333,13 +1613,28 @@ public class YoloImageDisplayPanel extends JPanel {
                 g2.drawImage(read, 0, 0, targetW, targetH, null);
                 g2.dispose();
                 return out;
-            } catch (IOException e) {
-                return null;
+            } catch (IOException | RuntimeException e) {
+                if (host == null) throw new IOException("Could not decode preview: " + file.getName(), e);
+                imageIoFailed = true;
+                if (abortCheck.shouldAbort()) return null;
+                return hostPreview().render(sourceRect, targetW, targetH, abortCheck);
             } finally {
                 if (handle != null) {
                     handle.close();
                 }
             }
+        }
+
+        private synchronized PreviewSource hostPreview() throws IOException {
+            if (hostPreview == null) hostPreview = loadHostPreview();
+            return hostPreview;
+        }
+
+        private <T extends RealType<T> & NativeType<T>> PreviewSource loadHostPreview() throws IOException {
+            RandomAccessibleInterval<T> image = host.openImagePreviewAsRai(file);
+            if (image == null || image.dimension(0) != width || image.dimension(1) != height)
+                throw new IOException("Host preview geometry does not match the image.");
+            return new RaiPreviewSource<>(image);
         }
 
         private static ReaderHandle openReader(File file) throws IOException {
@@ -1382,6 +1677,7 @@ public class YoloImageDisplayPanel extends JPanel {
     }
 
     private static final class RaiPreviewSource<T extends RealType<T> & NativeType<T>> implements PreviewSource {
+        private final RandomAccessibleInterval<T> original;
         private final RandomAccessibleInterval<T> rai;
         private final long minX;
         private final long minY;
@@ -1394,7 +1690,14 @@ public class YoloImageDisplayPanel extends JPanel {
         private boolean rangeReady;
 
         private RaiPreviewSource(RandomAccessibleInterval<T> source) {
+            this(source, 0, 0);
+        }
+
+        private RaiPreviewSource(RandomAccessibleInterval<T> source, int z, int t) {
+            original = source;
             RandomAccessibleInterval<T> view = source;
+            if (view.numDimensions() == 5) view = Views.hyperSlice(view, 4, view.min(4) + t);
+            if (view.numDimensions() == 4) view = Views.hyperSlice(view, 3, view.min(3) + z);
             while (view.numDimensions() > 3) {
                 view = Views.hyperSlice(view, view.numDimensions() - 1, view.min(view.numDimensions() - 1));
             }
@@ -1409,6 +1712,10 @@ public class YoloImageDisplayPanel extends JPanel {
             this.height = Math.max(1, (int) Math.min(Integer.MAX_VALUE, view.dimension(1)));
             this.channels = view.numDimensions() > 2 ? Math.max(1, (int) Math.min(4, view.dimension(2))) : 1;
         }
+
+        @Override public int depth() { return original.numDimensions() >= 4 ? Math.toIntExact(original.dimension(3)) : 1; }
+        @Override public int frames() { return original.numDimensions() >= 5 ? Math.toIntExact(original.dimension(4)) : 1; }
+        @Override public PreviewSource plane(int z, int t) { return new RaiPreviewSource<>(original, z, t); }
 
         /**
          * Returns the result of width.

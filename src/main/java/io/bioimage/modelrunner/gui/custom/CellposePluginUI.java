@@ -173,6 +173,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
      */
     public void close() {
         cancelled = true;
+        getInferencePanel().getImageDisplayPanel().clearImage();
         cancelChannelRead();
         inferenceService.close();
         if (workerThread != null && workerThread.isAlive()) {
@@ -457,43 +458,53 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         }
         selectedSystemPath = path;
         try {
+            getInferencePanel().getImageDisplayPanel().setPreviewFileConsumer(file -> {
+                if (!file.equals(selectedSystemImageFile)) readPreviewChannels(path, file);
+            });
             getInferencePanel().getImageDisplayPanel()
-                    .setImageFile(preview, preview.getName(), true);
-            selectedSystemImageFile = preview;
-            channelWorker = new javax.swing.SwingWorker<Integer, Void>() {
-                @Override protected Integer doInBackground() throws IOException {
-                    if (consumer == null) throw new IOException("A host image loader is required.");
-                    return consumer.getImageFileChannels(preview);
-                }
-
-                @Override protected void done() {
-                    if (this != channelWorker || isCancelled()) return;
-                    channelWorker = null;
-                    String requested = getInferencePanel().getImageSourcePanel().getSystemPathField().getText();
-                    if (!getInferencePanel().getImageSourcePanel().getSystemImagesRadio().isSelected()
-                            || !path.equals(new File(requested.trim()))) {
-                        selectedSystemPath = null;
-                        selectedSystemImageFile = null;
-                        return;
-                    }
-                    try {
-                        CellposeChannels.configure(getInferencePanel().getOptionsPanel().getCytoplasmComboBox(),
-                                getInferencePanel().getOptionsPanel().getNucleiComboBox(), get());
-                        getInferencePanel().getImageSourcePanel().setSystemPathSelectionConfirmed(true);
-                    } catch (Exception error) {
-                        selectedSystemPath = null;
-                        selectedSystemImageFile = null;
-                        showPreviewError(rootMessage(error));
-                    }
-                    getInferencePanel().updateImageActionState();
-                }
-            };
-            channelWorker.execute();
+                    .setImageFiles(candidates, preview, consumer);
+            readPreviewChannels(path, preview);
         } catch (IOException error) {
             selectedSystemPath = null;
             selectedSystemImageFile = null;
             showPreviewError(INVALID_IMAGE_MESSAGE);
         }
+        getInferencePanel().updateImageActionState();
+    }
+
+    private void readPreviewChannels(File path, File preview) {
+        cancelChannelRead();
+        selectedSystemImageFile = preview;
+        getInferencePanel().getImageSourcePanel().setSystemPathSelectionConfirmed(false);
+        channelWorker = new javax.swing.SwingWorker<Integer, Void>() {
+            @Override protected Integer doInBackground() throws IOException {
+                if (consumer == null) throw new IOException("A host image loader is required.");
+                return consumer.getImageFileChannels(preview);
+            }
+
+            @Override protected void done() {
+                if (this != channelWorker || isCancelled()) return;
+                channelWorker = null;
+                String requested = getInferencePanel().getImageSourcePanel().getSystemPathField().getText();
+                if (!getInferencePanel().getImageSourcePanel().getSystemImagesRadio().isSelected()
+                        || !path.equals(new File(requested.trim()))) {
+                    selectedSystemPath = null;
+                    selectedSystemImageFile = null;
+                    return;
+                }
+                try {
+                    CellposeChannels.configure(getInferencePanel().getOptionsPanel().getCytoplasmComboBox(),
+                            getInferencePanel().getOptionsPanel().getNucleiComboBox(), get());
+                    getInferencePanel().getImageSourcePanel().setSystemPathSelectionConfirmed(true);
+                } catch (Exception error) {
+                    selectedSystemPath = null;
+                    selectedSystemImageFile = null;
+                    showPreviewError(rootMessage(error));
+                }
+                getInferencePanel().updateImageActionState();
+            }
+        };
+        channelWorker.execute();
         getInferencePanel().updateImageActionState();
     }
 
