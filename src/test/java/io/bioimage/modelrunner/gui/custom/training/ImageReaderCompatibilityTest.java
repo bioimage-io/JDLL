@@ -169,9 +169,65 @@ public class ImageReaderCompatibilityTest {
         } finally { SwingUtilities.invokeAndWait(panel::clearImage); }
     }
 
+    @Test
+    public void hostImageReaderExposesOneStepArrowsAndDoesNotLoadAWholeStack() throws Exception {
+        RecordingPreviewReader reader = new RecordingPreviewReader(new PreviewReader.Info(1024, 512, 1, 4, 3, 0));
+        YoloImageDisplayPanel panel = new YoloImageDisplayPanel();
+        try {
+            SwingUtilities.invokeAndWait(() -> panel.setImageReader(reader, "Host grayscale Z/T stack"));
+            awaitPreview(panel, 200);
+            JScrollBar z = (JScrollBar) previewField(panel, "zScrollBar");
+            JScrollBar time = (JScrollBar) previewField(panel, "timeScrollBar");
+            assertTrue(z.isVisible());
+            assertTrue(time.isVisible());
+            assertEquals(4, z.getMaximum());
+            assertEquals(3, time.getMaximum());
+            // Reinstalling a host theme must not remove the arrows.
+            SwingUtilities.invokeAndWait(() -> { z.updateUI(); time.updateUI(); panel.doLayout(); });
+            clickArrow(z, javax.swing.SwingConstants.EAST);
+            clickArrow(time, javax.swing.SwingConstants.EAST);
+            awaitPreview(panel, 200);
+            assertEquals(1, panel.getPreviewZ());
+            assertEquals(1, panel.getPreviewTime());
+            BufferedImage pixels = (BufferedImage) previewField(panel, "renderedViewport");
+            assertEquals(0x101033, pixels.getRGB(20, 20) & 0xffffff);
+            clickArrow(z, javax.swing.SwingConstants.WEST);
+            clickArrow(time, javax.swing.SwingConstants.WEST);
+            awaitPreview(panel, 200);
+            assertEquals(0, panel.getPreviewZ());
+            assertEquals(0, panel.getPreviewTime());
+            clickArrow(z, javax.swing.SwingConstants.WEST);
+            assertEquals(0, panel.getPreviewZ());
+        } finally { SwingUtilities.invokeAndWait(panel::clearImage); }
+        assertTrue(reader.closed.await(3, TimeUnit.SECONDS));
+    }
+
+    private static void clickArrow(JScrollBar bar, int direction) throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            bar.doLayout();
+            for (java.awt.Component component : bar.getComponents()) {
+                if (!(component instanceof javax.swing.plaf.basic.BasicArrowButton)) continue;
+                javax.swing.plaf.basic.BasicArrowButton button = (javax.swing.plaf.basic.BasicArrowButton) component;
+                if (button.getDirection() != direction) continue;
+                assertTrue(button.isVisible());
+                assertTrue(button.getWidth() > 0 && button.getHeight() > 0);
+                long when = System.currentTimeMillis();
+                button.dispatchEvent(new java.awt.event.MouseEvent(button, java.awt.event.MouseEvent.MOUSE_PRESSED,
+                        when, 0, 2, 2, 1, false, java.awt.event.MouseEvent.BUTTON1));
+                button.dispatchEvent(new java.awt.event.MouseEvent(button, java.awt.event.MouseEvent.MOUSE_RELEASED,
+                        when, 0, 2, 2, 1, false, java.awt.event.MouseEvent.BUTTON1));
+                return;
+            }
+            fail("Missing one-step navigation arrow");
+        });
+    }
+
     private static final class RecordingPreviewReader implements PreviewReader {
         final CountDownLatch closed = new CountDownLatch(1);
-        @Override public Info info() { return new Info(1024, 512, 3, 4, 3, 0, 1, 2); }
+        private final Info geometry;
+        RecordingPreviewReader() { this(new Info(1024, 512, 3, 4, 3, 0, 1, 2)); }
+        RecordingPreviewReader(Info geometry) { this.geometry = geometry; }
+        @Override public Info info() { return geometry; }
         @Override public BufferedImage read(int z, int t, int level, java.awt.Rectangle region) {
             assertFalse("Decode regions off the EDT", SwingUtilities.isEventDispatchThread());
             assertTrue(region.x >= 0 && region.x + region.width <= info().width);

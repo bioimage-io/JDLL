@@ -53,6 +53,7 @@ import javax.swing.JScrollBar;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import javax.swing.border.LineBorder;
+import javax.swing.plaf.basic.BasicScrollBarUI;
 
 import io.bioimage.modelrunner.gui.custom.ConsumerInterface;
 import io.bioimage.modelrunner.gui.custom.PreviewReader;
@@ -127,8 +128,8 @@ public class YoloImageDisplayPanel extends JPanel {
     private final JButton expandButton = new JButton(EXPAND_SYMBOL);
     private final JButton previousFileButton = new JButton("\u2039");
     private final JButton nextFileButton = new JButton("\u203a");
-    private final JScrollBar zScrollBar = new JScrollBar(JScrollBar.HORIZONTAL);
-    private final JScrollBar timeScrollBar = new JScrollBar(JScrollBar.HORIZONTAL);
+    private final JScrollBar zScrollBar = createPlaneScrollBar();
+    private final JScrollBar timeScrollBar = createPlaneScrollBar();
     private final Timer planeSelectionTimer;
     private List<File> previewFiles = Collections.emptyList();
     private int previewFileIndex, selectedZ, selectedTime;
@@ -145,6 +146,16 @@ public class YoloImageDisplayPanel extends JPanel {
     private boolean applyingViewport;
     private boolean hintOnHoverOnly;
     private boolean mouseInside;
+
+    private static JScrollBar createPlaneScrollBar() {
+        return new JScrollBar(JScrollBar.HORIZONTAL) {
+            private static final long serialVersionUID = 1L;
+            @Override public void updateUI() {
+                // Some host themes hide scrollbar arrows, preventing single-plane stepping.
+                setUI(new BasicScrollBarUI());
+            }
+        };
+    }
 
     /**
      * Creates a new YoloImageDisplayPanel instance.
@@ -444,6 +455,23 @@ public class YoloImageDisplayPanel extends JPanel {
         this.emptyMessageColor = HELP_TEXT;
         clearBoxes();
         updateExpandButtonState();
+        updateHintVisibility(true);
+        repaint();
+    }
+
+    /**
+     * Shows an open host image without wrapping or loading its complete stack.
+     * Metadata must already be available; pixels are read by background workers.
+     * This panel owns the reader, not the underlying host image.
+     */
+    public void setImageReader(PreviewReader reader, String title) {
+        boolean drawing = drawEnabled;
+        setBufferedImage(null, title, false);
+        setDrawEnabled(drawing);
+        if (reader == null) return;
+        previewSource = new PyramidPreviewSource(new PreviewTileCache(reader), 0, 0);
+        updateNavigation();
+        requestOverviewRender();
         updateHintVisibility(true);
         repaint();
     }
