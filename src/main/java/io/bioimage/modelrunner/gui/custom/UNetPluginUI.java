@@ -27,8 +27,6 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
-import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -42,7 +40,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
-import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -72,7 +69,6 @@ import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.special.unet.UnetTrainingProgress;
 import io.bioimage.modelrunner.model.special.unet.UnetValidationPreview;
 import io.bioimage.modelrunner.tensor.Tensor;
-import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -689,8 +685,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                         throw new IOException(backend.getDisplayName()
                                 + " did not return a labels image for " + imageFile.getName());
                     }
-                    File outputMask = maskOutputFileFor(imageFile);
-                    writeLabelMask(outputs.get(0), outputMask);
+                    File outputMask = LabelMaskWriter.write(outputs.get(0), maskOutputFileFor(imageFile));
                     savedMasks++;
                     logConsumer.accept("Saved labels: " + outputMask.getAbsolutePath());
                     if (!emittedPatchProgress[0]) {
@@ -750,56 +745,6 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     private static String outputMaskExtension(String fileName) {
         String lower = fileName == null ? "" : fileName.toLowerCase();
         return lower.endsWith(".tif") || lower.endsWith(".tiff") ? "tif" : "png";
-    }
-
-    private static <T extends RealType<T> & NativeType<T>> void writeLabelMask(Tensor<T> tensor, File outputFile)
-            throws IOException {
-        RandomAccessibleInterval<T> labels = tensor.getData();
-        String axes = tensor.getAxesOrderString();
-        BufferedImage image = labelMaskImage(labels, axes);
-        String format = "tif".equals(outputMaskExtension(outputFile.getName())) ? "TIFF" : "png";
-        if (!ImageIO.write(image, format, outputFile)) {
-            throw new IOException("No ImageIO writer available for " + format + " masks.");
-        }
-    }
-
-    private static <T extends RealType<T> & NativeType<T>>
-    BufferedImage labelMaskImage(RandomAccessibleInterval<T> labels, String axes) {
-        long[] dims = labels.dimensionsAsLongArray();
-        int xAxis = axisIndex(axes, 'x', dims.length, dims.length > 1 ? 1 : 0);
-        int yAxis = axisIndex(axes, 'y', dims.length, 0);
-        int width = Math.toIntExact(dims[xAxis]);
-        int height = Math.toIntExact(dims[yAxis]);
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_USHORT_GRAY);
-        WritableRaster raster = image.getRaster();
-        RandomAccess<T> access = labels.randomAccess();
-        long[] position = new long[dims.length];
-        for (int y = 0; y < height; y++) {
-            position[yAxis] = y;
-            for (int x = 0; x < width; x++) {
-                position[xAxis] = x;
-                access.setPosition(position);
-                raster.setSample(x, y, 0, toUnsignedShortLabel(access.get().getRealDouble()));
-            }
-        }
-        return image;
-    }
-
-    private static int axisIndex(String axes, char axis, int dimensions, int fallback) {
-        if (axes != null) {
-            int index = axes.toLowerCase().indexOf(axis);
-            if (index >= 0 && index < dimensions) {
-                return index;
-            }
-        }
-        return Math.max(0, Math.min(fallback, dimensions - 1));
-    }
-
-    private static int toUnsignedShortLabel(double value) {
-        if (!Double.isFinite(value) || value <= 0) {
-            return 0;
-        }
-        return (int) Math.min(65535, Math.round(value));
     }
 
     private static String imageProgressBar(int imageIndex, int totalImages) {

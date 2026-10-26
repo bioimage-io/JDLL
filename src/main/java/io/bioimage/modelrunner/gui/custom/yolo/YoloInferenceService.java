@@ -21,6 +21,7 @@ package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.Rectangle;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -29,6 +30,7 @@ import org.apposed.appose.BuildException;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.gui.custom.InferenceStack;
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
 import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.detection.Detection;
@@ -48,6 +50,8 @@ public class YoloInferenceService {
     private String loadedDevice;
     private Yolo model;
     private Rectangle size = null;
+    private Consumer<InferenceProgress> progressConsumer;
+    private volatile boolean cancelled;
 
     /**
      * Creates a new YoloInferenceService instance.
@@ -198,6 +202,7 @@ public class YoloInferenceService {
      * Performs cancel current inference.
      */
     public void cancelCurrentInference() {
+        cancelled = true;
         if (model != null) {
             model.cancelCurrentInference();
         }
@@ -212,6 +217,7 @@ public class YoloInferenceService {
     private void ensureLoaded(String modelPath, String device, Consumer<String> logConsumer,
             Consumer<InferenceProgress> progressConsumer)
             throws BuildException, IOException, LoadModelException, ExecutionException, InterruptedException {
+        cancelled = false;
         if (loadedModelPath != null && (!loadedModelPath.equals(modelPath) || !device.equals(loadedDevice))) {
             close();
         }
@@ -238,6 +244,7 @@ public class YoloInferenceService {
     }
 
     private void configureInferenceProgressLogging(Consumer<InferenceProgress> progressConsumer) {
+        this.progressConsumer = progressConsumer;
         if (model == null) {
             return;
         }
@@ -302,6 +309,20 @@ public class YoloInferenceService {
 
     private <T extends RealType<T> & NativeType<T>>
     List<Detection> runLoadedModel(RandomAccessibleInterval<T> rai) throws RunModelException, LoadModelException {
+        InferenceStack<T> stack = new InferenceStack<>(rai, false);
+        model.setInferenceProgressConsumer(stack.progress(progressConsumer));
+        List<Detection> result = new ArrayList<>();
+        for (int unit = 0; unit < stack.size(); unit++) {
+            InferenceStack.checkCancelled(cancelled);
+            for (Detection detection : runSingleInput(stack.input(unit)))
+                result.add(detection.withPosition(stack.z(unit), stack.time(unit), unit));
+            InferenceStack.checkCancelled(cancelled);
+        }
+        return result;
+    }
+
+    private <T extends RealType<T> & NativeType<T>>
+    List<Detection> runSingleInput(RandomAccessibleInterval<T> rai) throws RunModelException, LoadModelException {
         RandomAccessibleInterval<T> input = addDimsToInput(rai,
                 rai.dimensionsAsLongArray().length > 2 && rai.dimensionsAsLongArray()[2] == 3 ? 3 : 1);
         List<Tensor<T>> outTensor = model.inference(Tensor.build("input", "xycb", input));

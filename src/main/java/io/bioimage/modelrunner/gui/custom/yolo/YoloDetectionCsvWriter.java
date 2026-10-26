@@ -68,13 +68,13 @@ public final class YoloDetectionCsvWriter {
             Files.createDirectories(parent.toPath());
         }
         try (BufferedWriter writer = Files.newBufferedWriter(outputFile.toPath(), StandardCharsets.UTF_8)) {
-            writer.write("image_path,x1,y1,x2,y2,class_id,confidence");
+            writer.write("image_path,x1,y1,x2,y2,class_id,confidence,z,t");
             writer.newLine();
             for (Map.Entry<String, List<Detection>> entry : detectionsByImagePath.entrySet()) {
                 List<Detection> detections = entry.getValue();
                 if (detections == null || detections.isEmpty()) {
                     writer.write(csv(entry.getKey()));
-                    writer.write(",,,,,,");
+                    writer.write(",,,,,,,,");
                     writer.newLine();
                     continue;
                 }
@@ -92,6 +92,10 @@ public final class YoloDetectionCsvWriter {
                     writer.write(Integer.toString(detection.getClassId()));
                     writer.write(',');
                     writer.write(number(detection.getConfidence()));
+                    writer.write(',');
+                    writer.write(Integer.toString(detection.getZIndex()));
+                    writer.write(',');
+                    writer.write(Integer.toString(detection.getTimeIndex()));
                     writer.newLine();
                 }
             }

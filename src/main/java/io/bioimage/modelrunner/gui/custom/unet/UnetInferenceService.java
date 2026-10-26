@@ -29,6 +29,7 @@ import org.apposed.appose.BuildException;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.gui.custom.InferenceStack;
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
 import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.special.unet.Unet;
@@ -49,6 +50,8 @@ public class UnetInferenceService implements DenseSegmentationInferenceService {
     private String loadedDevice;
     private Unet model;
     private Rectangle2D.Double objectReference;
+    private Consumer<InferenceProgress> progressConsumer;
+    private volatile boolean cancelled;
 
     /**
      * Creates a new UnetInferenceService instance.
@@ -141,6 +144,7 @@ public class UnetInferenceService implements DenseSegmentationInferenceService {
      * Cancels current inference.
      */
     public void cancelCurrentInference() {
+        cancelled = true;
         if (model != null) {
             model.cancelCurrentInference();
         }
@@ -149,6 +153,8 @@ public class UnetInferenceService implements DenseSegmentationInferenceService {
     private void ensureLoaded(String modelPath, String device, Consumer<String> logConsumer,
             Consumer<InferenceProgress> progressConsumer)
             throws BuildException, IOException, LoadModelException, ExecutionException, InterruptedException {
+        cancelled = false;
+        this.progressConsumer = progressConsumer;
         if (loadedModelPath != null && (!loadedModelPath.equals(modelPath) || !device.equals(loadedDevice))) {
             close();
         }
@@ -164,6 +170,13 @@ public class UnetInferenceService implements DenseSegmentationInferenceService {
 
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> runLoadedModel(RandomAccessibleInterval<T> rai) throws RunModelException {
+        InferenceStack<T> stack = new InferenceStack<>(rai, model.isVolumeModel());
+        model.setInferenceProgressConsumer(stack.progress(progressConsumer));
+        return stack.run(this::runSingleInput, () -> cancelled);
+    }
+
+    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    List<Tensor<R>> runSingleInput(RandomAccessibleInterval<T> rai) throws RunModelException {
         if (model.isVolumeModel()) {
             RandomAccessibleInterval<T> input = volumeInput(rai);
             String axes = input.numDimensions() == 3 ? "xyz" : "xycz";

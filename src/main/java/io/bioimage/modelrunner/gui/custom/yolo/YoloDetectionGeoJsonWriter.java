@@ -112,6 +112,10 @@ public final class YoloDetectionGeoJsonWriter {
         writer.write(Integer.toString(detection.getClassId()));
         writer.write(",\"confidence\":");
         writer.write(number(detection.getConfidence()));
+        writer.write(",\"z\":");
+        writer.write(Integer.toString(detection.getZIndex()));
+        writer.write(",\"t\":");
+        writer.write(Integer.toString(detection.getTimeIndex()));
         writer.write("},\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[");
         writeCoordinate(writer, detection.getX1(), detection.getY1());
         writer.write("],[");

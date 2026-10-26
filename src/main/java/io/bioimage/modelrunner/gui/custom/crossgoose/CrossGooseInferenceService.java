@@ -21,6 +21,7 @@ import org.apposed.appose.BuildException;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.gui.custom.InferenceStack;
 import io.bioimage.modelrunner.gui.custom.unet.DenseSegmentationInferenceService;
 import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.special.crossgoose.CrossGoose;
@@ -39,6 +40,8 @@ public final class CrossGooseInferenceService implements DenseSegmentationInfere
     private String loadedPath;
     private String loadedDevice;
     private Rectangle2D.Double objectReference;
+    private Consumer<InferenceProgress> progressConsumer;
+    private volatile boolean cancelled;
 
     public CrossGooseInferenceService(CrossGooseInstaller installer) {
         this.installer = installer;
@@ -73,6 +76,7 @@ public final class CrossGooseInferenceService implements DenseSegmentationInfere
     }
 
     @Override public void cancelCurrentInference() {
+        cancelled = true;
         if (model != null) model.cancelCurrentInference();
     }
 
@@ -86,6 +90,8 @@ public final class CrossGooseInferenceService implements DenseSegmentationInfere
     private void ensureLoaded(String path, String device, Consumer<String> logConsumer,
             Consumer<InferenceProgress> progressConsumer)
             throws IOException, ExecutionException, InterruptedException, BuildException, LoadModelException {
+        cancelled = false;
+        this.progressConsumer = progressConsumer;
         if (loadedPath != null && (!loadedPath.equals(path) || !device.equals(loadedDevice))) close();
         if (model == null || !model.isLoaded()) {
             installer.installIfNeeded(path, logConsumer);
@@ -99,6 +105,13 @@ public final class CrossGooseInferenceService implements DenseSegmentationInfere
 
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> infer(RandomAccessibleInterval<T> input) throws RunModelException {
+        InferenceStack<T> stack = new InferenceStack<>(input, false);
+        model.setInferenceProgressConsumer(stack.progress(progressConsumer));
+        return stack.run(this::runSingleInput, () -> cancelled);
+    }
+
+    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    List<Tensor<R>> runSingleInput(RandomAccessibleInterval<T> input) throws RunModelException {
         RandomAccessibleInterval<T> prepared = addDimensions(input);
         return model.inference(Tensor.build("input", "xycb", prepared));
     }

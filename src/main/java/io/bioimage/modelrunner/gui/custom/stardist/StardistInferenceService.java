@@ -30,6 +30,7 @@ import org.apposed.appose.BuildException;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.gui.custom.InferenceStack;
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
 import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.special.stardist.StarDist;
@@ -50,6 +51,8 @@ public class StardistInferenceService {
     private StarDist model;
     private Rectangle size = null;
     private Double threshold = null;
+    private Consumer<InferenceProgress> progressConsumer;
+    private volatile boolean cancelled;
 
     /**
      * Creates a new StardistInferenceService instance.
@@ -206,6 +209,7 @@ public class StardistInferenceService {
      * Performs cancel current inference.
      */
     public void cancelCurrentInference() {
+        cancelled = true;
         if (model != null) {
             model.cancelCurrentInference();
         }
@@ -220,6 +224,8 @@ public class StardistInferenceService {
     private void ensureLoaded(String modelPath, String device, Consumer<String> logConsumer,
             Consumer<InferenceProgress> progressConsumer)
             throws BuildException, IOException, LoadModelException, ExecutionException, InterruptedException {
+        cancelled = false;
+        this.progressConsumer = progressConsumer;
         if (loadedModelPath != null && (!loadedModelPath.equals(modelPath) || !device.equals(loadedDevice))) {
             close();
         }
@@ -297,6 +303,13 @@ public class StardistInferenceService {
 
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> runLoadedModel(RandomAccessibleInterval<T> rai) throws RunModelException {
+        InferenceStack<T> stack = new InferenceStack<>(rai, model.is3D());
+        model.setInferenceProgressConsumer(stack.progress(progressConsumer));
+        return stack.run(this::runSingleInput, () -> cancelled);
+    }
+
+    private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
+    List<Tensor<R>> runSingleInput(RandomAccessibleInterval<T> rai) throws RunModelException {
         Tensor<T> input = model.is3D()
                 ? prepareVolumeInput(rai, model.getNChannels())
                 : preparePlanarInput(rai, model.getNChannels());

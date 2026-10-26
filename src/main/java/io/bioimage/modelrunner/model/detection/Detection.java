@@ -43,6 +43,8 @@ public final class Detection {
     private final double confidence;
     private final int classId;
     private String classString;
+    private int zIndex = -1;
+    private int timeIndex = -1;
     
 
     /**
@@ -89,6 +91,18 @@ public final class Detection {
      */
     public int getBatchIndex() {
         return batchIndex;
+    }
+
+    /** Zero-based source Z/time positions, or -1 for legacy unpositioned detections. */
+    public int getZIndex() { return zIndex; }
+    public int getTimeIndex() { return timeIndex; }
+
+    public Detection withPosition(int z, int time, int batch) {
+        Detection result = new Detection(parentName, batch, x1, y1, x2, y2, confidence, classId);
+        result.classString = classString;
+        result.zIndex = z;
+        result.timeIndex = time;
+        return result;
     }
 
     /**
