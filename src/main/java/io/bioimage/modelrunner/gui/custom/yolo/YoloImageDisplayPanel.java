@@ -177,6 +177,7 @@ public class YoloImageDisplayPanel extends JPanel {
                     panStartY = panY;
                     return;
                 }
+                boxes.clear();
                 dragStartScreen = e.getPoint();
                 activeBox = toImageRectangle(dragStartScreen, dragStartScreen);
                 repaint();
