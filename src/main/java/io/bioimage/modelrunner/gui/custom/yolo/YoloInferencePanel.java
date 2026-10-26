@@ -115,6 +115,7 @@ public class YoloInferencePanel extends JPanel {
         this.thresholdControls = thresholdControls;
         this.optionsPanel = optionsPanel;
         this.optionsRowUnits = Math.max(0.0, optionsRowUnits);
+        imageDisplayPanel.setTitleBackground(true);
         YoloUiUtils.alignLabel(drawLabel);
         YoloUiUtils.alignLabel(thresholdLabel);
         YoloUiUtils.styleToggleButton(drawButton, false);
