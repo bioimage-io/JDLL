@@ -19,7 +19,14 @@
  */
 package io.bioimage.modelrunner.gui.custom.yolo;
 
+import java.awt.AWTEvent;
+import java.awt.Component;
+import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.event.AWTEventListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +37,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -62,6 +70,8 @@ public class YoloImageSourcePanel extends JPanel {
     private final FileDropHandler systemPathDropHandler;
     private boolean systemPathSelectionConfirmed;
     private boolean interactionEnabled = true;
+    private boolean editingSystemPath;
+    private final AWTEventListener outsidePathClick = this::commitPathOnOutsideClick;
 
     /**
      * Creates a new YoloImageSourcePanel instance.
@@ -102,6 +112,14 @@ public class YoloImageSourcePanel extends JPanel {
 
         openImagesRadio.addActionListener(e -> updateEnabledState());
         systemImagesRadio.addActionListener(e -> updateEnabledState());
+        systemPathField.addFocusListener(new FocusAdapter() {
+            @Override public void focusGained(FocusEvent event) { editingSystemPath = true; }
+            @Override public void focusLost(FocusEvent event) {
+                boolean submit = editingSystemPath;
+                editingSystemPath = false;
+                if (submit && interactionEnabled && systemImagesRadio.isSelected()) systemPathField.postActionEvent();
+            }
+        });
         systemPathField.getDocument().addDocumentListener(new DocumentListener() {
             /**
              * Performs insert update.
@@ -134,6 +152,26 @@ public class YoloImageSourcePanel extends JPanel {
             }
         });
         updateEnabledState();
+    }
+
+    @Override public void addNotify() {
+        super.addNotify();
+        Toolkit.getDefaultToolkit().addAWTEventListener(outsidePathClick, AWTEvent.MOUSE_EVENT_MASK);
+    }
+
+    @Override public void removeNotify() {
+        Toolkit.getDefaultToolkit().removeAWTEventListener(outsidePathClick);
+        editingSystemPath = false;
+        super.removeNotify();
+    }
+
+    private void commitPathOnOutsideClick(AWTEvent event) {
+        if (!editingSystemPath || !interactionEnabled || !systemImagesRadio.isSelected()
+                || !(event instanceof MouseEvent) || event.getID() != MouseEvent.MOUSE_PRESSED
+                || !(event.getSource() instanceof Component)) return;
+        Component target = (Component) event.getSource();
+        if (target != systemPathField && !SwingUtilities.isDescendingFrom(target, systemPathField))
+            systemPathField.postActionEvent();
     }
 
     private void invalidateSystemPathSelection() {
@@ -240,10 +278,9 @@ public class YoloImageSourcePanel extends JPanel {
         focusButton.setEnabled(interactionEnabled && openSelected && hasOpenImage);
         openImagesHelpIcon.setEnabled(interactionEnabled && openSelected);
 
-        boolean systemSelected = systemImagesRadio.isSelected();
-        systemPathField.setEnabled(interactionEnabled && systemSelected);
-        browseButton.setEnabled(interactionEnabled && systemSelected);
-        systemPathHelpIcon.setEnabled(interactionEnabled && systemSelected);
+        systemPathField.setEnabled(interactionEnabled);
+        browseButton.setEnabled(interactionEnabled);
+        systemPathHelpIcon.setEnabled(interactionEnabled);
     }
 
     /**
@@ -359,7 +396,11 @@ public class YoloImageSourcePanel extends JPanel {
      * @param dropConsumer the drop consumer callback.
      */
     public void setSystemPathDropConsumer(Consumer<File> dropConsumer) {
-        systemPathDropHandler.setDropConsumer(dropConsumer);
+        systemPathDropHandler.setDropConsumer(file -> {
+            systemImagesRadio.setSelected(true);
+            updateEnabledState();
+            if (dropConsumer != null) dropConsumer.accept(file);
+        });
     }
 
     /**
@@ -399,7 +440,7 @@ public class YoloImageSourcePanel extends JPanel {
          */
         @Override
         public boolean canImport(TransferSupport support) {
-            return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
+            return field.isEnabled() && support.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
         }
 
         /**
@@ -410,6 +451,7 @@ public class YoloImageSourcePanel extends JPanel {
          */
         @Override
         public boolean importData(TransferSupport support) {
+            if (!canImport(support)) return false;
             try {
                 @SuppressWarnings("unchecked")
                 List<File> files = (List<File>) support.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);

@@ -869,7 +869,7 @@ public class YoloImageDisplayPanel extends JPanel {
     }
 
     private void cancelPrefetch() {
-        if (prefetchWorker != null) prefetchWorker.cancel(true);
+        if (prefetchWorker != null) prefetchWorker.cancel(false);
         prefetchWorker = null;
     }
 
@@ -1256,7 +1256,9 @@ public class YoloImageDisplayPanel extends JPanel {
         cancelPrefetch();
         renderVersion++;
         if (renderWorker != null && !renderWorker.isDone()) {
-            renderWorker.cancel(true);
+            // Interrupting a shared decoder can close its file channel permanently.
+            // Discard stale work between bounded tiles instead of interrupting a read.
+            renderWorker.cancel(false);
         }
         renderWorker = null;
     }
@@ -1264,7 +1266,7 @@ public class YoloImageDisplayPanel extends JPanel {
     private void cancelOverviewWorker() {
         overviewVersion++;
         if (overviewWorker != null && !overviewWorker.isDone()) {
-            overviewWorker.cancel(true);
+            overviewWorker.cancel(false);
         }
         overviewWorker = null;
     }

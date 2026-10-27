@@ -23,8 +23,6 @@ import java.awt.Color;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -286,20 +284,9 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
 
     private void installInferenceSourceListeners() {
         YoloImageSourcePanel sourcePanel = inferencePanel.getImageSourcePanel();
-        sourcePanel.getSystemImagesRadio().addActionListener(e -> showSystemPathPrompt());
+        sourcePanel.getSystemImagesRadio().addActionListener(e -> updateSystemPathPreviewFromField());
         sourcePanel.getOpenImagesRadio().addActionListener(e -> showOpenImageSource());
         sourcePanel.getSystemPathField().addActionListener(e -> updateSystemPathPreviewFromField());
-        sourcePanel.getSystemPathField().addFocusListener(new FocusAdapter() {
-            /**
-             * Performs focus lost.
-             *
-             * @param e the e.
-             */
-            @Override
-            public void focusLost(FocusEvent e) {
-                updateSystemPathPreviewFromField();
-            }
-        });
         sourcePanel.setSystemPathDropConsumer(file -> updateSystemPathPreview(file));
         sourcePanel.getBrowseButton().addActionListener(e -> browseSystemImagePath());
     }
@@ -467,6 +454,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     }
 
     private void showOpenImageSource() {
+        inferencePanel.getImageSourcePanel().updateEnabledState();
         selectedSystemPath = null;
         selectedSystemImageFile = null;
         inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(false);
@@ -506,6 +494,13 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     }
 
     private void updateSystemPathPreview(File path) {
+        if (inferenceRunning || !inferencePanel.getImageSourcePanel().getSystemImagesRadio().isSelected()) return;
+        if (path != null && path.equals(selectedSystemPath)
+                && inferencePanel.getImageDisplayPanel().getPreviewFile() != null) {
+            inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(true);
+            inferencePanel.updateImageActionState();
+            return;
+        }
         selectedSystemPath = null;
         selectedSystemImageFile = null;
         inferencePanel.getImageSourcePanel().setSystemPathSelectionConfirmed(false);

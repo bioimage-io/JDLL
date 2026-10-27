@@ -13,6 +13,7 @@ package io.bioimage.modelrunner.gui.custom;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.function.BooleanSupplier;
 
 /** Host-owned, background-only reader for series zero. Coordinates are native image pixels. */
 public interface PreviewReader extends AutoCloseable {
@@ -37,8 +38,14 @@ public interface PreviewReader extends AutoCloseable {
     /**
      * Reads only this region at Z/T; level L means a 2^L downsample. Return display RGB pixels.
      * Readers should use native pyramid levels where available and keep temporary decoding bounded.
+     * Stale requests are cancelled between tiles, without interrupting an active shared read.
      */
     BufferedImage read(int z, int t, int level, Rectangle region) throws IOException;
+
+    /** Allows cooperative cancellation inside a bounded region read; null means cancelled. */
+    default BufferedImage read(int z, int t, int level, Rectangle region, BooleanSupplier cancelled) throws IOException {
+        return cancelled.getAsBoolean() ? null : read(z, t, level, region);
+    }
 
     @Override void close() throws IOException;
 }

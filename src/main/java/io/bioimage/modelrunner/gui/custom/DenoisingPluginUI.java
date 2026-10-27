@@ -13,8 +13,6 @@ package io.bioimage.modelrunner.gui.custom;
 
 import java.awt.Color;
 import java.awt.Window;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -114,9 +112,6 @@ public final class DenoisingPluginUI extends DenoisingGUI {
         source.getBrowseButton().addActionListener(e -> browse());
         source.setSystemPathDropConsumer(this::selectSystemPath);
         source.getSystemPathField().addActionListener(e -> selectSystemPathFromField());
-        source.getSystemPathField().addFocusListener(new FocusAdapter() {
-            @Override public void focusLost(FocusEvent e) { selectSystemPathFromField(); }
-        });
         source.getSystemImagesRadio().addActionListener(e -> {
             invalidateCache();
             getComparisonPanel().getOriginalPanel().clearImage();

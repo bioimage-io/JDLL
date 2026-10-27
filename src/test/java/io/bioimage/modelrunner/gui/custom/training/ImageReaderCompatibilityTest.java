@@ -51,6 +51,8 @@ import io.bioimage.modelrunner.gui.custom.StarDistPluginUI;
 import io.bioimage.modelrunner.gui.custom.UNetPluginUI;
 import io.bioimage.modelrunner.gui.custom.YOLOPluginUI;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageDisplayPanel;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloInferencePanel;
+import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSourcePanel;
 import io.bioimage.modelrunner.model.detection.Detection;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
@@ -60,6 +62,224 @@ import net.imglib2.type.numeric.RealType;
 /** Test the actual disk-entry readers without constructing a GUI or loading a model. */
 public class ImageReaderCompatibilityTest {
     @Rule public TemporaryFolder folder = new TemporaryFolder();
+
+    @Test
+    public void outsideClicksCommitThroughTheInstalledListenerAndDetachWithThePanel() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            YoloImageSourcePanel source = new YoloImageSourcePanel();
+            java.util.concurrent.atomic.AtomicInteger commits = new java.util.concurrent.atomic.AtomicInteger();
+            source.getSystemImagesRadio().setSelected(true);
+            source.getSystemPathField().addActionListener(event -> commits.incrementAndGet());
+            javax.swing.JPanel background = new javax.swing.JPanel();
+            background.setFocusable(false);
+            source.addNotify();
+            try {
+                java.awt.event.FocusEvent gained = new java.awt.event.FocusEvent(
+                        source.getSystemPathField(), java.awt.event.FocusEvent.FOCUS_GAINED);
+                for (java.awt.event.FocusListener listener : source.getSystemPathField().getFocusListeners())
+                    listener.focusGained(gained);
+                background.dispatchEvent(new java.awt.event.MouseEvent(background, java.awt.event.MouseEvent.MOUSE_PRESSED,
+                        System.currentTimeMillis(), 0, 2, 2, 1, false, java.awt.event.MouseEvent.BUTTON1));
+                assertEquals(1, commits.get());
+            } finally { source.removeNotify(); }
+            // A removed window must no longer observe clicks elsewhere in Icy.
+            java.awt.event.FocusEvent gained = new java.awt.event.FocusEvent(
+                    source.getSystemPathField(), java.awt.event.FocusEvent.FOCUS_GAINED);
+            for (java.awt.event.FocusListener listener : source.getSystemPathField().getFocusListeners())
+                listener.focusGained(gained);
+            background.dispatchEvent(new java.awt.event.MouseEvent(background, java.awt.event.MouseEvent.MOUSE_PRESSED,
+                    System.currentTimeMillis(), 0, 2, 2, 1, false, java.awt.event.MouseEvent.BUTTON1));
+            assertEquals(1, commits.get());
+        });
+    }
+
+    @Test
+    public void rapidSliceChangesDoNotInterruptOrPoisonTheSharedDiskReader() throws Exception {
+        File file = folder.newFile("many-slices.tif");
+        java.util.concurrent.atomic.AtomicBoolean poisoned = new java.util.concurrent.atomic.AtomicBoolean();
+        java.util.concurrent.atomic.AtomicReference<CountDownLatch[]> gate = new java.util.concurrent.atomic.AtomicReference<>();
+        ImageConsumer host = new ImageConsumer();
+        host.readerFactory = ignored -> new PreviewReader() {
+            public Info info() { return new Info(32, 32, 1, 80, 1); }
+            public BufferedImage read(int z, int t, int level, java.awt.Rectangle region) throws IOException {
+                if (poisoned.get()) throw new IOException("Shared decoder was invalidated by interruption");
+                CountDownLatch[] blocked = gate.getAndSet(null);
+                if (blocked != null) {
+                    blocked[0].countDown();
+                    try { assertTrue(blocked[1].await(5, TimeUnit.SECONDS)); }
+                    catch (InterruptedException error) {
+                        poisoned.set(true);
+                        Thread.currentThread().interrupt();
+                        throw new IOException("Decoder channel closed by interruption", error);
+                    }
+                }
+                BufferedImage image = new BufferedImage(region.width, region.height, BufferedImage.TYPE_INT_RGB);
+                java.awt.Graphics2D graphics = image.createGraphics();
+                graphics.setColor(new java.awt.Color(z + 1));
+                graphics.fillRect(0, 0, image.getWidth(), image.getHeight());
+                graphics.dispose();
+                return image;
+            }
+            public void close() {}
+        };
+        YoloImageDisplayPanel panel = new YoloImageDisplayPanel();
+        SwingUtilities.invokeAndWait(() -> {
+            try { panel.setImageFile(file, "stack", false, host); }
+            catch (IOException error) { throw new AssertionError(error); }
+        });
+        CountDownLatch[] blocked = null;
+        try {
+            awaitPreview(panel, 200);
+            JScrollBar z = (JScrollBar) previewField(panel, "zScrollBar");
+            for (int pass = 0; pass < 2; pass++) {
+                blocked = new CountDownLatch[] {new CountDownLatch(1), new CountDownLatch(1)};
+                gate.set(blocked);
+                int start = 20 + pass * 20, last = 70 + pass;
+                SwingUtilities.invokeAndWait(() -> z.setValue(start));
+                assertTrue("A disk read must be active before scrolling", blocked[0].await(3, TimeUnit.SECONDS));
+                SwingUtilities.invokeAndWait(() -> {
+                    z.setValueIsAdjusting(true);
+                    for (int i = start; i < last; i++) z.setValue(i);
+                    z.setValueIsAdjusting(false);
+                    // Arrow auto-repeat does not set valueIsAdjusting.
+                    for (int i = 0; i < 20; i++) z.setValue(i + start);
+                    z.setValue(last);
+                });
+                blocked[1].countDown();
+                awaitPreview(panel, 200);
+                assertFalse("Cancelling stale previews must not interrupt shared decoding", poisoned.get());
+                assertNull(previewField(panel, "renderError"));
+                assertEquals(last, panel.getPreviewZ());
+                BufferedImage image = (BufferedImage) previewField(panel, "renderedViewport");
+                assertEquals(last + 1, image.getRGB(0, 0) & 0xffffff);
+            }
+        } finally {
+            if (blocked != null) blocked[1].countDown();
+            SwingUtilities.invokeAndWait(panel::clearImage);
+        }
+    }
+
+    @Test
+    public void sourceSelectionAndFocusLossPreserveNavigatedSystemPreviewAcrossAllWorkflows() throws Exception {
+        File directory = folder.newFolder("source");
+        File first = new File(directory, "a.png"), second = new File(directory, "b.png");
+        ImageIO.write(new BufferedImage(2, 2, BufferedImage.TYPE_BYTE_GRAY), "png", first);
+        ImageIO.write(new BufferedImage(2, 2, BufferedImage.TYPE_BYTE_GRAY), "png", second);
+        List<Function<ImageConsumer, Object>> factories = Arrays.asList(
+                c -> new YOLOPluginUI(c, null), c -> new StarDistPluginUI(c, null),
+                c -> new UNetPluginUI(c, null), c -> new CrossGoosePluginUI(c, null),
+                c -> new CellposePluginUI(c, null));
+        for (Function<ImageConsumer, Object> factory : factories) {
+            ImageConsumer host = new ImageConsumer() {
+                @Override public void setComponents(List<JComponent> components) { componentsGui = components; }
+                @Override public void updateGUI() {
+                    if (componentsGui.get(1).isEnabled())
+                        ((YoloImageDisplayPanel) componentsGui.get(3)).setBufferedImage(
+                                new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB), "Host image", false);
+                }
+            };
+            host.image = ArrayImgs.unsignedBytes(2, 2, 3, 1, 1);
+            host.readerFactory = file -> new RecordingPreviewReader();
+            Object[] ui = new Object[1];
+            SwingUtilities.invokeAndWait(() -> ui[0] = factory.apply(host));
+            YoloInferencePanel inference = (YoloInferencePanel) ui[0].getClass().getMethod("getInferencePanel").invoke(ui[0]);
+            YoloImageSourcePanel source = inference.getImageSourcePanel();
+            YoloImageDisplayPanel preview = inference.getImageDisplayPanel();
+            try {
+                long hostVersion = (Long) previewField(preview, "sourceVersion");
+                SwingUtilities.invokeAndWait(() -> {
+                    source.getSystemPathField().setText(directory.getAbsolutePath());
+                    losePathFocus(source);
+                });
+                assertEquals("Typing an inactive path must not replace the host preview", hostVersion,
+                        previewField(preview, "sourceVersion"));
+                SwingUtilities.invokeAndWait(() -> {
+                    java.awt.datatransfer.Transferable transfer = new java.awt.datatransfer.Transferable() {
+                        public java.awt.datatransfer.DataFlavor[] getTransferDataFlavors() {
+                            return new java.awt.datatransfer.DataFlavor[] {java.awt.datatransfer.DataFlavor.javaFileListFlavor};
+                        }
+                        public boolean isDataFlavorSupported(java.awt.datatransfer.DataFlavor flavor) {
+                            return java.awt.datatransfer.DataFlavor.javaFileListFlavor.equals(flavor);
+                        }
+                        public Object getTransferData(java.awt.datatransfer.DataFlavor flavor) {
+                            return java.util.Collections.singletonList(directory);
+                        }
+                    };
+                    assertTrue(source.getSystemPathField().getTransferHandler().importData(
+                            new javax.swing.TransferHandler.TransferSupport(source.getSystemPathField(), transfer)));
+                    assertTrue(source.getSystemImagesRadio().isSelected());
+                });
+                awaitPreview(preview, 200);
+                JButton previous = (JButton) previewField(preview, "previousFileButton");
+                JButton next = (JButton) previewField(preview, "nextFileButton");
+                SwingUtilities.invokeAndWait(() -> { if (next.isEnabled()) next.doClick(); else previous.doClick(); });
+                awaitPreview(preview, 200);
+                JScrollBar z = (JScrollBar) previewField(preview, "zScrollBar");
+                JScrollBar time = (JScrollBar) previewField(preview, "timeScrollBar");
+                SwingUtilities.invokeAndWait(() -> { z.setValue(3); time.setValue(2); });
+                awaitPreview(preview, 200);
+                File navigated = preview.getPreviewFile();
+                long version = (Long) previewField(preview, "sourceVersion");
+                SwingUtilities.invokeAndWait(() -> {
+                    losePathFocus(source);
+                    source.getSystemPathField().postActionEvent();
+                    source.getSystemImagesRadio().doClick();
+                });
+                assertEquals(version, previewField(preview, "sourceVersion"));
+                assertEquals(navigated, preview.getPreviewFile());
+                assertEquals(3, preview.getPreviewZ());
+                assertEquals(2, preview.getPreviewTime());
+                SwingUtilities.invokeAndWait(source.getOpenImagesRadio()::doClick);
+                assertNull(preview.getPreviewFile());
+                SwingUtilities.invokeAndWait(() -> {
+                    source.getSystemImagesRadio().doClick();
+                    source.getSystemPathField().setText(first.getAbsolutePath());
+                    losePathFocus(source);
+                });
+                awaitPreview(preview, 200);
+                assertEquals("A changed path is accepted without Enter", first, preview.getPreviewFile());
+                SwingUtilities.invokeAndWait(() -> {
+                    source.getSystemPathField().setText(second.getAbsolutePath());
+                    java.awt.event.FocusEvent gained = new java.awt.event.FocusEvent(
+                            source.getSystemPathField(), java.awt.event.FocusEvent.FOCUS_GAINED);
+                    for (java.awt.event.FocusListener listener : source.getSystemPathField().getFocusListeners())
+                        listener.focusGained(gained);
+                    clickOutsidePath(source, source.getSystemPathField());
+                });
+                assertEquals("Clicking inside the editor must not commit it", first, preview.getPreviewFile());
+                SwingUtilities.invokeAndWait(() -> {
+                    javax.swing.JPanel background = new javax.swing.JPanel();
+                    background.setFocusable(false);
+                    clickOutsidePath(source, background);
+                });
+                awaitPreview(preview, 200);
+                assertEquals("Clicking a non-focusable background must commit the path", second, preview.getPreviewFile());
+            } finally {
+                SwingUtilities.invokeAndWait(() -> {
+                    try { ui[0].getClass().getMethod("close").invoke(ui[0]); }
+                    catch (Exception error) { throw new AssertionError(error); }
+                });
+            }
+        }
+    }
+
+    private static void losePathFocus(YoloImageSourcePanel source) {
+        java.awt.event.FocusEvent gained = new java.awt.event.FocusEvent(
+                source.getSystemPathField(), java.awt.event.FocusEvent.FOCUS_GAINED);
+        for (java.awt.event.FocusListener listener : source.getSystemPathField().getFocusListeners()) listener.focusGained(gained);
+        java.awt.event.FocusEvent event = new java.awt.event.FocusEvent(
+                source.getSystemPathField(), java.awt.event.FocusEvent.FOCUS_LOST);
+        for (java.awt.event.FocusListener listener : source.getSystemPathField().getFocusListeners()) listener.focusLost(event);
+    }
+
+    private static void clickOutsidePath(YoloImageSourcePanel source, java.awt.Component target) {
+        try {
+            Method commit = YoloImageSourcePanel.class.getDeclaredMethod("commitPathOnOutsideClick", java.awt.AWTEvent.class);
+            commit.setAccessible(true);
+            commit.invoke(source, new java.awt.event.MouseEvent(target, java.awt.event.MouseEvent.MOUSE_PRESSED,
+                    System.currentTimeMillis(), 0, 2, 2, 1, false, java.awt.event.MouseEvent.BUTTON1));
+        } catch (Exception error) { throw new AssertionError(error); }
+    }
 
     @Test
     public void diskPreviewNavigatesZTimeAndExactInferenceFileOrderOffTheEdt() throws Exception {

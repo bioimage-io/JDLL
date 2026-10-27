@@ -25,8 +25,6 @@ import java.awt.Window;
 import java.awt.color.ColorSpace;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
@@ -384,15 +382,9 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 
     private void installInferenceSourceListeners() {
         YoloImageSourcePanel source = getInferencePanel().getImageSourcePanel();
-        source.getSystemImagesRadio().addActionListener(e -> showSystemPathPrompt());
+        source.getSystemImagesRadio().addActionListener(e -> updateSystemPathPreviewFromField());
         source.getOpenImagesRadio().addActionListener(e -> showOpenImageSource());
         source.getSystemPathField().addActionListener(e -> updateSystemPathPreviewFromField());
-        source.getSystemPathField().addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusLost(FocusEvent event) {
-                updateSystemPathPreviewFromField();
-            }
-        });
         source.setSystemPathDropConsumer(this::updateSystemPathPreview);
         source.getBrowseButton().addActionListener(e -> browseSystemImagePath());
     }
@@ -408,6 +400,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     }
 
     private void showOpenImageSource() {
+        getInferencePanel().getImageSourcePanel().updateEnabledState();
         cancelChannelRead();
         selectedSystemPath = null;
         selectedSystemImageFile = null;
@@ -415,6 +408,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         getInferencePanel().getImageDisplayPanel().setEmptyMessage(DEFAULT_PREVIEW_MESSAGE);
         if (consumer != null) {
             consumer.updateGUI();
+        } else {
+            getInferencePanel().getImageDisplayPanel().clearImage();
         }
         getInferencePanel().updateImageActionState();
     }
@@ -436,13 +431,16 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
             return;
         }
         String path = getInferencePanel().getImageSourcePanel().getSystemPathField().getText();
-        updateSystemPathPreview(path == null || path.trim().isEmpty() ? null : new File(path.trim()));
+        if (path == null || path.trim().isEmpty()) showSystemPathPrompt();
+        else updateSystemPathPreview(new File(path.trim()));
     }
 
     private void updateSystemPathPreview(File path) {
-        if (inferenceRunning) return;
-        if (path != null && path.equals(selectedSystemPath)) {
+        if (inferenceRunning || !getInferencePanel().getImageSourcePanel().getSystemImagesRadio().isSelected()) return;
+        if (path != null && path.equals(selectedSystemPath)
+                && getInferencePanel().getImageDisplayPanel().getPreviewFile() != null) {
             getInferencePanel().getImageSourcePanel().setSystemPathSelectionConfirmed(channelWorker == null);
+            getInferencePanel().updateImageActionState();
             return;
         }
         cancelChannelRead();

@@ -96,7 +96,8 @@ final class PreviewTileCache implements AutoCloseable {
         int x = Math.toIntExact(key.x * TILE_SIZE * scale), y = Math.toIntExact(key.y * TILE_SIZE * scale);
         int w = (int) Math.min(TILE_SIZE * scale, info().width - (long) x);
         int h = (int) Math.min(TILE_SIZE * scale, info().height - (long) y);
-        BufferedImage decoded = reader.read(key.z, key.t, key.level, new Rectangle(x, y, w, h));
+        BufferedImage decoded = reader.read(key.z, key.t, key.level, new Rectangle(x, y, w, h), abort);
+        if (abort.getAsBoolean()) return null;
         if (decoded == null) throw new IOException("Preview reader returned no pixels.");
         int targetW = (int) ((w + scale - 1) / scale), targetH = (int) ((h + scale - 1) / scale);
         BufferedImage result = new BufferedImage(targetW, targetH, BufferedImage.TYPE_INT_RGB);
