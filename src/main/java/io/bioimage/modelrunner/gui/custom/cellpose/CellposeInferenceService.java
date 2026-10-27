@@ -19,10 +19,12 @@
  */
 package io.bioimage.modelrunner.gui.custom.cellpose;
 
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.special.cellpose.Cellpose;
@@ -48,6 +50,7 @@ public class CellposeInferenceService {
         private final String device;
         private final boolean intermediates;
         private final Float diameter;
+        private IntFunction<Rectangle2D.Double> sizeHints;
         private boolean diameterLogged;
 
         public Run(String modelSelection, int[] channels, Float diameter, String device, boolean intermediates) {
@@ -64,6 +67,18 @@ public class CellposeInferenceService {
         }
 
         public Float getDiameter() { return diameter; }
+
+        public Run withSizeHints(IntFunction<Rectangle2D.Double> hints) {
+            Run configured = new Run(modelSelection, channels, diameter, device, intermediates);
+            configured.sizeHints = hints;
+            return configured;
+        }
+
+        public Float diameterAt(int time) {
+            if (sizeHints == null) return diameter;
+            Rectangle2D.Double rectangle = sizeHints.apply(time);
+            return rectangle == null ? null : (float) Math.sqrt(rectangle.width * rectangle.height);
+        }
     }
 
     public CellposeInferenceService(CellposeInstaller installer) { this.installer = installer; }
@@ -123,11 +138,12 @@ public class CellposeInferenceService {
         String[] names = {"labels", "flows_0", "flows_1", "flows_2", "image_dn"};
         String[] axes = {"xy", "xyc", "cxy", "xy", "xyc"};
         for (long t = 0; t < frames; t++) {
+            Float diameter = run.diameterAt(Math.toIntExact(t));
             for (long z = 0; z < depth; z++) {
                 if (Thread.currentThread().isInterrupted()) throw new RunModelException("Cellpose inference cancelled.");
                 accept(log, "Running plane " + (t * depth + z + 1) + "/" + (depth * frames) + ".");
-                if (run.diameter == null) model.clearDiameter();
-                else model.setDiameter(run.diameter);
+                if (diameter == null) model.clearDiameter();
+                else model.setDiameter(diameter);
                 RandomAccessibleInterval<T> plane = Views.hyperSlice(Views.hyperSlice(input, 4, t), 3, z);
                 List<Tensor<FloatType>> outputs = model.inference(
                         Tensor.build("input", "xyc", CellposeChannels.pack(plane, run.channels)));

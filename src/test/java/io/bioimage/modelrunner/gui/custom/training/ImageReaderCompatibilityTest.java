@@ -64,6 +64,118 @@ public class ImageReaderCompatibilityTest {
     @Rule public TemporaryFolder folder = new TemporaryFolder();
 
     @Test
+    public void sharedAndIndividualSizeHintsFollowFilesAndTimeButNeverZ() throws Exception {
+        File first = folder.newFile("first.tif"), second = folder.newFile("second.tif");
+        ImageConsumer host = new ImageConsumer();
+        host.readerFactory = file -> new RecordingPreviewReader();
+        YoloImageDisplayPanel panel = new YoloImageDisplayPanel();
+        SwingUtilities.invokeAndWait(() -> {
+            panel.setSizeHintsEnabled(true);
+            try { panel.setImageFiles(Arrays.asList(first, second), first, host); }
+            catch (IOException error) { throw new AssertionError(error); }
+        });
+        try {
+            awaitPreview(panel, 400);
+            javax.swing.JCheckBox shared = (javax.swing.JCheckBox) previewField(panel, "sharedSizeCheckBox");
+            JScrollBar z = (JScrollBar) previewField(panel, "zScrollBar");
+            JScrollBar time = (JScrollBar) previewField(panel, "timeScrollBar");
+            drawReference(panel, 100, 100, 100, 80);
+            java.awt.geom.Rectangle2D.Double original = panel.getBoxes().get(0);
+            assertTrue(shared.isVisible());
+            assertTrue(shared.isSelected());
+            assertEquals(panel.getFont(), shared.getFont());
+            JButton fileArrow = (JButton) previewField(panel, "previousFileButton");
+            assertEquals(fileArrow.getX(), shared.getX());
+            assertTrue(shared.getY() >= fileArrow.getY() + fileArrow.getHeight());
+            SwingUtilities.invokeAndWait(() -> { z.setValue(3); time.setValue(1); });
+            awaitPreview(panel, 400);
+            assertEquals(original, panel.getBoxes().get(0));
+            SwingUtilities.invokeAndWait(shared::doClick);
+            drawReference(panel, 150, 120, 200, 160);
+            java.awt.geom.Rectangle2D.Double individualTime = panel.getBoxes().get(0);
+            SwingUtilities.invokeAndWait(() -> time.setValue(0));
+            awaitPreview(panel, 400);
+            assertTrue(shared.isSelected());
+            assertEquals(original, panel.getBoxes().get(0));
+            drawReference(panel, 100, 100, 140, 110);
+            java.awt.geom.Rectangle2D.Double updatedShared = panel.getBoxes().get(0);
+            SwingUtilities.invokeAndWait(() -> time.setValue(1));
+            awaitPreview(panel, 400);
+            assertFalse(shared.isSelected());
+            assertEquals(individualTime, panel.getBoxes().get(0));
+            JButton next = (JButton) previewField(panel, "nextFileButton");
+            JButton previous = (JButton) previewField(panel, "previousFileButton");
+            SwingUtilities.invokeAndWait(next::doClick);
+            awaitPreview(panel, 400);
+            assertTrue(shared.isSelected());
+            assertEquals(updatedShared, panel.getBoxes().get(0));
+            SwingUtilities.invokeAndWait(shared::doClick);
+            drawReference(panel, 100, 100, 60, 50);
+            java.awt.geom.Rectangle2D.Double individualFile = panel.getBoxes().get(0);
+            io.bioimage.modelrunner.gui.custom.SizeHints.Snapshot snapshot = panel.getSizeHints();
+            assertEquals(individualTime, snapshot.forImage(first).apply(1));
+            assertEquals(individualFile, snapshot.forImage(second).apply(0));
+            assertEquals(updatedShared, snapshot.forImage(second).apply(2));
+            SwingUtilities.invokeAndWait(previous::doClick);
+            awaitPreview(panel, 400);
+            assertEquals(updatedShared, panel.getBoxes().get(0));
+            SwingUtilities.invokeAndWait(() -> time.setValue(1));
+            awaitPreview(panel, 400);
+            assertEquals(individualTime, panel.getBoxes().get(0));
+            SwingUtilities.invokeAndWait(shared::doClick);
+            assertEquals(updatedShared, panel.getBoxes().get(0));
+            assertEquals(individualTime, snapshot.forImage(first).apply(1));
+            assertEquals(1, panel.getBoxes().size());
+        } finally { SwingUtilities.invokeAndWait(panel::clearImage); }
+    }
+
+    @Test
+    public void aSingleVolumeKeepsItsLatestRectangleOnEverySliceWithoutASharingCheckbox() throws Exception {
+        YoloImageDisplayPanel panel = new YoloImageDisplayPanel();
+        SwingUtilities.invokeAndWait(() -> {
+            panel.setSizeHintsEnabled(true);
+            panel.setImage(ArrayImgs.unsignedBytes(1024, 512, 1, 4, 1), "volume");
+        });
+        try {
+            awaitPreview(panel, 400);
+            drawReference(panel, 100, 100, 100, 80);
+            java.awt.geom.Rectangle2D.Double first = panel.getBoxes().get(0);
+            javax.swing.JCheckBox shared = (javax.swing.JCheckBox) previewField(panel, "sharedSizeCheckBox");
+            assertFalse(shared.isVisible());
+            JScrollBar z = (JScrollBar) previewField(panel, "zScrollBar");
+            SwingUtilities.invokeAndWait(() -> z.setValue(3));
+            awaitPreview(panel, 400);
+            assertEquals(first, panel.getBoxes().get(0));
+            drawReference(panel, 200, 120, 180, 100);
+            java.awt.geom.Rectangle2D.Double replacement = panel.getBoxes().get(0);
+            assertNotNull(replacement);
+            assertFalse(first.equals(replacement));
+            SwingUtilities.invokeAndWait(() -> z.setValue(0));
+            awaitPreview(panel, 400);
+            assertEquals(replacement, panel.getBoxes().get(0));
+            assertFalse(shared.isVisible());
+            assertEquals(1, panel.getBoxes().size());
+        } finally { SwingUtilities.invokeAndWait(panel::clearImage); }
+    }
+
+    private static void drawReference(YoloImageDisplayPanel panel, int x, int y, int width, int height) throws Exception {
+        java.awt.Rectangle image = (java.awt.Rectangle) previewField(panel, "currentImageRect");
+        int x1 = image.x + (int) Math.round(x * image.width / 1024.0);
+        int y1 = image.y + (int) Math.round(y * image.height / 512.0);
+        int x2 = image.x + (int) Math.round((x + width) * image.width / 1024.0);
+        int y2 = image.y + (int) Math.round((y + height) * image.height / 512.0);
+        SwingUtilities.invokeAndWait(() -> {
+            panel.setDrawEnabled(true);
+            for (int kind : new int[] {java.awt.event.MouseEvent.MOUSE_PRESSED,
+                    java.awt.event.MouseEvent.MOUSE_DRAGGED, java.awt.event.MouseEvent.MOUSE_RELEASED}) {
+                boolean start = kind == java.awt.event.MouseEvent.MOUSE_PRESSED;
+                panel.dispatchEvent(new java.awt.event.MouseEvent(panel, kind, System.currentTimeMillis(),
+                        0, start ? x1 : x2, start ? y1 : y2, 1, false, java.awt.event.MouseEvent.BUTTON1));
+            }
+        });
+    }
+
+    @Test
     public void outsideClicksCommitThroughTheInstalledListenerAndDetachWithThePanel() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             YoloImageSourcePanel source = new YoloImageSourcePanel();

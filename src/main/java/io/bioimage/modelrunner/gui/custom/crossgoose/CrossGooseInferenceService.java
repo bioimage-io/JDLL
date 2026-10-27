@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 
 import org.apposed.appose.BuildException;
 
@@ -40,6 +41,7 @@ public final class CrossGooseInferenceService implements DenseSegmentationInfere
     private String loadedPath;
     private String loadedDevice;
     private Rectangle2D.Double objectReference;
+    private IntFunction<Rectangle2D.Double> objectSizeByTime;
     private Consumer<InferenceProgress> progressConsumer;
     private volatile boolean cancelled;
 
@@ -71,8 +73,13 @@ public final class CrossGooseInferenceService implements DenseSegmentationInfere
     }
 
     @Override public void setObjectSize(List<Rectangle2D.Double> boxes) {
+        objectSizeByTime = null;
         objectReference = boxes == null || boxes.isEmpty() ? null : boxes.get(0);
         applyObjectSize();
+    }
+
+    @Override public void setObjectSizeByTime(IntFunction<Rectangle2D.Double> sizes) {
+        objectSizeByTime = sizes;
     }
 
     @Override public void cancelCurrentInference() {
@@ -107,7 +114,13 @@ public final class CrossGooseInferenceService implements DenseSegmentationInfere
     List<Tensor<R>> infer(RandomAccessibleInterval<T> input) throws RunModelException {
         InferenceStack<T> stack = new InferenceStack<>(input, false);
         model.setInferenceProgressConsumer(stack.progress(progressConsumer));
-        return stack.run(this::runSingleInput, () -> cancelled);
+        return stack.run(plane -> {
+            if (objectSizeByTime != null) {
+                objectReference = objectSizeByTime.apply(stack.currentTime());
+                applyObjectSize();
+            }
+            return runSingleInput(plane);
+        }, () -> cancelled);
     }
 
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>

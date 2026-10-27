@@ -58,6 +58,7 @@ public final class InferenceStack<T extends RealType<T> & NativeType<T>> {
 
     public int depth() { return Math.toIntExact(image.dimension(3)); }
     public int frames() { return Math.toIntExact(image.dimension(4)); }
+    public int currentTime() { return time(currentUnit); }
     public int size() { return Math.multiplyExact(volume ? 1 : depth(), frames()); }
     public int z(int unit) { return volume ? 0 : unit % depth(); }
     public int time(int unit) { return volume ? unit : unit / depth(); }

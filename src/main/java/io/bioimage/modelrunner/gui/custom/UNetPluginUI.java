@@ -104,6 +104,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     private boolean revertingTabSelection;
     private boolean windowCloseHookInstalled;
     private Thread workerThread;
+    private SizeHints.Snapshot inferenceSizeHints;
     private int lastLoggedEpochStart;
     private int lastLoggedTrainEpoch;
     private int lastLoggedValidationEpoch;
@@ -268,6 +269,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     }
 
     private void startInferenceUiState() {
+        inferenceSizeHints = inferencePanel.getImageDisplayPanel().getSizeHints();
         inferenceRunning = true;
         updateTabLocks();
     }
@@ -601,7 +603,6 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
             consumer.notifyParams(null);
         }
         String modelPath = this.inferencePanel.getModelSelectionPanel().getSelectedModelValue();
-        inferenceService.setObjectSize(inferencePanel.getImageDisplayPanel().getBoxes());
         if (this.inferencePanel.getImageSourcePanel().getSystemImagesRadio().isSelected()) {
             runUnetOnSystemImage(modelPath);
             return;
@@ -619,6 +620,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
             return;
         }
         RandomAccessibleInterval<T> rai = consumer.convertIntoRai(selected);
+        inferenceService.setObjectSizeByTime(inferenceSizeHints.forImage(null));
         Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
                 UNetPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
         startInferenceLogTimer();
@@ -661,6 +663,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                 final boolean[] emittedPatchProgress = new boolean[] {false};
                 try {
                     RandomAccessibleInterval<T> rai = readImageFileAsRai(imageFile);
+                    inferenceService.setObjectSizeByTime(inferenceSizeHints.forImage(imageFile));
                     List<Tensor<T>> outputs = inferenceService.runWithProgress(modelPath, rai, progress -> {
                         if (progress == null) {
                             return;

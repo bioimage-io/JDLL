@@ -20,11 +20,13 @@
 package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.Rectangle;
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 
 import org.apposed.appose.BuildException;
 
@@ -50,6 +52,7 @@ public class YoloInferenceService {
     private String loadedDevice;
     private Yolo model;
     private Rectangle size = null;
+    private IntFunction<Rectangle2D.Double> objectSizeByTime;
     private Consumer<InferenceProgress> progressConsumer;
     private volatile boolean cancelled;
 
@@ -314,6 +317,10 @@ public class YoloInferenceService {
         List<Detection> result = new ArrayList<>();
         for (int unit = 0; unit < stack.size(); unit++) {
             InferenceStack.checkCancelled(cancelled);
+            if (objectSizeByTime != null) {
+                Rectangle2D.Double reference = objectSizeByTime.apply(stack.time(unit));
+                model.setObjectSize(reference == null ? null : reference.getBounds());
+            }
             for (Detection detection : runSingleInput(stack.input(unit)))
                 result.add(detection.withPosition(stack.z(unit), stack.time(unit), unit));
             InferenceStack.checkCancelled(cancelled);
@@ -365,9 +372,14 @@ public class YoloInferenceService {
 	 * @param boxes the boxes.
 	 */
 	public void setObjectSize(List<Rectangle.Double> boxes) {
+		objectSizeByTime = null;
 		if (boxes != null && boxes.size() > 0)
 			size = boxes.get(0).getBounds();
 		else
 			size = null;
 	}
+
+    public void setObjectSizeByTime(IntFunction<Rectangle2D.Double> sizes) {
+        objectSizeByTime = sizes;
+    }
 }

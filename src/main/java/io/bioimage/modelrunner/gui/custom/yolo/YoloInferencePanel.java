@@ -116,6 +116,7 @@ public class YoloInferencePanel extends JPanel {
         this.optionsPanel = optionsPanel;
         this.optionsRowUnits = Math.max(0.0, optionsRowUnits);
         imageDisplayPanel.setTitleBackground(true);
+        imageDisplayPanel.setSizeHintsEnabled(true);
         YoloUiUtils.alignLabel(drawLabel);
         YoloUiUtils.alignLabel(thresholdLabel);
         YoloUiUtils.styleToggleButton(drawButton, false);
@@ -126,6 +127,7 @@ public class YoloInferencePanel extends JPanel {
         refreshButton.setMargin(new java.awt.Insets(1, 4, 1, 4));
         drawButton.addActionListener(e -> setDrawModeEnabled(!drawButton.isSelected()));
         refreshButton.addActionListener(e -> imageDisplayPanel.clearBoxes());
+        refreshButton.setToolTipText("Clear the shared size, or remove this image's exception and use the shared size.");
         imageSourcePanel.getOpenImagesComboBox().addActionListener(e -> updateImageActionState());
         imageSourcePanel.getOpenImagesRadio().addActionListener(e -> updateImageActionState());
         imageSourcePanel.getSystemImagesRadio().addActionListener(e -> updateImageActionState());

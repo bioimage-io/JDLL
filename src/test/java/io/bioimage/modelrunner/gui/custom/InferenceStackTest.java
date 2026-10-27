@@ -172,6 +172,11 @@ public class InferenceStackTest {
         java.lang.reflect.Field field = YoloInferenceService.class.getDeclaredField("model");
         field.setAccessible(true);
         field.set(service, model);
+        SizeHints hints = new SizeHints();
+        hints.set(null, 0, new java.awt.geom.Rectangle2D.Double(0, 0, 10, 10));
+        hints.useShared(null, 1, false);
+        hints.set(null, 1, new java.awt.geom.Rectangle2D.Double(0, 0, 20, 20));
+        service.setObjectSizeByTime(hints.snapshot().forImage(null));
         List<Detection> detections = service.runWithProgress("fake", source(), null, "cpu");
         assertEquals(6, detections.size());
         for (int unit = 0; unit < detections.size(); unit++) {
@@ -181,12 +186,16 @@ public class InferenceStackTest {
             assertEquals(unit, detection.getBatchIndex());
             assertEquals("nucleus", detection.getClassName());
             assertEquals(100 * (unit / 2) + 10 * (unit % 2), model.pixels.get(unit), 0);
+            assertEquals(unit / 2 == 1 ? 400 : 100, model.referenceAreas.get(unit), 0);
         }
     }
 
     private static final class FakeYolo extends Yolo {
         private final List<Float> pixels = new ArrayList<>();
+        private final List<Double> referenceAreas = new ArrayList<>();
+        private java.awt.Rectangle reference;
         FakeYolo(File weights) throws Exception { super(weights.getAbsolutePath(), "cpu"); loaded = true; }
+        @Override public void setObjectSize(java.awt.Rectangle reference) { this.reference = reference; }
         @Override public HashMap<String, String> getClassMappings() {
             HashMap<String, String> names = new HashMap<>();
             names.put("1", "nucleus");
@@ -202,6 +211,7 @@ public class InferenceStackTest {
         protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
         List<Tensor<R>> backboneSingleInferenceTile(List<Tensor<T>> inputs) {
             pixels.add(inputs.get(0).getData().randomAccess().get().getRealFloat());
+            referenceAreas.add(reference == null ? 0.0 : reference.getWidth() * reference.getHeight());
             return (List) Collections.singletonList(Tensor.build("detections", "bic",
                     ArrayImgs.floats(new float[] {0, 0, 2, 2, 0.9f, 1}, 1, 1, 6)));
         }

@@ -56,7 +56,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -114,6 +113,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     
     private Runnable cancelCallback;
     Thread workerThread;
+    private SizeHints.Snapshot inferenceSizeHints;
 
     /**
      * Creates a new CellposePluginUI.
@@ -275,6 +275,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     }
 
     private void startInferenceUiState() {
+        inferenceSizeHints = inferencePanel.getImageDisplayPanel().getSizeHints();
         inferenceRunning = true;
         updateTabLocks();
     }
@@ -527,8 +528,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     		return;
     	}
     	RandomAccessibleInterval<T> rai = this.consumer.convertIntoRai(objIm);
-        List<Rectangle2D.Double> boxes = inferencePanel.getImageDisplayPanel().getBoxes();
-        inferenceService.setObjectSize(boxes);
+        inferenceService.setObjectSizeByTime(inferenceSizeHints.forImage(null));
     	Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
     			StarDistPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
         startInferenceLogTimer();
@@ -556,8 +556,6 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
             });
             return;
         }
-        List<Rectangle2D.Double> boxes = inferencePanel.getImageDisplayPanel().getBoxes();
-        inferenceService.setObjectSize(boxes);
         Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
                 StarDistPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
         startInferenceLogTimer();
@@ -574,6 +572,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                 final boolean[] emittedPatchProgress = new boolean[] {false};
                 try {
                     RandomAccessibleInterval<T> rai = readImageFileAsRai(imageFile);
+                    inferenceService.setObjectSizeByTime(inferenceSizeHints.forImage(imageFile));
                     List<Tensor<T>> outputs = inferenceService.runWithProgress(modelPath, rai, progress -> {
                         if (progress == null) {
                             return;

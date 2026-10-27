@@ -20,11 +20,13 @@
 package io.bioimage.modelrunner.gui.custom.stardist;
 
 import java.awt.Rectangle;
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 
 import org.apposed.appose.BuildException;
 
@@ -50,6 +52,7 @@ public class StardistInferenceService {
     private String loadedDevice;
     private StarDist model;
     private Rectangle size = null;
+    private IntFunction<Rectangle2D.Double> objectSizeByTime;
     private Double threshold = null;
     private Consumer<InferenceProgress> progressConsumer;
     private volatile boolean cancelled;
@@ -305,7 +308,13 @@ public class StardistInferenceService {
     List<Tensor<R>> runLoadedModel(RandomAccessibleInterval<T> rai) throws RunModelException {
         InferenceStack<T> stack = new InferenceStack<>(rai, model.is3D());
         model.setInferenceProgressConsumer(stack.progress(progressConsumer));
-        return stack.run(this::runSingleInput, () -> cancelled);
+        return stack.run(input -> {
+            if (objectSizeByTime != null) {
+                Rectangle2D.Double reference = objectSizeByTime.apply(stack.currentTime());
+                model.setObjectSize(reference == null ? null : reference.getBounds());
+            }
+            return runSingleInput(input);
+        }, () -> cancelled);
     }
 
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
@@ -458,11 +467,16 @@ public class StardistInferenceService {
 	 * @param boxes the boxes.
 	 */
 	public void setObjectSize(List<Rectangle.Double> boxes) {
+		objectSizeByTime = null;
 		if (boxes != null && boxes.size() > 0)
 			size = boxes.get(0).getBounds();
 		else
 			size = null;
 	}
+
+    public void setObjectSizeByTime(IntFunction<Rectangle2D.Double> sizes) {
+        objectSizeByTime = sizes;
+    }
 
     /**
      * Sets the probability threshold.

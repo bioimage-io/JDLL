@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 
 import org.apposed.appose.BuildException;
 
@@ -50,6 +51,7 @@ public class UnetInferenceService implements DenseSegmentationInferenceService {
     private String loadedDevice;
     private Unet model;
     private Rectangle2D.Double objectReference;
+    private IntFunction<Rectangle2D.Double> objectSizeByTime;
     private Consumer<InferenceProgress> progressConsumer;
     private volatile boolean cancelled;
 
@@ -124,8 +126,13 @@ public class UnetInferenceService implements DenseSegmentationInferenceService {
      * @param boxes the preview boxes.
      */
     public void setObjectSize(List<Rectangle2D.Double> boxes) {
+        objectSizeByTime = null;
         objectReference = boxes == null || boxes.isEmpty() ? null : boxes.get(0);
         applyObjectSize();
+    }
+
+    @Override public void setObjectSizeByTime(IntFunction<Rectangle2D.Double> sizes) {
+        objectSizeByTime = sizes;
     }
 
     /**
@@ -172,7 +179,13 @@ public class UnetInferenceService implements DenseSegmentationInferenceService {
     List<Tensor<R>> runLoadedModel(RandomAccessibleInterval<T> rai) throws RunModelException {
         InferenceStack<T> stack = new InferenceStack<>(rai, model.isVolumeModel());
         model.setInferenceProgressConsumer(stack.progress(progressConsumer));
-        return stack.run(this::runSingleInput, () -> cancelled);
+        return stack.run(input -> {
+            if (objectSizeByTime != null) {
+                objectReference = objectSizeByTime.apply(stack.currentTime());
+                applyObjectSize();
+            }
+            return runSingleInput(input);
+        }, () -> cancelled);
     }
 
     private <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>

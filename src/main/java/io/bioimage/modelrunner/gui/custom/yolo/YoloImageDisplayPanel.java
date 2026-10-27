@@ -48,6 +48,7 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.SwingWorker;
@@ -57,6 +58,7 @@ import javax.swing.plaf.basic.BasicScrollBarUI;
 
 import io.bioimage.modelrunner.gui.custom.ConsumerInterface;
 import io.bioimage.modelrunner.gui.custom.PreviewReader;
+import io.bioimage.modelrunner.gui.custom.SizeHints;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
@@ -128,6 +130,16 @@ public class YoloImageDisplayPanel extends JPanel {
     private final JButton expandButton = new JButton(EXPAND_SYMBOL);
     private final JButton previousFileButton = new JButton("\u2039");
     private final JButton nextFileButton = new JButton("\u203a");
+    private final JCheckBox sharedSizeCheckBox = new JCheckBox("Use shared size", true) {
+        private static final long serialVersionUID = 1L;
+        @Override protected void paintComponent(Graphics graphics) {
+            graphics.setColor(getBackground());
+            graphics.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
+            super.paintComponent(graphics);
+        }
+    };
+    private final SizeHints sizeHints = new SizeHints();
+    private boolean sizeHintsEnabled;
     private final JScrollBar zScrollBar = createPlaneScrollBar();
     private final JScrollBar timeScrollBar = createPlaneScrollBar();
     private final Timer planeSelectionTimer;
@@ -170,6 +182,17 @@ public class YoloImageDisplayPanel extends JPanel {
         expandButton.setToolTipText("Expand image to fill preview");
         expandButton.addActionListener(e -> setExpandedToFill(!expandedToFill));
         add(expandButton);
+        sharedSizeCheckBox.setVisible(false);
+        sharedSizeCheckBox.setOpaque(false);
+        sharedSizeCheckBox.setBackground(new Color(20, 24, 32, 190));
+        sharedSizeCheckBox.setForeground(Color.WHITE);
+        sharedSizeCheckBox.setToolTipText("Checked: drawing updates the shared size. Uncheck to adjust only this image/time point. Z slices always share a size.");
+        sharedSizeCheckBox.addActionListener(e -> {
+            sizeHints.useShared(getPreviewFile(), selectedTime, sharedSizeCheckBox.isSelected());
+            restoreSizeHint();
+            repaint();
+        });
+        add(sharedSizeCheckBox);
         planeSelectionTimer = new Timer(100, e -> selectPreviewPlane());
         planeSelectionTimer.setRepeats(false);
         for (JScrollBar bar : new JScrollBar[] {zScrollBar, timeScrollBar}) {
@@ -286,7 +309,12 @@ public class YoloImageDisplayPanel extends JPanel {
                     return;
                 }
                 if (activeBox.width > 1 && activeBox.height > 1) {
-                    boxes.add(activeBox);
+                    if (sizeHintsEnabled) {
+                        sizeHints.set(getPreviewFile(), selectedTime, activeBox);
+                        restoreSizeHint();
+                    } else boxes.add(activeBox);
+                } else if (sizeHintsEnabled) {
+                    restoreSizeHint();
                 }
                 dragStartScreen = null;
                 activeBox = null;
@@ -360,7 +388,28 @@ public class YoloImageDisplayPanel extends JPanel {
     public void clearBoxes() {
         boxes.clear();
         activeBox = null;
+        if (sizeHintsEnabled) {
+            sizeHints.clear(getPreviewFile(), selectedTime);
+            restoreSizeHint();
+        }
         repaint();
+    }
+
+    /** Enables inference-only reference sizing, leaving annotation/validation panels unchanged. */
+    public void setSizeHintsEnabled(boolean enabled) {
+        sizeHintsEnabled = enabled;
+        updateNavigation();
+    }
+
+    public SizeHints.Snapshot getSizeHints() { return sizeHints.snapshot(); }
+
+    private void restoreSizeHint() {
+        if (!sizeHintsEnabled) return;
+        boxes.clear();
+        activeBox = null;
+        Rectangle2D.Double rectangle = sizeHints.get(getPreviewFile(), selectedTime);
+        if (rectangle != null) boxes.add(rectangle);
+        updateNavigation();
     }
 
     /**
@@ -582,6 +631,7 @@ public class YoloImageDisplayPanel extends JPanel {
                     if (isCancelled() || version != metadataVersion) { releaseSource(opened); return; }
                     try {
                         previewSource = get();
+                        restoreSizeHint();
                         updateNavigation();
                         requestOverviewRender();
                         updateHintVisibility(showHint);
@@ -801,6 +851,9 @@ public class YoloImageDisplayPanel extends JPanel {
             timeScrollBar.setValues(selectedTime, 1, 0, frames);
             zScrollBar.setVisible(depth > 1);
             timeScrollBar.setVisible(frames > 1);
+            sharedSizeCheckBox.setSelected(sizeHints.usesShared(getPreviewFile(), selectedTime));
+            sharedSizeCheckBox.setVisible(sizeHintsEnabled && previewSource != null && sizeHints.hasAny()
+                    && (previewFiles.size() > 1 || frames > 1));
             zScrollBar.setToolTipText("Z " + (selectedZ + 1) + "/" + depth);
             timeScrollBar.setToolTipText("Time " + (selectedTime + 1) + "/" + frames);
             previousFileButton.setVisible(previewFiles.size() > 1);
@@ -830,6 +883,7 @@ public class YoloImageDisplayPanel extends JPanel {
         selectedZ = zScrollBar.getValue();
         selectedTime = timeScrollBar.getValue();
         previewSource = previewSource.plane(selectedZ, selectedTime);
+        restoreSizeHint();
         sourceVersion++;
         updateNavigation();
         requestOverviewRender();
@@ -848,6 +902,7 @@ public class YoloImageDisplayPanel extends JPanel {
     }
 
     private void resetFileNavigation() {
+        sizeHints.reset();
         cancelMetadata();
         planeSelectionTimer.stop();
         previewFiles = Collections.emptyList();
@@ -900,6 +955,12 @@ public class YoloImageDisplayPanel extends JPanel {
                 Math.min(YoloUiUtils.MAX_CONTROL_FONT_SIZE - 2, size * 0.42f))));
         previousFileButton.setBounds(VIEW_PAD + 2, VIEW_PAD, size, size);
         nextFileButton.setBounds(VIEW_PAD + size + 3, VIEW_PAD, size, size);
+        int hintX = VIEW_PAD + 2;
+        int hintY = VIEW_PAD + (previewFiles.size() > 1 ? Math.max(23, size + 2) : 23);
+        int hintHeight = Math.max(18, getFontMetrics(getFont()).getHeight() + 4);
+        sharedSizeCheckBox.setFont(getFont());
+        sharedSizeCheckBox.setBounds(hintX, hintY,
+                Math.max(1, Math.min(getWidth() - hintX - VIEW_PAD, sharedSizeCheckBox.getPreferredSize().width + 6)), hintHeight);
         int barHeight = navigationHeight();
         int y = getHeight() - VIEW_PAD - barHeight * ((zScrollBar.isVisible() ? 1 : 0) + (timeScrollBar.isVisible() ? 1 : 0));
         if (zScrollBar.isVisible()) {
@@ -1076,7 +1137,9 @@ public class YoloImageDisplayPanel extends JPanel {
         g2.setStroke(new BasicStroke(BOX_STROKE));
         g2.setColor(boxColor);
         for (Rectangle2D.Double box : boxes) {
-            g2.draw(new Rectangle2D.Double(drawX + box.x * sx, drawY + box.y * sy, box.width * sx, box.height * sy));
+            double x = sizeHintsEnabled ? Math.max(0, Math.min(box.x, previewSource.width() - box.width)) : box.x;
+            double y = sizeHintsEnabled ? Math.max(0, Math.min(box.y, previewSource.height() - box.height)) : box.y;
+            g2.draw(new Rectangle2D.Double(drawX + x * sx, drawY + y * sy, box.width * sx, box.height * sy));
         }
         if (activeBox != null) {
             g2.setColor(ACTIVE_BOX_COLOR);

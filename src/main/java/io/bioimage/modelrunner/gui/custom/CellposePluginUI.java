@@ -104,11 +104,13 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         final CellposeInferenceService.Run run;
         final File source;
         final YoloImageSelectionEntry entry;
+        final SizeHints.Snapshot hints;
 
-        Settings(CellposeInferenceService.Run run, File source, YoloImageSelectionEntry entry) {
+        Settings(CellposeInferenceService.Run run, File source, YoloImageSelectionEntry entry, SizeHints.Snapshot hints) {
             this.run = run;
             this.source = source;
             this.entry = entry;
+            this.hints = hints;
         }
     }
 
@@ -263,7 +265,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         CellposeInferenceService.Run run = new CellposeInferenceService.Run(model, selectedChannels(),
                 selectedDiameter(), selectedInferenceDevice(), !files && getInferencePanel().getOptionsPanel()
                         .getDisplayIntermediateOutputsCheckBox().isSelected());
-        return new Settings(run, files ? source : null, files ? null : entry);
+        return new Settings(run, files ? source : null, files ? null : entry,
+                getInferencePanel().getImageDisplayPanel().getSizeHints());
     }
 
     private void runCellpose(Settings settings) throws Exception {
@@ -276,7 +279,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 
     private <T extends RealType<T> & NativeType<T>> void runOnOpenImage(Settings settings) throws Exception {
         RandomAccessibleInterval<T> image = consumer.convertIntoRai(settings.entry.getImage());
-        List<Tensor<FloatType>> outputs = inferenceService.run(settings.run, image, this::appendLog);
+        List<Tensor<FloatType>> outputs = inferenceService.run(
+                settings.run.withSizeHints(settings.hints.forImage(null)), image, this::appendLog);
         if (!cancelled) SwingUtilities.invokeAndWait(() -> displayOutputs(outputs, settings.entry.getTitle()));
     }
 
@@ -297,7 +301,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
             appendLog("Processing image " + (index + 1) + "/" + images.size()
                     + ": " + imageFile.getName());
             RandomAccessibleInterval<T> image = readImageFileAsRai(imageFile);
-            List<Tensor<FloatType>> outputs = inferenceService.run(settings.run, image, this::appendLog);
+            List<Tensor<FloatType>> outputs = inferenceService.run(
+                    settings.run.withSizeHints(settings.hints.forImage(imageFile)), image, this::appendLog);
             if (cancelled) return;
             File outputFile = maskOutputFileFor(imageFile);
             writeLabelMask(outputs.get(0), outputFile);

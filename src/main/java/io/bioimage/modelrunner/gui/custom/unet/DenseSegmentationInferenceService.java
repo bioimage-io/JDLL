@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 
 import org.apposed.appose.BuildException;
 
@@ -43,6 +44,7 @@ public interface DenseSegmentationInferenceService {
             ExecutionException, InterruptedException;
 
     void setObjectSize(List<Rectangle2D.Double> boxes);
+    void setObjectSizeByTime(IntFunction<Rectangle2D.Double> sizes);
     void cancelCurrentInference();
     void close();
 }
