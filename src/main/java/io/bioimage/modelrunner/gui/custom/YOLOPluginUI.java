@@ -19,6 +19,8 @@
  */
 package io.bioimage.modelrunner.gui.custom;
 
+import io.bioimage.modelrunner.model.python.envs.EnvironmentSetupLog;
+
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -453,7 +455,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     		cancelled = false;
             startInferenceUiState();
     		workerThread = new Thread(() -> {
-        		try {
+                try (EnvironmentSetupLog.Scope setup = inferencePanel.getLogPanel().openEnvironmentLog()) {
         			runYOLO();
     			} catch (Exception e1) {
     				if (cancelled)
@@ -679,7 +681,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         cancelled = false;
         final long trainingRunId = startTrainingUiState();
         workerThread = new Thread(() -> {
-            try {
+            try (EnvironmentSetupLog.Scope setup = trainPanel.getTrainingLogPanel().openEnvironmentLog()) {
             	consumer.notifyParams(null);
                 YoloTrainingConfig config = readTrainingConfig();
                 bestValidationCheckpointPath = new File(new File(config.getOutputWeightsPath()).getParentFile(),

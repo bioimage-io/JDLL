@@ -95,7 +95,7 @@ public class TrainingUiTest {
             });
             settle(log, scroll, text);
             SwingUtilities.invokeAndWait(() -> {
-                scroll.getVerticalScrollBar().setValue(50);
+                scrollAsUser(scroll, 50);
                 text.setCaretPosition(0);
                 panel.lossButton.doClick();
                 panel.setTrainingRunning(true);
@@ -117,7 +117,7 @@ public class TrainingUiTest {
 
             AtomicInteger position = new AtomicInteger();
             SwingUtilities.invokeAndWait(() -> {
-                scroll.getVerticalScrollBar().setValue(50);
+                scrollAsUser(scroll, 50);
                 position.set(scroll.getVerticalScrollBar().getValue());
                 panel.setTrainingRunning(true);
                 log.appendLine("Reading earlier messages during training");
@@ -169,7 +169,7 @@ public class TrainingUiTest {
         SwingUtilities.invokeAndWait(() -> {
             // Scroll up after a tail update is queued but before it executes.
             log.appendLine("Queued update");
-            scroll.getVerticalScrollBar().setValue(150);
+            scrollAsUser(scroll, 150);
             position.set(scroll.getVerticalScrollBar().getValue());
             selection.set(text.viewToModel2D(new java.awt.Point(12, position.get() + 20)));
             text.select(selection.get(), selection.get() + 5);
@@ -187,7 +187,7 @@ public class TrainingUiTest {
         settle(log, scroll, text);
         SwingUtilities.invokeAndWait(() -> {
             assertEquals(position.get(), scroll.getVerticalScrollBar().getValue());
-            scroll.getVerticalScrollBar().setValue(scroll.getVerticalScrollBar().getMaximum());
+            scrollAsUser(scroll, scroll.getVerticalScrollBar().getMaximum());
             log.appendLine("Follow again");
         });
         settle(log, scroll, text);
@@ -198,7 +198,7 @@ public class TrainingUiTest {
         settle(log, scroll, text);
         SwingUtilities.invokeAndWait(() -> {
             assertBottom(scroll);
-            scroll.getVerticalScrollBar().setValue(50);
+            scrollAsUser(scroll, 50);
             log.clearLog();
             for (int i = 0; i < 100; i++) log.appendLine("New run " + i);
         });
@@ -209,7 +209,7 @@ public class TrainingUiTest {
         });
         settle(log, scroll, text);
         SwingUtilities.invokeAndWait(() -> {
-            scroll.getVerticalScrollBar().setValue(500);
+            scrollAsUser(scroll, 500);
             position.set(scroll.getVerticalScrollBar().getValue());
             log.appendLine("Trim the oldest line while keeping the reader's place");
         });
@@ -274,6 +274,13 @@ public class TrainingUiTest {
                 throw new AssertionError(e);
             }
         });
+    }
+
+    private static void scrollAsUser(JScrollPane scroll, int value) {
+        JScrollBar bar = scroll.getVerticalScrollBar();
+        bar.setValueIsAdjusting(true);
+        bar.setValue(value);
+        bar.setValueIsAdjusting(false);
     }
 
     private static void settle(TrainingLogPanel log, JScrollPane scroll, JTextPane text) throws Exception {

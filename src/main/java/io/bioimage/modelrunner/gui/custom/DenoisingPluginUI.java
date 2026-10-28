@@ -11,6 +11,8 @@
  */
 package io.bioimage.modelrunner.gui.custom;
 
+import io.bioimage.modelrunner.model.python.envs.EnvironmentSetupLog;
+
 import java.awt.Color;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
@@ -166,7 +168,7 @@ public final class DenoisingPluginUI extends DenoisingGUI {
         appendLog("Preparing denoising environment.");
         getStatusPanel().setIdle();
         Thread loader = new Thread(() -> {
-            try {
+            try (EnvironmentSetupLog.Scope setup = getLogPanel().openEnvironmentLog()) {
                 DenoisingCapabilities detected = service.capabilities(this::showInstallProgress);
                 capabilities = detected;
                 SwingUtilities.invokeLater(() -> {
@@ -268,7 +270,7 @@ public final class DenoisingPluginUI extends DenoisingGUI {
                         getStrengthPanel().getStrength()) + ".");
         updateActionState();
         worker = new Thread(() -> {
-            try {
+            try (EnvironmentSetupLog.Scope setup = getLogPanel().openEnvironmentLog()) {
                 if (complete) runComplete(); else runPreview();
                 if (!cancelled) SwingUtilities.invokeLater(() -> {
                     getStatusPanel().setComplete();

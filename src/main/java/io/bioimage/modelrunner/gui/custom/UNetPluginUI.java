@@ -19,6 +19,8 @@
  */
 package io.bioimage.modelrunner.gui.custom;
 
+import io.bioimage.modelrunner.model.python.envs.EnvironmentSetupLog;
+
 import java.awt.Color;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -562,7 +564,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
             cancelled = false;
             startInferenceUiState();
             workerThread = new Thread(() -> {
-                try {
+                try (EnvironmentSetupLog.Scope setup = inferencePanel.getLogPanel().openEnvironmentLog()) {
                     runUnet();
                 } catch (Exception e1) {
                     if (!cancelled) {
@@ -817,7 +819,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         cancelled = false;
         final long trainingRunId = startTrainingUiState();
         workerThread = new Thread(() -> {
-            try {
+            try (EnvironmentSetupLog.Scope setup = trainPanel.getTrainingLogPanel().openEnvironmentLog()) {
                 if (consumer != null) {
                     consumer.notifyParams(null);
                 }

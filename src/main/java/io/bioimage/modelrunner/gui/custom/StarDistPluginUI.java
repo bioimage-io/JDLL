@@ -19,6 +19,8 @@
  */
 package io.bioimage.modelrunner.gui.custom;
 
+import io.bioimage.modelrunner.model.python.envs.EnvironmentSetupLog;
+
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -462,7 +464,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     		cancelled = false;
             startInferenceUiState();
     		workerThread = new Thread(() -> {
-        		try {
+                try (EnvironmentSetupLog.Scope setup = inferencePanel.getLogPanel().openEnvironmentLog()) {
         			runStardist();
     			} catch (Exception e1) {
     				if (cancelled)
@@ -766,7 +768,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         inferenceService.close();
         final long trainingRunId = startTrainingUiState();
         workerThread = new Thread(() -> {
-            try {
+            try (EnvironmentSetupLog.Scope setup = trainPanel.getTrainingLogPanel().openEnvironmentLog()) {
             	consumer.notifyParams(null);
                 StardistTrainingConfig config = readTrainingConfig();
                 trainPanel.getTrainingLogPanel().startDiskLog(new File(config.getOutputModelDir()));

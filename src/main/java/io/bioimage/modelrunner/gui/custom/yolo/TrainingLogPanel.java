@@ -46,7 +46,6 @@ import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.border.LineBorder;
-import javax.swing.text.DefaultCaret;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
@@ -55,6 +54,8 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
+
+import io.bioimage.modelrunner.model.python.envs.EnvironmentSetupLog;
 
 public class TrainingLogPanel extends JPanel {
 
@@ -92,6 +93,7 @@ public class TrainingLogPanel extends JPanel {
     private int previousScrollValue;
     private int previousScrollMaximum;
     private int previousScrollExtent;
+    private boolean previousScrollAdjusting;
     private boolean trainingActive;
     private boolean placeholderVisible;
     private int activityLineStart = -1;
@@ -105,6 +107,23 @@ public class TrainingLogPanel extends JPanel {
     private int totalEpochs;
     private long elapsedMillis;
     private double secondsPerStep = Double.NaN;
+    private String installationLine;
+    private final InstallationLogController installationLog = new InstallationLogController(
+            this::appendLine, this::setInstallationLine);
+
+    /** Route all environment builds on this worker to this log, including model loading. */
+    public EnvironmentSetupLog.Scope openEnvironmentLog() {
+        return installationLog.openScope();
+    }
+
+    private void setInstallationLine(String line) {
+        installationLine = line;
+        withScrollTrackingSuppressed(() -> {
+            removeActivityLine();
+            appendActivityLine();
+        });
+        if (followTail) scrollToBottom();
+    }
 
     /**
      * Creates a new TrainingLogPanel instance.
@@ -148,10 +167,15 @@ public class TrainingLogPanel extends JPanel {
         StyleConstants.setForeground(activityStyle, new Color(44, 111, 179));
 
         textPane.setEditable(false);
+        textPane.setOpaque(true);
         textPane.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         textPane.setBackground(Color.WHITE);
         textPane.setForeground(new Color(35, 42, 56));
-        ((DefaultCaret) textPane.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+        LogCaret caret = new LogCaret(() -> adjustingScroll || suppressScrollTracking);
+        caret.setBlinkRate(textPane.getCaret().getBlinkRate());
+        textPane.setCaret(caret);
+        scrollPane.setBackground(Color.WHITE);
+        scrollPane.getViewport().setOpaque(true);
         scrollPane.getViewport().setBackground(Color.WHITE);
         scrollPane.setBorder(new LineBorder(new Color(205, 210, 221)));
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -161,14 +185,16 @@ public class TrainingLogPanel extends JPanel {
             boolean rangeChanged = bar.getMaximum() != previousScrollMaximum
                     || bar.getVisibleAmount() != previousScrollExtent;
             boolean moved = bar.getValue() != previousScrollValue;
-            // Appending text and resizing change the range, not the user's follow preference.
-            if (!adjustingScroll && !suppressScrollTracking && moved && !rangeChanged) {
+            boolean released = previousScrollAdjusting && !bar.getValueIsAdjusting();
+            if (!adjustingScroll && !suppressScrollTracking && moved
+                    && (isAtBottom() || LogScrollInput.isUserScroll(scrollPane))) {
                 followTail = isAtBottom();
             }
             previousScrollValue = bar.getValue();
             previousScrollMaximum = bar.getMaximum();
             previousScrollExtent = bar.getVisibleAmount();
-            if (rangeChanged && followTail) {
+            previousScrollAdjusting = bar.getValueIsAdjusting();
+            if (followTail && (rangeChanged || released || (moved && !adjustingScroll && !suppressScrollTracking))) {
                 scrollToBottom();
             }
         });
@@ -529,6 +555,7 @@ public class TrainingLogPanel extends JPanel {
     }
 
     private void stopActivityTimer() {
+        installationLog.stop();
         if (activityTimer.isRunning()) {
             activityTimer.stop();
         }
@@ -537,7 +564,7 @@ public class TrainingLogPanel extends JPanel {
     }
 
     private void updateActivityLine() {
-        if (!trainingActive) {
+        if (!trainingActive || installationLine != null) {
             return;
         }
         activityDots = activityDots % 3 + 1;
@@ -551,7 +578,7 @@ public class TrainingLogPanel extends JPanel {
     }
 
     private void appendActivityLine() {
-        if (!trainingActive || activityLineStart >= 0) {
+        if ((!trainingActive && installationLine == null) || activityLineStart >= 0) {
             return;
         }
         if (placeholderVisible) {
@@ -566,7 +593,8 @@ public class TrainingLogPanel extends JPanel {
             activityLineStart = logDocument.getLength();
             logDocument.insertString(logDocument.getLength(), "[" + LocalTime.now().format(TIME_FORMAT) + "] ",
                     timestampStyle);
-            logDocument.insertString(logDocument.getLength(), ACTIVITY_TEXT + dots + System.lineSeparator(),
+            logDocument.insertString(logDocument.getLength(),
+                    (installationLine == null ? ACTIVITY_TEXT + dots : installationLine) + System.lineSeparator(),
                     activityStyle);
         } catch (BadLocationException e) {
             activityLineStart = -1;
@@ -614,8 +642,10 @@ public class TrainingLogPanel extends JPanel {
             if (!followTail || bar.getValueIsAdjusting()) return;
             adjustingScroll = true;
             try {
+                int horizontalPosition = scrollPane.getHorizontalScrollBar().getValue();
                 textPane.setCaretPosition(logDocument.getLength());
                 bar.setValue(bar.getMaximum());
+                scrollPane.getHorizontalScrollBar().setValue(horizontalPosition);
             } finally {
                 adjustingScroll = false;
             }
@@ -639,6 +669,7 @@ public class TrainingLogPanel extends JPanel {
         public boolean getScrollableTracksViewportWidth() {
             return false;
         }
+
     }
 
     private static final class CopyIcon implements Icon {

@@ -19,6 +19,8 @@
  */
 package io.bioimage.modelrunner.gui.custom;
 
+import io.bioimage.modelrunner.model.python.envs.EnvironmentSetupLog;
+
 import java.awt.Color;
 import java.awt.Transparency;
 import java.awt.Window;
@@ -219,7 +221,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         getInferencePanel().getLogPanel().startRunTimer();
         appendLog("Starting Cellpose inference.");
         workerThread = new Thread(() -> {
-            try {
+            try (EnvironmentSetupLog.Scope setup = getInferencePanel().getLogPanel().openEnvironmentLog()) {
                 runCellpose(settings);
                 if (!cancelled) {
                     appendLog("Cellpose inference finished.");
