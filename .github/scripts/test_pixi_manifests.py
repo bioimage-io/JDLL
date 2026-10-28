@@ -103,6 +103,13 @@ class PixiManifestTests(unittest.TestCase):
         self.assertFalse((TOMLS.parents[3] / ".github/workflows/biapy-pixi-install.yml").exists())
         self.assertEqual(len(list(TOMLS.glob("biapy-pixi-*.toml"))), 6)
 
+    def test_ci_allows_slow_cuda_wheel_downloads_without_retrying_model_checks(self):
+        action = (TOMLS.parents[3] / ".github/actions/jdll-pixi-smoke/action.yml").read_text()
+        self.assertIn('UV_HTTP_TIMEOUT: "300"', action)
+        for command in ("lock", "install"):
+            self.assertIn(f'run_install([str(pixi), "{command}"', action)
+        self.assertIn('subprocess.run([str(pixi), "run"', action)
+
 
 if __name__ == "__main__":
     unittest.main()

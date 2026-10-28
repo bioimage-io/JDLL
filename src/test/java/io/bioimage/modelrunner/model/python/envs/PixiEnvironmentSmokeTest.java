@@ -23,8 +23,11 @@ public class PixiEnvironmentSmokeTest {
         PixiEnvironmentSpec spec = new PixiEnvironmentSpec(selected == null ? "default" : selected,
                 new String(Files.readAllBytes(manifest.toPath()), StandardCharsets.UTF_8), manifest.getParentFile());
         Environment environment = PixiEnvironmentManager.openEnvironment(spec, System.out::println);
-        try (Service service = environment.python()) {
-            Task task = service.task("import numpy as np\n"
+        // NumPy must initialize before the worker reads stdin to avoid a Windows deadlock.
+        try (Service service = environment.python().init("import numpy as np").debug(System.err::println)) {
+            Task task = service.task("import sys\n"
+                    + "assert 'numpy' in sys.modules, 'NumPy was not initialized before the worker input loop'\n"
+                    + "import numpy as np\n"
                     + "from multiprocessing import shared_memory\n"
                     + "shm = shared_memory.SharedMemory(create=True, size=16)\n"
                     + "try:\n"
