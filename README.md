@@ -39,6 +39,60 @@ The information about the engines supported currently by JDLL, for which OS and 
 Note that JDLL will be in **constant development** and that it is open to community collaboration, so **pull requests** to the official repository of JDLL to improve functionality or to add new engines are **very welcomed**.
 
 # Quickstart
+
+## Python Model Environments
+
+The protected Python backends use the `jdll-pixi-*` templates in
+[`src/main/resources/tomls`](src/main/resources/tomls). JDLL renders these templates;
+they are not directly installable until their format placeholders are resolved.
+
+- The shared main environment contains JDLL UNet, JDLL denoising (including BM3D/BM4D),
+  Cellpose 3, the official headless Ultralytics distribution and Cross-GOOSE,
+  all using NumPy 2.0.2. It does not install
+  BiaPy, CAREamics, timm, torch-fidelity or pytorch-msssim.
+- There is only one native OpenCV implementation: `opencv-python-headless`.
+  Cross-GOOSE's regular OpenCV requirement is satisfied by a bundled metadata-only
+  `opencv-python` compatibility package, version `4.11.0.86+jdll.headless`, depending
+  on the exact headless version. It contains no `cv2` code or native libraries.
+  Java and the standalone renderer deploy its project beside the manifest.
+  CI verifies its metadata and rejects competing OpenCV implementations.
+- StarDist has a separate TensorFlow/Keras 2 environment, not a copy of PyTorch.
+  CPU-only Linux/Windows profiles use `tensorflow-cpu`, without CUDA runtimes.
+- Linux and Windows have CPU and CUDA 11.8/12.1/12.4 wheel profiles. Apple Silicon
+  targets macOS 12+; the Intel main environment targets macOS 10.15+ and uses
+  conda-forge PyTorch: 2.7.1 on macOS 10.15, 2.12.0 on macOS 11 and 2.14.1 on macOS 12+.
+  These profiles need native platform testing; successful dependency resolution
+  alone does not establish runtime or accelerator support.
+
+Existing BiaPy and StarDist manifests and installations are retained. To select
+them instead, set the Java property `-Djdll.python.environment=legacy` or environment
+variable `JDLL_PYTHON_ENVIRONMENT=legacy` before starting the host application.
+Use `slim` (the default) to select the new environments. Local backend source paths
+remain explicit development overrides, not installation requirements.
+
+For a standalone installation test, using Python 3.11+:
+
+```bash
+python .github/scripts/render_jdll_pixi.py --template jdll-pixi-lin-x86-no-cuda.toml --output /tmp/jdll-check/pixi.toml
+pixi install --manifest-path /tmp/jdll-check/pixi.toml
+pixi run --manifest-path /tmp/jdll-check/pixi.toml python .github/scripts/smoke_jdll_models.py --report /tmp/jdll-check/results.json
+```
+
+All five PyTorch backends, including Cross-GOOSE, are installed and tested by those
+commands in the same `default` environment. For Intel macOS 10.15, pass
+`--environment macos-catalina` to the renderer; for macOS 11, use
+`--environment macos-big-sur`. These are OS compatibility profiles for the
+entire main environment, not model-specific environments. Java selects the
+appropriate host profile automatically.
+
+The **JDLL slim environments and models** GitHub Actions workflow installs the
+native Windows/Linux/macOS profiles and runs synthetic inference and gradient
+checks without downloading pretrained weights. CUDA-wheel jobs on hosted runners
+exercise CPU execution, not GPU execution. Actual CUDA, MPS/Metal and older-macOS
+tests are opt-in jobs requiring appropriately labelled self-hosted runners.
+Compatibility profiles executed on newer Macs are not tests of the older OS.
+Each job retains the rendered manifest, resolved lockfile, package inventory and
+model results as artifacts. The original BiaPy installation workflow is unchanged.
 As mentioned above, JDLL was originally developed for the purpose of seamlessly integrating Deep Learning capabilities into other software applications. Its main objective was to empower these software applications to effectively execute Deep Learning models. For that use case, JDLL was mainly oriented for application developers that wanted to incorporate DL methods in their softwares.
 
 But after a couple of stable releases, the JDLL team noticed that because of its user-friendly interface, the library could be accessible not just to software developers but also to everyday users with basic scripting knowledge in languages like Python or Matlab. This makes it suitable for anyone interested in crafting processing routines that require Deep Learning models. Using a Java based or Java compatible scripting laguage such as Jython, one can easily use JDLL to run DL models.

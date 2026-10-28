@@ -1,0 +1,64 @@
+[workspace]
+name = "%s"
+channels = ["https://prefix.dev/conda-forge"]
+platforms = ["osx-arm64"]
+
+# Keep host Python/CUDA installations out of the worker process.
+[activation.env]
+CUDA_HOME = ""
+CUDA_PATH = ""
+CUDA_ROOT = ""
+LD_LIBRARY_PATH = ""
+DYLD_LIBRARY_PATH = ""
+PYTHONPATH = ""
+PYTHONNOUSERSITE = "1"
+MPLBACKEND = "Agg"
+
+[system-requirements]
+macos = "12.0"
+
+[feature.runtime.dependencies]
+python = "3.11.*"
+# Git is needed to install the revision-pinned Python backends.
+git = ">=2.45"
+
+[feature.runtime.pypi-dependencies]
+appose = "==0.11.0"
+scipy = "==1.15.2"
+numba = "==0.60.0"
+tifffile = "==2025.5.10"
+
+[feature.pytorch.pypi-dependencies]
+torch = "==2.4.1"
+torchvision = "==0.19.1"
+
+# All five PyTorch backends share NumPy 2 and one headless cv2 implementation.
+[feature.core.pypi-dependencies]
+numpy = "==2.0.2"
+jdll-unet = { git = "https://github.com/carlosuc3m/jdll-unet.git", rev = "3a499aab726a4fa981be3a48fee0bbf239ded03d", extras = ["region-reading"] }
+jdll-denoise = { git = "https://github.com/carlosuc3m/jdll-denoise.git", rev = "e502bbfd4865f08d1a0b6cba41aab1865f596d61", extras = ["bm"] }
+cellpose = "==3.1.1.1"
+ultralytics-opencv-headless = "==8.4.40"
+opencv-python-headless = "==4.11.0.86"
+# Metadata-only alias for Cross-GOOSE; no second cv2 binary is installed.
+opencv-python = { path = "./opencv-python-compat" }
+imagecodecs = "==2025.3.30"
+# tifffile 2025.5.10 exports Zarr 2 stores; keep crop decoding operational.
+zarr = "==2.18.7"
+bm3d = "==4.0.3"
+bm4d = "==4.2.5"
+
+jdll-cross-goose = { git = "https://github.com/carlosuc3m/jdll-cross-goose.git", rev = "f19d815bab4b7d447944479e6ac433b8ab3c16f7" }
+lightning = "==2.5.0"
+pytorch-lightning = "==2.5.0"
+torchmetrics = "==1.4.3"
+
+[tasks.python]
+cmd = "python"
+
+[tasks.check-gpu]
+cmd = "python -c \"import platform, torch; print('Python:', platform.python_version()); print('Torch:', torch.__version__); print('CUDA:', torch.cuda.is_available(), torch.version.cuda); print('MPS:', torch.backends.mps.is_available())\""
+
+[environments]
+# Every PyTorch backend uses this same environment.
+default = %s

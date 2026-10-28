@@ -1,0 +1,229 @@
+name: JDLL slim environments and models
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_cuda_hardware:
+        description: Require a self-hosted Linux x64 GPU runner and test actual CUDA execution
+        type: boolean
+        default: false
+      run_mps_hardware:
+        description: Require a self-hosted Apple Silicon runner and test actual Metal execution
+        type: boolean
+        default: false
+      legacy_macos_labels:
+        description: Optional self-hosted older Mac labels as JSON, for example ["self-hosted","macOS","X64","monterey"]
+        type: string
+        default: ""
+      legacy_macos_template:
+        description: Template for the self-hosted older Mac
+        type: choice
+        options:
+          - jdll-pixi-mac-x86.toml
+          - jdll-pixi-mac-arm.toml
+      legacy_macos_environment:
+        description: Selected profile for the self-hosted older Mac
+        type: choice
+        options:
+          - default
+          - macos-big-sur
+          - macos-catalina
+  pull_request:
+    paths:
+      - .github/actions/jdll-pixi-smoke/**
+      - .github/scripts/*pixi*
+      - .github/scripts/smoke_jdll_models.py
+      - .github/workflows/jdll-pixi-install.yml
+      - src/main/resources/tomls/jdll-pixi-*.toml
+      - src/main/resources/python/opencv-python-compat/**
+      - src/main/java/io/bioimage/modelrunner/model/python/**
+      - src/main/java/io/bioimage/modelrunner/model/special/**
+      - src/test/java/io/bioimage/modelrunner/model/python/envs/**
+  push:
+    paths:
+      - .github/actions/jdll-pixi-smoke/**
+      - .github/scripts/*pixi*
+      - .github/scripts/smoke_jdll_models.py
+      - .github/workflows/jdll-pixi-install.yml
+      - src/main/resources/tomls/jdll-pixi-*.toml
+      - src/main/resources/python/opencv-python-compat/**
+      - src/main/java/io/bioimage/modelrunner/model/python/**
+      - src/main/java/io/bioimage/modelrunner/model/special/**
+      - src/test/java/io/bioimage/modelrunner/model/python/envs/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jdll-pixi-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "11"
+          cache: maven
+      - run: python -m unittest discover -s .github/scripts -p 'test_pixi*.py' -v
+      - run: mvn -B -Djava.awt.headless=true test
+
+  models:
+    needs: contracts
+    name: ${{ matrix.id }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: linux-cpu-main
+            runner: ubuntu-24.04
+            template: jdll-pixi-lin-x86-no-cuda.toml
+            environment: default
+            models: unet denoise cellpose yolo cross-goose
+            bridge: true
+          - id: windows-cpu-main
+            runner: windows-2022
+            template: jdll-pixi-win-x86-no-cuda.toml
+            environment: default
+            models: unet denoise cellpose yolo cross-goose
+            bridge: true
+          - id: mac-arm-monterey-compat-profile
+            runner: macos-15
+            template: jdll-pixi-mac-arm.toml
+            environment: default
+            models: unet denoise cellpose yolo cross-goose
+            bridge: true
+          - id: mac-arm-current-main
+            runner: macos-26
+            template: jdll-pixi-mac-arm.toml
+            environment: default
+            models: unet denoise cellpose yolo cross-goose
+          - id: mac-intel-main
+            runner: macos-15-intel
+            template: jdll-pixi-mac-x86.toml
+            environment: default
+            models: unet denoise cellpose yolo cross-goose
+          - id: mac-intel-big-sur-main-profile
+            runner: macos-15-intel
+            template: jdll-pixi-mac-x86.toml
+            environment: macos-big-sur
+            models: unet denoise cellpose yolo cross-goose
+          - id: mac-intel-catalina-main-profile
+            runner: macos-15-intel
+            template: jdll-pixi-mac-x86.toml
+            environment: macos-catalina
+            models: unet denoise cellpose yolo cross-goose
+          - id: linux-stardist
+            runner: ubuntu-24.04
+            template: jdll-pixi-stardist.toml
+            environment: linux-x86-64-no-cuda
+            models: stardist
+          - id: windows-stardist
+            runner: windows-2022
+            template: jdll-pixi-stardist.toml
+            environment: win-x86-64-no-cuda
+            models: stardist
+          - id: mac-arm-stardist
+            runner: macos-15
+            template: jdll-pixi-stardist.toml
+            environment: macos-arm64
+            models: stardist
+          - id: mac-intel-stardist
+            runner: macos-15-intel
+            template: jdll-pixi-stardist.toml
+            environment: macos-x86-64
+            models: stardist
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/jdll-pixi-smoke
+        with:
+          id: ${{ matrix.id }}
+          template: ${{ matrix.template }}
+          environment: ${{ matrix.environment }}
+          models: ${{ matrix.models }}
+          bridge: ${{ matrix.bridge || false }}
+
+  cuda-wheels:
+    needs: contracts
+    name: ${{ matrix.os }} CUDA ${{ matrix.cuda }} installation, CPU execution
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [linux, windows]
+        cuda: ["11.8", "12.1", "12.4"]
+        include:
+          - os: linux
+            runner: ubuntu-24.04
+            template: jdll-pixi-lin-x86-cuda.toml
+          - os: windows
+            runner: windows-2022
+            template: jdll-pixi-win-x86-cuda.toml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/jdll-pixi-smoke
+        with:
+          id: ${{ matrix.os }}-cuda-${{ matrix.cuda }}
+          template: ${{ matrix.template }}
+          cuda: ${{ matrix.cuda }}
+          models: unet denoise cellpose yolo cross-goose
+
+  cuda-hardware:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_cuda_hardware
+    runs-on: [self-hosted, linux, x64, gpu]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/jdll-pixi-smoke
+        with:
+          id: cuda-hardware-main
+          template: jdll-pixi-lin-x86-cuda.toml
+          device: cuda
+      - uses: ./.github/actions/jdll-pixi-smoke
+        with:
+          id: cuda-hardware-stardist
+          template: jdll-pixi-stardist.toml
+          environment: linux-x86-64-cuda
+          models: stardist
+          device: cuda
+
+  mps-hardware:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_mps_hardware
+    runs-on: [self-hosted, macOS, ARM64]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/jdll-pixi-smoke
+        with:
+          id: mps-hardware-main
+          template: jdll-pixi-mac-arm.toml
+          device: mps
+      - uses: ./.github/actions/jdll-pixi-smoke
+        with:
+          id: metal-hardware-stardist
+          template: jdll-pixi-stardist.toml
+          environment: macos-arm64
+          models: stardist
+          device: mps
+
+  older-macos-hardware:
+    if: github.event_name == 'workflow_dispatch' && inputs.legacy_macos_labels != ''
+    runs-on: ${{ fromJSON(inputs.legacy_macos_labels || '["self-hosted","macOS","X64"]') }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/jdll-pixi-smoke
+        with:
+          id: older-macos-hardware
+          template: ${{ inputs.legacy_macos_template }}
+          environment: ${{ inputs.legacy_macos_environment }}
+          models: unet denoise cellpose yolo cross-goose

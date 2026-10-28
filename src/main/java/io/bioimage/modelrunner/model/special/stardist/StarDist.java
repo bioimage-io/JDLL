@@ -184,6 +184,7 @@ public final class StarDist extends DLModelPytorchProtected {
 		this.dimensionality = dimensionality;
 		this.objectScaleMetadata = modelSource == null ? null : loadObjectScaleMetadata(modelSource, dimensionality);
 		this.environmentSpec = resolvePytorchEnv();
+		this.envPath = environmentSpec.getEnvironmentDirectory().getAbsolutePath();
 		super.setInferenceProgressConsumer(inferenceProgressConsumer);
 	}
 
@@ -1403,12 +1404,14 @@ public final class StarDist extends DLModelPytorchProtected {
 	 * @return the resulting pixi environment spec.
 	 */
 	public static PixiEnvironmentSpec resolvePytorchEnv() {
+		boolean legacy = PixiEnvironmentResolver.useLegacy();
+		String resource = legacy ? PIXI_TOML : "tomls/jdll-pixi-stardist.toml";
+		String name = legacy ? COMMON_STARDIST_ENV_NAME : "jdll-stardist";
 		String pixiTomlContent = String.format(java.util.Locale.ROOT,
-				PixiEnvironmentResolver.readClasspathResourceAsString(PIXI_TOML),
-				COMMON_STARDIST_ENV_NAME);
+				PixiEnvironmentResolver.readClasspathResourceAsString(resource), name);
 		String selectedEnvironment = resolveStardistEnvironmentName();
 		return new PixiEnvironmentSpec(selectedEnvironment, pixiTomlContent,
-				new File(org.apposed.appose.util.Environments.apposeEnvsDir(), COMMON_STARDIST_ENV_NAME),
+				new File(org.apposed.appose.util.Environments.apposeEnvsDir(), name),
 				new ArrayList<String>());
 	}
 

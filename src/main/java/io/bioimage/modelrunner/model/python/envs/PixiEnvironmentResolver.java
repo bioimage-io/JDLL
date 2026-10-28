@@ -41,11 +41,63 @@ import io.bioimage.modelrunner.system.PlatformDetection;
  */
 public final class PixiEnvironmentResolver {
 
+	public static final String FAMILY_PROPERTY = "jdll.python.environment";
+	public static final String FAMILY_VARIABLE = "JDLL_PYTHON_ENVIRONMENT";
+
 	private static final String DEFAULT_SELECTED_ENVIRONMENT = "default";
 	private static final String JDLL_CACHE_DIR_NAME = "jdll";
 
 	private PixiEnvironmentResolver() {
 		// Utility class.
+	}
+
+	/** Set the property or environment variable to legacy to retain the BiaPy stack. */
+	public static boolean useLegacy() {
+		String family = System.getProperty(FAMILY_PROPERTY);
+		if (family == null || family.trim().isEmpty()) family = System.getenv(FAMILY_VARIABLE);
+		if (family == null || family.trim().isEmpty() || "slim".equalsIgnoreCase(family.trim())) return false;
+		if ("legacy".equalsIgnoreCase(family.trim())) return true;
+		throw new IllegalArgumentException(FAMILY_PROPERTY + " must be slim or legacy, not " + family);
+	}
+
+	/** Select native Apple Silicon workers even when the Java host uses Rosetta. */
+	public static String currentPytorchPlatform() {
+		if (PlatformDetection.isMacOS() && PlatformDetection.isUsingRosseta()) return "osx-arm64";
+		return currentPixiPlatform();
+	}
+
+	/** Profiles describe host OS compatibility, never the selected model. */
+	public static PixiEnvironmentSpec pytorch(String platform, String cuda, String profile) {
+		if (!"default".equals(profile)
+				&& !("osx-64".equals(platform)
+						&& ("macos-big-sur".equals(profile) || "macos-catalina".equals(profile)))) {
+			throw new IllegalArgumentException("Unknown JDLL PyTorch host profile: " + profile);
+		}
+		String suffix;
+		switch (platform) {
+			case "linux-64": suffix = "lin-x86-" + (cuda == null ? "no-cuda" : "cuda"); break;
+			case "win-64": suffix = "win-x86-" + (cuda == null ? "no-cuda" : "cuda"); break;
+			case "osx-arm64": suffix = "mac-arm"; break;
+			case "osx-64": suffix = "mac-x86"; break;
+			default: throw new UnsupportedOperationException("Unsupported JDLL PyTorch platform: " + platform);
+		}
+		boolean hasCuda = suffix.endsWith("-cuda") && !suffix.endsWith("-no-cuda");
+		if (hasCuda && !"11.8".equals(cuda) && !"12.1".equals(cuda) && !"12.4".equals(cuda)) {
+			throw new IllegalArgumentException("Unsupported PyTorch CUDA wheel version: " + cuda);
+		}
+		String name = "jdll-" + suffix + (hasCuda ? "-" + cuda.replace(".", "") : "");
+		if (!"default".equals(profile)) name += "-" + profile;
+		String template = readClasspathResourceAsString("tomls/jdll-pixi-" + suffix + ".toml");
+		String compact = hasCuda ? cuda.replace(".", "") : "";
+		String features = "[\"runtime\", \"pytorch\", \"core\"]";
+		if (!"default".equals(profile)) {
+			String torch = profile.replace("macos-", "pytorch-");
+			features = "[\"runtime\", \"" + torch + "\", \"core\"]";
+		}
+		String manifest = hasCuda ? String.format(Locale.ROOT, template, name, compact, compact, features)
+				: String.format(Locale.ROOT, template, name, features);
+		return new PixiEnvironmentSpec(DEFAULT_SELECTED_ENVIRONMENT, manifest,
+				new File(Environments.apposeEnvsDir(), name), new ArrayList<String>());
 	}
 
 	/**

@@ -33,6 +33,7 @@ import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.java.DLModelJava.TilingConsumer;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentResolver;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
 import io.bioimage.modelrunner.system.GpuCompatibility;
 import io.bioimage.modelrunner.system.PlatformDetection;
@@ -102,7 +103,7 @@ public class DLModelPytorchProtected extends BaseModel {
     private List<InputTransferScale> inputTransferScales = new ArrayList<InputTransferScale>();
 
     /**
-     * Default environment directory name.
+     * Legacy shared environment directory name.
      */
     public static final String COMMON_PYTORCH_ENV_NAME = "biapy";
 
@@ -1348,6 +1349,20 @@ public class DLModelPytorchProtected extends BaseModel {
      * @return the resulting pixi environment spec.
      */
     public static PixiEnvironmentSpec resolvePytorchEnv() {
+        if (PixiEnvironmentResolver.useLegacy()) return resolveLegacyPytorchEnv();
+        String platform = PixiEnvironmentResolver.currentPytorchPlatform();
+        String profile = "default";
+        if ("osx-64".equals(platform)) {
+            int major = PlatformDetection.getOSVersion().getMajor();
+            if (major < 11) profile = "macos-catalina";
+            else if (major < 12) profile = "macos-big-sur";
+        }
+        return PixiEnvironmentResolver.pytorch(platform,
+                GpuCompatibility.pickCudaVersion(CUDA_COMPAT_VERSIONS), profile);
+    }
+
+    /** Explicit access to the unchanged pre-slim environment family. */
+    public static PixiEnvironmentSpec resolveLegacyPytorchEnv() {
         final String cudaVersion = GpuCompatibility.pickCudaVersion(CUDA_COMPAT_VERSIONS);
 
         final String pixiTomlContent;

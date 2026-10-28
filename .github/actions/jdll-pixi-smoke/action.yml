@@ -1,0 +1,124 @@
+name: JDLL Pixi model smoke test
+description: Render a production template, install its selected environment and run real model operations.
+inputs:
+  id:
+    description: Unique report and workspace name
+    required: true
+  template:
+    description: Classpath manifest filename
+    required: true
+  environment:
+    description: Host compatibility profile, or named StarDist environment
+    default: default
+  cuda:
+    description: PyTorch CUDA wheel family
+    default: "12.4"
+  models:
+    description: Space-separated model checks
+    default: unet denoise cellpose yolo cross-goose
+  device:
+    description: Actual device to require, never silently substituted
+    default: cpu
+  lock-only:
+    description: Resolve only; do not claim runtime coverage for this job
+    default: "false"
+  bridge:
+    description: Also exercise the actual Java Appose worker against the installed prefix
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    # Node 20 remains usable on older Macs; newer releases use Node 24.
+    - uses: prefix-dev/setup-pixi@v0.8.8
+      with:
+        # Match the currently used Pixi generation, not an unbounded latest.
+        pixi-version: v0.58.0
+        pixi-bin-path: ${{ runner.temp }}/appose-environments/.pixi/bin
+        run-install: false
+        cache: false
+        post-cleanup: false
+    - name: Render, install and exercise models
+      shell: python
+      env:
+        JDLL_CASE: ${{ inputs.id }}
+        JDLL_TEMPLATE: ${{ inputs.template }}
+        JDLL_ENVIRONMENT: ${{ inputs.environment }}
+        JDLL_CUDA: ${{ inputs.cuda }}
+        JDLL_MODELS: ${{ inputs.models }}
+        JDLL_DEVICE: ${{ inputs.device }}
+        JDLL_LOCK_ONLY: ${{ inputs.lock-only }}
+        PYTHONNOUSERSITE: "1"
+        MPLBACKEND: Agg
+        TF_NUM_INTRAOP_THREADS: "2"
+        TF_NUM_INTEROP_THREADS: "2"
+        OMP_NUM_THREADS: "2"
+        APPOSE_ENVS_DIR: ${{ runner.temp }}/appose-environments
+      run: |
+        import os
+        from pathlib import Path
+        import subprocess
+        import sys
+
+        root = Path(os.environ["GITHUB_WORKSPACE"])
+        directory = Path(os.environ["RUNNER_TEMP"]) / "jdll-pixi" / os.environ["JDLL_CASE"]
+        manifest = directory / "pixi.toml"
+        subprocess.run([sys.executable, str(root / ".github/scripts/render_jdll_pixi.py"),
+                        "--template", os.environ["JDLL_TEMPLATE"], "--name", os.environ["JDLL_CASE"].replace(".", "-"),
+                        "--environment", os.environ["JDLL_ENVIRONMENT"],
+                        "--cuda", os.environ["JDLL_CUDA"], "--output", str(manifest)], check=True)
+        subprocess.run(["pixi", "lock", "--manifest-path", str(manifest)], check=True)
+        if os.environ["JDLL_LOCK_ONLY"] == "true":
+            print("Resolution-only check: models were NOT executed.")
+        else:
+            environment = os.environ["JDLL_ENVIRONMENT"] if os.environ["JDLL_TEMPLATE"] == "jdll-pixi-stardist.toml" else "default"
+            subprocess.run(["pixi", "install", "--locked", "--manifest-path", str(manifest),
+                            "--environment", environment], check=True)
+            subprocess.run(["pixi", "list", "--manifest-path", str(manifest),
+                            "--environment", environment, "--json"], check=True,
+                           stdout=(directory / "packages.json").open("w", encoding="utf-8"))
+            subprocess.run(["pixi", "run", "--locked", "--manifest-path", str(manifest),
+                            "--environment", environment, "python",
+                            str(root / ".github/scripts/smoke_jdll_models.py"),
+                            "--models", *os.environ["JDLL_MODELS"].split(),
+                            "--device", os.environ["JDLL_DEVICE"],
+                            "--report", str(directory / "model-results.json")], check=True)
+    - uses: actions/setup-java@v4
+      if: inputs.bridge == 'true'
+      with:
+        distribution: temurin
+        java-version: "11"
+        cache: maven
+    - name: Check Java Appose worker and shared memory
+      if: inputs.bridge == 'true'
+      shell: python
+      env:
+        JDLL_CASE: ${{ inputs.id }}
+        JDLL_TEMPLATE: ${{ inputs.template }}
+        JDLL_ENVIRONMENT: ${{ inputs.environment }}
+        APPOSE_ENVS_DIR: ${{ runner.temp }}/appose-environments
+      run: |
+        import os
+        from pathlib import Path
+        import shutil
+        import subprocess
+
+        directory = Path(os.environ["RUNNER_TEMP"]) / "jdll-pixi" / os.environ["JDLL_CASE"]
+        os.environ["JDLL_PIXI_SMOKE_MANIFEST"] = str(directory / "pixi.toml")
+        os.environ["JDLL_PIXI_SMOKE_ENVIRONMENT"] = os.environ["JDLL_ENVIRONMENT"] if os.environ["JDLL_TEMPLATE"] == "jdll-pixi-stardist.toml" else "default"
+        subprocess.run([shutil.which("mvn"), "-B", "-Djava.awt.headless=true",
+                        "-Dtest=PixiEnvironmentSmokeTest", "test"], check=True)
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: jdll-pixi-${{ inputs.id }}
+        if-no-files-found: warn
+        path: |
+          ${{ runner.temp }}/jdll-pixi/${{ inputs.id }}/pixi.toml
+          ${{ runner.temp }}/jdll-pixi/${{ inputs.id }}/pixi.lock
+          ${{ runner.temp }}/jdll-pixi/${{ inputs.id }}/opencv-python-compat/pyproject.toml
+          ${{ runner.temp }}/jdll-pixi/${{ inputs.id }}/packages.json
+          ${{ runner.temp }}/jdll-pixi/${{ inputs.id }}/model-results.json
+          ${{ runner.temp }}/jdll-pixi/${{ inputs.id }}/setup-logs/*.log

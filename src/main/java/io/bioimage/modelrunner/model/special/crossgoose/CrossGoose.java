@@ -13,6 +13,8 @@ package io.bioimage.modelrunner.model.special.crossgoose;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -42,19 +44,35 @@ import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
-/** Cross-GOOSE model backed by the future {@code jdll-cross-goose} adapter. */
+/** Cross-GOOSE model backed by the installed {@code jdll-cross-goose} adapter. */
 public final class CrossGoose extends DLModelPytorchProtected {
 
-    private static final String DEFAULT_SOURCE_DIR = "/home/carlos/hack_git/jdll-cross-goose";
     private final String modelPath;
     private volatile Double objectSize;
 
     private CrossGoose(String modelPath, Consumer<InferenceProgress> progressConsumer, String device) {
-        super(modelPath, modelPath, modelPath, modelPath, new LinkedHashMap<String, Object>(), true, device);
+        super(modelPath, modelPath, modelPath, checkpointIdentity(modelPath), new LinkedHashMap<String, Object>(), true, device);
         this.modelPath = modelPath;
+        modelFolder = new File(modelPath).getAbsolutePath();
         setMaxSharedMemoryPixelCount(Long.MAX_VALUE);
         environmentSpec = resolvePytorchEnv();
+        envPath = environmentSpec.getEnvironmentDirectory().getAbsolutePath();
         setInferenceProgressConsumer(progressConsumer);
+    }
+
+    private static String checkpointIdentity(String modelPath) {
+        File source = new File(modelPath);
+        if (source.isFile()) return source.getAbsolutePath();
+        File bundled = new File(source, "weights.ckpt");
+        if (bundled.isFile()) return bundled.getAbsolutePath();
+        File[] checkpoints = new File(source, "checkpoints").listFiles(
+                file -> file.isFile() && file.getName().toLowerCase(Locale.ROOT).endsWith(".ckpt"));
+        if (checkpoints == null || checkpoints.length == 0) {
+            throw new IllegalArgumentException("Cross-GOOSE model has no checkpoint: " + modelPath);
+        }
+        // This is the Java model identity; Python resolves the checkpoint to load.
+        Arrays.sort(checkpoints, Comparator.comparing(File::getName));
+        return checkpoints[checkpoints.length - 1].getAbsolutePath();
     }
 
     public static CrossGoose fromFile(String modelPath, Consumer<InferenceProgress> progressConsumer,
@@ -221,7 +239,7 @@ public final class CrossGoose extends DLModelPytorchProtected {
     private static String sourceDirectory() {
         String path = System.getProperty("jdll.crossgoose.path");
         if (path == null || path.trim().isEmpty()) path = System.getenv("JDLL_CROSS_GOOSE_PATH");
-        return path == null || path.trim().isEmpty() ? DEFAULT_SOURCE_DIR : path.trim();
+        return path == null || path.trim().isEmpty() ? "" : path.trim();
     }
 
     private static String buildTrainingCode(Map<String, Object> config) {

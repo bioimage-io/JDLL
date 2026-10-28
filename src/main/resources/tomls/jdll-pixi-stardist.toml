@@ -1,0 +1,149 @@
+[workspace]
+name = "%s"
+version = "0.0.0.dev0"
+description = "JDLL isolated StarDist runtime; TensorFlow is not installed in the PyTorch environments."
+authors = ["Curtis Rueden", "Carlos Garcia"]
+channels = ["https://prefix.dev/conda-forge", "nvidia"]
+platforms = ["osx-arm64", "osx-64", "linux-64", "linux-aarch64", "win-64"]
+
+# Global environment isolation.
+[activation.env]
+CUDA_HOME = ""
+CUDA_PATH = ""
+CUDA_ROOT = ""
+LD_LIBRARY_PATH = ""
+DYLD_LIBRARY_PATH = ""
+PYTHONPATH = ""
+PYTHONNOUSERSITE = "1"
+
+[dependencies]
+python = "3.10.*"
+appose = "==0.11.0"
+numpy = "==1.26.4"
+scipy = "==1.15.2"
+pip = "*"
+setuptools = "<81"
+
+[pypi-dependencies]
+stardist = "==0.9.1"
+csbdeep = "==0.8.2"
+numba = "==0.60.0"
+
+# -----------------------------------------------------------------------------
+# Linux x86-64
+# -----------------------------------------------------------------------------
+[feature.linux-x86-64-no-cuda]
+platforms = ["linux-64"]
+
+[feature.linux-x86-64-no-cuda.pypi-dependencies]
+tensorflow-cpu = "==2.15.1"
+
+[feature.linux-x86-64-cuda]
+platforms = ["linux-64"]
+
+[feature.linux-x86-64-cuda.dependencies]
+cudatoolkit = "11.2.*"
+cudnn = "8.1.*"
+
+[feature.linux-x86-64-cuda.pypi-dependencies]
+tensorflow = "==2.10.1"
+
+[feature.linux-x86-64-cuda.activation.env]
+LD_LIBRARY_PATH = "$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
+
+[feature.linux-x86-64-cuda.tasks.python]
+cmd = '''
+sh -lc 'LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}" exec python "$@"' sh
+'''
+
+[feature.linux-x86-64-cuda.tasks.check-gpu]
+cmd = '''
+sh -lc 'LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}" python -c "import platform, tensorflow as tf; print(\"TensorFlow:\", tf.__version__); print(\"GPUs:\", tf.config.list_physical_devices(\"GPU\")); print(\"Platform:\", platform.platform())"'
+'''
+
+# -----------------------------------------------------------------------------
+# Linux arm64/aarch64: CPU only for now.
+# -----------------------------------------------------------------------------
+[feature.linux-aarch64]
+platforms = ["linux-aarch64"]
+
+[feature.linux-aarch64.pypi-dependencies]
+tensorflow = "==2.15.1"
+
+# -----------------------------------------------------------------------------
+# Windows x86-64 native. No WSL branch.
+# -----------------------------------------------------------------------------
+[feature.win-x86-64-no-cuda]
+platforms = ["win-64"]
+
+[feature.win-x86-64-no-cuda.pypi-dependencies]
+tensorflow-cpu = "==2.15.1"
+
+[feature.win-x86-64-cuda]
+platforms = ["win-64"]
+
+[feature.win-x86-64-cuda.dependencies]
+cudatoolkit = "11.2.*"
+cudnn = "8.1.*"
+
+[feature.win-x86-64-cuda.pypi-dependencies]
+tensorflow = "==2.10.1"
+
+[feature.win-x86-64-cuda.activation.env]
+CUDA_HOME = "%%CONDA_PREFIX%%\\Library"
+CUDA_PATH = "%%CONDA_PREFIX%%\\Library"
+CUDA_ROOT = "%%CONDA_PREFIX%%\\Library"
+PATH = "%%CONDA_PREFIX%%\\Library\\bin;%%PATH%%"
+
+[feature.win-x86-64-cuda.tasks.check-gpu]
+cmd = '''
+powershell -NoProfile -Command "
+$env:PATH = \"$env:CONDA_PREFIX\\Library\\bin;$env:PATH\";
+python -c \"import platform, tensorflow as tf; print('TensorFlow:', tf.__version__); print('GPUs:', tf.config.list_physical_devices('GPU')); print('Platform:', platform.platform())\"
+"
+'''
+
+# -----------------------------------------------------------------------------
+# macOS
+# -----------------------------------------------------------------------------
+[feature.macos-x86-64]
+platforms = ["osx-64"]
+
+[feature.macos-x86-64.system-requirements]
+macos = "10.15"
+
+[feature.macos-x86-64.pypi-dependencies]
+tensorflow = "==2.15.1"
+
+[feature.macos-arm64]
+platforms = ["osx-arm64"]
+
+[feature.macos-arm64.system-requirements]
+macos = "12.0"
+
+[feature.macos-arm64.pypi-dependencies]
+tensorflow = "==2.15.1"
+tensorflow-metal = "==1.1.0"
+
+# -----------------------------------------------------------------------------
+# Tasks
+# -----------------------------------------------------------------------------
+[tasks.python]
+cmd = "python"
+
+[tasks.check-gpu]
+cmd = '''
+python -c "import platform, tensorflow as tf; print('TensorFlow:', tf.__version__); print('GPUs:', tf.config.list_physical_devices('GPU')); print('Platform:', platform.platform())"
+'''
+
+# -----------------------------------------------------------------------------
+# Environments
+# -----------------------------------------------------------------------------
+[environments]
+linux-x86-64-no-cuda = ["linux-x86-64-no-cuda"]
+linux-x86-64-cuda = ["linux-x86-64-cuda"]
+linux-aarch64 = ["linux-aarch64"]
+win-x86-64-no-cuda = ["win-x86-64-no-cuda"]
+win-x86-64-cuda = ["win-x86-64-cuda"]
+macos-x86-64 = ["macos-x86-64"]
+macos-arm64 = ["macos-arm64"]
