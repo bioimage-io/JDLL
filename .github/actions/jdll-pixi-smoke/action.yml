@@ -31,12 +31,12 @@ runs:
     - uses: actions/setup-python@v5
       with:
         python-version: "3.11"
-    # Node 20 remains usable on older Macs; newer releases use Node 24.
+    # Pin the setup action and Pixi version used by the Appose integration.
     - uses: prefix-dev/setup-pixi@v0.8.8
       with:
         # Match the currently used Pixi generation, not an unbounded latest.
         pixi-version: v0.58.0
-        pixi-bin-path: ${{ runner.temp }}/appose-environments/.pixi/bin
+        pixi-bin-path: ${{ runner.temp }}/appose-environments/${{ inputs.id }}/.pixi/bin/pixi${{ runner.os == 'Windows' && '.exe' || '' }}
         run-install: false
         cache: false
         post-cleanup: false
@@ -55,7 +55,7 @@ runs:
         TF_NUM_INTRAOP_THREADS: "2"
         TF_NUM_INTEROP_THREADS: "2"
         OMP_NUM_THREADS: "2"
-        APPOSE_ENVS_DIR: ${{ runner.temp }}/appose-environments
+        APPOSE_ENVS_DIR: ${{ runner.temp }}/appose-environments/${{ inputs.id }}
       run: |
         import os
         from pathlib import Path
@@ -65,21 +65,23 @@ runs:
         root = Path(os.environ["GITHUB_WORKSPACE"])
         directory = Path(os.environ["RUNNER_TEMP"]) / "jdll-pixi" / os.environ["JDLL_CASE"]
         manifest = directory / "pixi.toml"
+        pixi = Path(os.environ["APPOSE_ENVS_DIR"]) / ".pixi/bin" / ("pixi.exe" if os.name == "nt" else "pixi")
+        subprocess.run([str(pixi), "--version"], check=True)
         subprocess.run([sys.executable, str(root / ".github/scripts/render_jdll_pixi.py"),
                         "--template", os.environ["JDLL_TEMPLATE"], "--name", os.environ["JDLL_CASE"].replace(".", "-"),
                         "--environment", os.environ["JDLL_ENVIRONMENT"],
                         "--cuda", os.environ["JDLL_CUDA"], "--output", str(manifest)], check=True)
-        subprocess.run(["pixi", "lock", "--manifest-path", str(manifest)], check=True)
+        subprocess.run([str(pixi), "lock", "--manifest-path", str(manifest)], check=True)
         if os.environ["JDLL_LOCK_ONLY"] == "true":
             print("Resolution-only check: models were NOT executed.")
         else:
             environment = os.environ["JDLL_ENVIRONMENT"] if os.environ["JDLL_TEMPLATE"] == "jdll-pixi-stardist.toml" else "default"
-            subprocess.run(["pixi", "install", "--locked", "--manifest-path", str(manifest),
+            subprocess.run([str(pixi), "install", "--locked", "--manifest-path", str(manifest),
                             "--environment", environment], check=True)
-            subprocess.run(["pixi", "list", "--manifest-path", str(manifest),
+            subprocess.run([str(pixi), "list", "--manifest-path", str(manifest),
                             "--environment", environment, "--json"], check=True,
                            stdout=(directory / "packages.json").open("w", encoding="utf-8"))
-            subprocess.run(["pixi", "run", "--locked", "--manifest-path", str(manifest),
+            subprocess.run([str(pixi), "run", "--locked", "--manifest-path", str(manifest),
                             "--environment", environment, "python",
                             str(root / ".github/scripts/smoke_jdll_models.py"),
                             "--models", *os.environ["JDLL_MODELS"].split(),
@@ -98,7 +100,7 @@ runs:
         JDLL_CASE: ${{ inputs.id }}
         JDLL_TEMPLATE: ${{ inputs.template }}
         JDLL_ENVIRONMENT: ${{ inputs.environment }}
-        APPOSE_ENVS_DIR: ${{ runner.temp }}/appose-environments
+        APPOSE_ENVS_DIR: ${{ runner.temp }}/appose-environments/${{ inputs.id }}
       run: |
         import os
         from pathlib import Path

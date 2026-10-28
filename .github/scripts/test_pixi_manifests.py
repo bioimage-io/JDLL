@@ -91,6 +91,18 @@ class PixiManifestTests(unittest.TestCase):
         self.assertEqual(data["system-requirements"]["macos"], "12.0")
         self.assertEqual(data["feature"]["core"]["pypi-dependencies"]["opencv-python-headless"], "==4.10.0.84")
 
+    def test_ci_installs_a_pixi_executable_not_a_directory(self):
+        action = (TOMLS.parents[3] / ".github/actions/jdll-pixi-smoke/action.yml").read_text()
+        self.assertIn("pixi-bin-path: ${{ runner.temp }}/appose-environments/${{ inputs.id }}/.pixi/bin/pixi"
+                      "${{ runner.os == 'Windows' && '.exe' || '' }}", action)
+        self.assertEqual(action.count("APPOSE_ENVS_DIR: ${{ runner.temp }}/appose-environments/${{ inputs.id }}"), 2)
+        self.assertIn('subprocess.run([str(pixi), "--version"], check=True)', action)
+        self.assertNotIn('subprocess.run(["pixi",', action)
+
+    def test_retired_biapy_workflow_does_not_remove_the_legacy_manifests(self):
+        self.assertFalse((TOMLS.parents[3] / ".github/workflows/biapy-pixi-install.yml").exists())
+        self.assertEqual(len(list(TOMLS.glob("biapy-pixi-*.toml"))), 6)
+
 
 if __name__ == "__main__":
     unittest.main()
