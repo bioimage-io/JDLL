@@ -1,4 +1,6 @@
 [workspace]
+# Supported hosts: Intel macOS 12.0+; Java selects this template automatically.
+description = "JDLL shared PyTorch environment for Intel macOS 12.0+"
 name = "%s"
 channels = ["https://prefix.dev/conda-forge"]
 platforms = ["osx-64"]
@@ -15,7 +17,7 @@ PYTHONNOUSERSITE = "1"
 MPLBACKEND = "Agg"
 
 [system-requirements]
-macos = "10.15"
+macos = "12.0"
 
 [feature.runtime.dependencies]
 python = "3.11.*"
@@ -35,44 +37,23 @@ jdll-unet = { git = "https://github.com/carlosuc3m/jdll-unet.git", rev = "3a499a
 jdll-denoise = { git = "https://github.com/carlosuc3m/jdll-denoise.git", rev = "e502bbfd4865f08d1a0b6cba41aab1865f596d61", extras = ["bm"] }
 cellpose = "==3.1.1.1"
 ultralytics-opencv-headless = "==8.4.40"
-opencv-python-headless = "==4.11.0.86"
-# Metadata-only alias for Cross-GOOSE; no second cv2 binary is installed.
-opencv-python = { path = "./opencv-python-compat" }
+opencv-python-headless = "==4.13.0"
 imagecodecs = "==2025.3.30"
 # tifffile 2025.5.10 exports Zarr 2 stores; keep crop decoding operational.
 zarr = "==2.18.7"
 bm3d = "==4.0.3"
 bm4d = "==4.2.5"
-jdll-cross-goose = { git = "https://github.com/carlosuc3m/jdll-cross-goose.git", rev = "f19d815bab4b7d447944479e6ac433b8ab3c16f7" }
+jdll-cross-goose = { git = "https://github.com/carlosuc3m/jdll-cross-goose.git", rev = "951f5bc4c62ff07f50bbebfcfeeda719c41272f4" }
 lightning = "==2.5.0"
 pytorch-lightning = "==2.5.0"
 torchmetrics = "==1.4.3"
 
 # Official wheels stop at 2.2.2, but conda-forge still builds Intel PyTorch.
-# All backends use the newest compatible version for the host OS.
-[feature.pytorch.system-requirements]
-macos = "12.0"
-
+# All backends use this OS-compatible CPU stack.
 [feature.pytorch.dependencies]
 pytorch = { version = "==2.14.1", build = "cpu_generic*" }
 torchvision = { version = "==0.29.1", build = "cpu*" }
-numpy = "==2.0.2"
-packaging = ">=20,<25"
-fsspec = ">=2022.5,<2026"
-
-[feature.pytorch-big-sur.system-requirements]
-macos = "11.0"
-
-[feature.pytorch-big-sur.dependencies]
-pytorch = { version = "==2.12.0", build = "cpu_generic*" }
-torchvision = { version = "==0.27.1", build = "cpu*" }
-numpy = "==2.0.2"
-packaging = ">=20,<25"
-fsspec = ">=2022.5,<2026"
-
-[feature.pytorch-catalina.dependencies]
-pytorch = { version = "==2.7.1", build = "cpu_generic*" }
-torchvision = { version = "==0.22.1", build = "cpu*" }
+py-opencv = { version = "==4.13.0", build = "headless*" }
 numpy = "==2.0.2"
 packaging = ">=20,<25"
 fsspec = ">=2022.5,<2026"
@@ -84,5 +65,5 @@ cmd = "python"
 cmd = "python -c \"import platform, torch; print('Python:', platform.python_version()); print('Torch:', torch.__version__); print('CUDA:', torch.cuda.is_available(), torch.version.cuda); print('MPS:', torch.backends.mps.is_available())\""
 
 [environments]
-# Java selects one OS-compatible main environment for every PyTorch backend.
+# Every PyTorch backend shares this OS-compatible main environment.
 default = %s

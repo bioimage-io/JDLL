@@ -24,8 +24,6 @@ import org.apposed.appose.tool.Pixi;
  */
 public final class PixiEnvironmentManager {
 
-    private static final String OPENCV_COMPAT = "opencv-python-compat/pyproject.toml";
-
     private PixiEnvironmentManager() {
         // Utility class.
     }
@@ -42,7 +40,6 @@ public final class PixiEnvironmentManager {
      * <li>the first manifest found in the order {@code pixi.toml},
      * {@code pyproject.toml}, {@code environment.yml} matches the expected
      * content from the spec,</li>
-     * <li>any bundled compatibility resource matches its classpath source,</li>
      * <li>and Pixi is installed.</li>
      * </ul>
      *
@@ -91,11 +88,7 @@ public final class PixiEnvironmentManager {
             return false;
         }
 
-        try {
-            return resourcesMatch(spec) && new Pixi().isInstalled();
-        } catch (IOException e) {
-            return false;
-        }
+        return new Pixi().isInstalled();
     }
 
     /**
@@ -135,7 +128,6 @@ public final class PixiEnvironmentManager {
                     reporter.output(line);
                 };
                 try {
-                    prepareResources(spec);
                     boolean prefixPresent = hasPrefix(spec);
                     // Appose 0.12 checks builder state, but not whether its prefix was deleted.
                     if (!prefixPresent) Files.deleteIfExists(new File(directory, "appose.json").toPath());
@@ -174,31 +166,6 @@ public final class PixiEnvironmentManager {
         } finally {
             reporter.finish(success, diagnostics.getAbsolutePath());
         }
-    }
-
-    /** Install the metadata-only OpenCV alias beside the manifest, not in site-packages. */
-    static void prepareResources(PixiEnvironmentSpec spec) throws IOException {
-        if (!needsOpenCvCompat(spec)) return;
-        File target = new File(spec.getEnvironmentDirectory(), OPENCV_COMPAT);
-        String content = openCvCompatContent();
-        if (target.isFile() && content.equals(new String(Files.readAllBytes(target.toPath()), StandardCharsets.UTF_8))) return;
-        Files.createDirectories(target.getParentFile().toPath());
-        Files.write(target.toPath(), content.getBytes(StandardCharsets.UTF_8));
-    }
-
-    static boolean resourcesMatch(PixiEnvironmentSpec spec) throws IOException {
-        if (!needsOpenCvCompat(spec)) return true;
-        File target = new File(spec.getEnvironmentDirectory(), OPENCV_COMPAT);
-        return target.isFile() && openCvCompatContent().equals(
-                new String(Files.readAllBytes(target.toPath()), StandardCharsets.UTF_8));
-    }
-
-    private static boolean needsOpenCvCompat(PixiEnvironmentSpec spec) {
-        return spec.getPixiTomlContent().contains("path = \"./opencv-python-compat\"");
-    }
-
-    private static String openCvCompatContent() {
-        return PixiEnvironmentResolver.readClasspathResourceAsString("python/" + OPENCV_COMPAT);
     }
 
     private static boolean hasPrefix(PixiEnvironmentSpec spec) {

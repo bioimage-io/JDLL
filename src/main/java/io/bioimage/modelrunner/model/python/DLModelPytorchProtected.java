@@ -1350,15 +1350,8 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     public static PixiEnvironmentSpec resolvePytorchEnv() {
         if (PixiEnvironmentResolver.useLegacy()) return resolveLegacyPytorchEnv();
-        String platform = PixiEnvironmentResolver.currentPytorchPlatform();
-        String profile = "default";
-        if ("osx-64".equals(platform)) {
-            int major = PlatformDetection.getOSVersion().getMajor();
-            if (major < 11) profile = "macos-catalina";
-            else if (major < 12) profile = "macos-big-sur";
-        }
-        return PixiEnvironmentResolver.pytorch(platform,
-                GpuCompatibility.pickCudaVersion(CUDA_COMPAT_VERSIONS), profile);
+        return PixiEnvironmentResolver.pytorchForCurrentPlatform(
+                GpuCompatibility.pickCudaVersion(CUDA_COMPAT_VERSIONS));
     }
 
     /** Explicit access to the unchanged pre-slim environment family. */

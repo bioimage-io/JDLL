@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import argparse
 import importlib.metadata as metadata
+import importlib.util
 import json
 import os
 from pathlib import Path
 import platform
+import sys
 import tempfile
 import time
 import traceback
@@ -224,6 +226,36 @@ CHECKS = {"unet": unet, "denoise": denoise, "cellpose": cellpose, "yolo": yolo,
           "cross-goose": cross_goose, "stardist": stardist}
 
 
+def shared_conda_opencv_metadata():
+    """Conda-forge publishes both metadata names for its single headless cv2 build."""
+    prefix = Path(sys.prefix).resolve()
+    bindings = list((prefix / "conda-meta").glob("py-opencv-*.json"))
+    libraries = list((prefix / "conda-meta").glob("libopencv-*.json"))
+    if len(bindings) != 1 or len(libraries) != 1:
+        return False
+    try:
+        records = [json.loads(path.read_text(encoding="utf-8")) for path in bindings + libraries]
+        if any(not record["build"].startswith("headless") for record in records):
+            return False
+        version = records[0]["version"]
+        if records[1]["version"] != version:
+            return False
+        owned = set().union(*(record["files"] for record in records))
+        for name in ("opencv-python", "opencv-python-headless"):
+            distribution = metadata.distribution(name)
+            if distribution.version != version:
+                return False
+            if (distribution.read_text("INSTALLER") or "").strip() not in {"conda", "cmake"}:
+                return False
+            path = distribution.locate_file(f"{name.replace('-', '_')}-{distribution.version}.dist-info/METADATA")
+            if Path(path).resolve().relative_to(prefix).as_posix() not in owned:
+                return False
+        module = importlib.util.find_spec("cv2")
+        return module is not None and Path(module.origin).resolve().relative_to(prefix).as_posix() in owned
+    except (OSError, ValueError, KeyError, TypeError, metadata.PackageNotFoundError):
+        return False
+
+
 def check_dependencies():
     from packaging.requirements import Requirement
 
@@ -243,14 +275,8 @@ def check_dependencies():
             else:
                 if requirement.specifier and version not in requirement.specifier:
                     errors.append(f"{name} requires {requirement}; found {version}")
-    if "opencv-python" in installed and "opencv-python-headless" in installed:
-        alias = metadata.distribution("opencv-python")
-        requirements = alias.requires or []
-        # The only allowed alias contains metadata, never a second cv2 implementation.
-        metadata_only = all(".dist-info/" in str(path).replace("\\", "/") for path in alias.files or ())
-        if (alias.version != "4.11.0.86+jdll.headless" or not alias.files or not metadata_only
-                or requirements != ["opencv-python-headless==4.11.0.86"]):
-            errors.append("Both OpenCV implementations are installed and can overwrite the same cv2 module")
+    if "opencv-python" in installed and "opencv-python-headless" in installed and not shared_conda_opencv_metadata():
+        errors.append("Both OpenCV implementations are installed and can overwrite the same cv2 module")
     if errors:
         raise AssertionError("Unsatisfied installed dependencies:\n" + "\n".join(errors))
     return installed

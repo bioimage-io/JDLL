@@ -52,23 +52,28 @@ public class PixiEnvironmentResolverTest {
             assertTrue(spec.getEnvironmentDirectory().getName().endsWith(profile));
             assertTrue(spec.getPixiTomlContent().contains("cpu_generic*"));
             assertTrue(spec.getPixiTomlContent().contains("jdll-cross-goose ="));
-            assertTrue(spec.getPixiTomlContent().contains("default = [\"runtime\", \""
-                    + profile.replace("macos-", "pytorch-") + "\", \"core\"]"));
+            assertTrue(spec.getPixiTomlContent().contains("default = [\"runtime\", \"pytorch\", \"core\"]"));
+            assertTrue(spec.getPixiTomlContent().contains("py-opencv ="));
+            String minimum = "macos-catalina".equals(profile) ? "10.15" : "11.0";
+            assertTrue(spec.getPixiTomlContent().contains("macos = \"" + minimum + "\""));
         }
     }
 
-    @Test public void opencvCompatibilityResourcesAreExtractedAndChangesAreDetected() throws Exception {
-        PixiEnvironmentSpec original = PixiEnvironmentResolver.pytorch("linux-64", null, "default");
-        java.io.File directory = temporary.newFolder("main");
-        PixiEnvironmentSpec spec = new PixiEnvironmentSpec("default", original.getPixiTomlContent(), directory);
-        assertFalse(PixiEnvironmentManager.resourcesMatch(spec));
-        PixiEnvironmentManager.prepareResources(spec);
-        assertTrue(PixiEnvironmentManager.resourcesMatch(spec));
-        java.io.File project = new java.io.File(directory, "opencv-python-compat/pyproject.toml");
-        java.nio.file.Files.write(project.toPath(), new byte[0]);
-        assertFalse(PixiEnvironmentManager.resourcesMatch(spec));
-        PixiEnvironmentManager.prepareResources(spec);
-        assertTrue(PixiEnvironmentManager.resourcesMatch(spec));
+    @Test public void intelMacVersionBoundariesSelectTheRightSharedTemplate() {
+        assertEquals("macos-catalina", PixiEnvironmentResolver.intelMacProfile(10, 15));
+        assertEquals("macos-big-sur", PixiEnvironmentResolver.intelMacProfile(10, 16));
+        assertEquals("macos-big-sur", PixiEnvironmentResolver.intelMacProfile(11, 0));
+        assertEquals("macos-big-sur", PixiEnvironmentResolver.intelMacProfile(11, 7));
+        assertEquals("default", PixiEnvironmentResolver.intelMacProfile(12, 0));
+        assertEquals("default", PixiEnvironmentResolver.intelMacProfile(13, 0));
+        assertEquals("default", PixiEnvironmentResolver.intelMacProfile(26, 0));
+        assertTrue(PixiEnvironmentResolver.pytorch("osx-64", null, "default")
+                .getPixiTomlContent().contains("macos = \"12.0\""));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void intelMacVersionsBelowCatalinaFailClearly() {
+        PixiEnvironmentResolver.intelMacProfile(10, 14);
     }
 
     @Test public void legacyIsExplicitAndStillUsesTheOriginalManifests() {

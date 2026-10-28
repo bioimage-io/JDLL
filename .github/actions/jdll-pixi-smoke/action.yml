@@ -118,7 +118,6 @@ runs:
         path: |
           ${{ runner.temp }}/jdll-pixi/${{ inputs.id }}/pixi.toml
           ${{ runner.temp }}/jdll-pixi/${{ inputs.id }}/pixi.lock
-          ${{ runner.temp }}/jdll-pixi/${{ inputs.id }}/opencv-python-compat/pyproject.toml
           ${{ runner.temp }}/jdll-pixi/${{ inputs.id }}/packages.json
           ${{ runner.temp }}/jdll-pixi/${{ inputs.id }}/model-results.json
           ${{ runner.temp }}/jdll-pixi/${{ inputs.id }}/setup-logs/*.log

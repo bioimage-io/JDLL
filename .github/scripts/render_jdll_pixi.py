@@ -16,6 +16,10 @@ TOMLS = Path(__file__).resolve().parents[2] / "src/main/resources/tomls"
 def render(template: Path, name: str, cuda: str = "12.4", environment: str = "default") -> str:
     if not name or any(char not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_" for char in name):
         raise ValueError("Use a nonempty alphanumeric workspace name")
+    if template.name != "jdll-pixi-stardist.toml" and environment != "default":
+        if template.name != "jdll-pixi-mac-x86.toml" or environment not in {"macos-big-sur", "macos-catalina"}:
+            raise ValueError("Unknown JDLL host profile: " + environment)
+        template = template.with_name("jdll-pixi-mac-x86-" + environment.removeprefix("macos-") + ".toml")
     text = template.read_text(encoding="utf-8")
     args = [name]
     if template.name.endswith("-cuda.toml") and not template.name.endswith("-no-cuda.toml"):
@@ -23,15 +27,7 @@ def render(template: Path, name: str, cuda: str = "12.4", environment: str = "de
             raise ValueError("CUDA must be 11.8, 12.1 or 12.4")
         args.extend([cuda.replace(".", ""), cuda.replace(".", "")])
     if template.name != "jdll-pixi-stardist.toml":
-        if environment == "default":
-            features = ["runtime", "pytorch", "core"]
-        elif environment in {"macos-big-sur", "macos-catalina"}:
-            if template.name != "jdll-pixi-mac-x86.toml":
-                raise ValueError("Older host profiles are only available on Intel macOS")
-            features = ["runtime", environment.replace("macos-", "pytorch-"), "core"]
-        else:
-            raise ValueError("Unknown JDLL environment: " + environment)
-        args.append(json.dumps(features))
+        args.append(json.dumps(["runtime", "pytorch", "core"]))
     text = text % tuple(args)
     parsed = tomllib.loads(text)
     if parsed["workspace"]["name"] != name:
@@ -49,11 +45,6 @@ def main() -> None:
     args = parser.parse_args()
     text = render(TOMLS / args.template, args.name, args.cuda, args.environment)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    if args.template != "jdll-pixi-stardist.toml":
-        source = TOMLS.parent / "python/opencv-python-compat/pyproject.toml"
-        target = args.output.parent / "opencv-python-compat/pyproject.toml"
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(source.read_bytes())
     args.output.write_text(text, encoding="utf-8")
     print(f"Rendered {args.template} to {args.output}")
 

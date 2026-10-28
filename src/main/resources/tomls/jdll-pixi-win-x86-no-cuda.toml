@@ -37,15 +37,13 @@ jdll-denoise = { git = "https://github.com/carlosuc3m/jdll-denoise.git", rev = "
 cellpose = "==3.1.1.1"
 ultralytics-opencv-headless = "==8.4.40"
 opencv-python-headless = "==4.11.0.86"
-# Metadata-only alias for Cross-GOOSE; no second cv2 binary is installed.
-opencv-python = { path = "./opencv-python-compat" }
 imagecodecs = "==2025.3.30"
 # tifffile 2025.5.10 exports Zarr 2 stores; keep crop decoding operational.
 zarr = "==2.18.7"
 bm3d = "==4.0.3"
 bm4d = "==4.2.5"
 
-jdll-cross-goose = { git = "https://github.com/carlosuc3m/jdll-cross-goose.git", rev = "f19d815bab4b7d447944479e6ac433b8ab3c16f7" }
+jdll-cross-goose = { git = "https://github.com/carlosuc3m/jdll-cross-goose.git", rev = "951f5bc4c62ff07f50bbebfcfeeda719c41272f4" }
 lightning = "==2.5.0"
 pytorch-lightning = "==2.5.0"
 torchmetrics = "==1.4.3"

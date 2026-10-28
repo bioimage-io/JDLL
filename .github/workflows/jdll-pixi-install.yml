@@ -20,14 +20,9 @@ on:
         type: choice
         options:
           - jdll-pixi-mac-x86.toml
+          - jdll-pixi-mac-x86-big-sur.toml
+          - jdll-pixi-mac-x86-catalina.toml
           - jdll-pixi-mac-arm.toml
-      legacy_macos_environment:
-        description: Selected profile for the self-hosted older Mac
-        type: choice
-        options:
-          - default
-          - macos-big-sur
-          - macos-catalina
   pull_request:
     paths:
       - .github/actions/jdll-pixi-smoke/**
@@ -35,7 +30,6 @@ on:
       - .github/scripts/smoke_jdll_models.py
       - .github/workflows/jdll-pixi-install.yml
       - src/main/resources/tomls/jdll-pixi-*.toml
-      - src/main/resources/python/opencv-python-compat/**
       - src/main/java/io/bioimage/modelrunner/model/python/**
       - src/main/java/io/bioimage/modelrunner/model/special/**
       - src/test/java/io/bioimage/modelrunner/model/python/envs/**
@@ -46,7 +40,6 @@ on:
       - .github/scripts/smoke_jdll_models.py
       - .github/workflows/jdll-pixi-install.yml
       - src/main/resources/tomls/jdll-pixi-*.toml
-      - src/main/resources/python/opencv-python-compat/**
       - src/main/java/io/bioimage/modelrunner/model/python/**
       - src/main/java/io/bioimage/modelrunner/model/special/**
       - src/test/java/io/bioimage/modelrunner/model/python/envs/**
@@ -113,13 +106,13 @@ jobs:
             models: unet denoise cellpose yolo cross-goose
           - id: mac-intel-big-sur-main-profile
             runner: macos-15-intel
-            template: jdll-pixi-mac-x86.toml
-            environment: macos-big-sur
+            template: jdll-pixi-mac-x86-big-sur.toml
+            environment: default
             models: unet denoise cellpose yolo cross-goose
           - id: mac-intel-catalina-main-profile
             runner: macos-15-intel
-            template: jdll-pixi-mac-x86.toml
-            environment: macos-catalina
+            template: jdll-pixi-mac-x86-catalina.toml
+            environment: default
             models: unet denoise cellpose yolo cross-goose
           - id: linux-stardist
             runner: ubuntu-24.04
@@ -225,5 +218,5 @@ jobs:
         with:
           id: older-macos-hardware
           template: ${{ inputs.legacy_macos_template }}
-          environment: ${{ inputs.legacy_macos_environment }}
+          environment: default
           models: unet denoise cellpose yolo cross-goose

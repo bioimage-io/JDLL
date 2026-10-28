@@ -50,19 +50,31 @@ they are not directly installable until their format placeholders are resolved.
   Cellpose 3, the official headless Ultralytics distribution and Cross-GOOSE,
   all using NumPy 2.0.2. It does not install
   BiaPy, CAREamics, timm, torch-fidelity or pytorch-msssim.
-- There is only one native OpenCV implementation: `opencv-python-headless`.
-  Cross-GOOSE's regular OpenCV requirement is satisfied by a bundled metadata-only
-  `opencv-python` compatibility package, version `4.11.0.86+jdll.headless`, depending
-  on the exact headless version. It contains no `cv2` code or native libraries.
-  Java and the standalone renderer deploy its project beside the manifest.
-  CI verifies its metadata and rejects competing OpenCV implementations.
+- Cross-GOOSE uses a revision-pinned fork whose only upstream change is replacing
+  regular OpenCV with `opencv-python-headless`. No JDLL compatibility package or
+  dependency suppression is needed. There is only one native `cv2` implementation.
+  Intel Macs use conda-forge's headless OpenCV builds; these expose both standard
+  package metadata names for the same implementation. CI verifies that conda owns
+  those metadata files and the `cv2` module, rejecting conflicting OpenCV wheels.
 - StarDist has a separate TensorFlow/Keras 2 environment, not a copy of PyTorch.
   CPU-only Linux/Windows profiles use `tensorflow-cpu`, without CUDA runtimes.
 - Linux and Windows have CPU and CUDA 11.8/12.1/12.4 wheel profiles. Apple Silicon
-  targets macOS 12+; the Intel main environment targets macOS 10.15+ and uses
-  conda-forge PyTorch: 2.7.1 on macOS 10.15, 2.12.0 on macOS 11 and 2.14.1 on macOS 12+.
-  These profiles need native platform testing; successful dependency resolution
-  alone does not establish runtime or accelerator support.
+  targets macOS 12+ and uses headless OpenCV 4.10; its 4.11 wheels require macOS 13.
+  Intel Macs use the explicit compatibility templates below. Each template declares
+  its macOS minimum and describes its intended host range.
+
+| Intel macOS | Template | PyTorch / torchvision | Headless OpenCV |
+|---|---|---|---|
+| 10.15.x (Catalina) | `jdll-pixi-mac-x86-catalina.toml` | 2.7.1 / 0.22.1 | conda-forge 4.11.0 |
+| 11.x (Big Sur) | `jdll-pixi-mac-x86-big-sur.toml` | 2.12.0 / 0.27.1 | conda-forge 4.13.0 |
+| 12.0+ | `jdll-pixi-mac-x86.toml` | 2.14.1 / 0.29.1 | conda-forge 4.13.0 |
+
+Java selects the Intel template from the host macOS version and rejects versions
+older than 10.15. Older JVMs reporting macOS 11+ as 10.16 use the Big Sur stack.
+All requested PyTorch backends share the chosen environment. The conda OpenCV
+builds add native dependencies but avoid compiling OpenCV on older Intel Macs.
+These profiles need native platform testing; successful dependency resolution
+alone does not establish runtime or accelerator support.
 
 Existing BiaPy and StarDist manifests and installations are retained. To select
 them instead, set the Java property `-Djdll.python.environment=legacy` or environment
@@ -79,11 +91,11 @@ pixi run --manifest-path /tmp/jdll-check/pixi.toml python .github/scripts/smoke_
 ```
 
 All five PyTorch backends, including Cross-GOOSE, are installed and tested by those
-commands in the same `default` environment. For Intel macOS 10.15, pass
-`--environment macos-catalina` to the renderer; for macOS 11, use
-`--environment macos-big-sur`. These are OS compatibility profiles for the
-entire main environment, not model-specific environments. Java selects the
-appropriate host profile automatically.
+commands in the same `default` environment. For an Intel Mac, render the template
+matching the OS range in the table above. These are OS compatibility profiles for
+the entire main environment, not model-specific environments. The former
+`--environment macos-catalina` and `--environment macos-big-sur` options remain
+accepted with the base Intel template and resolve to the versioned templates.
 
 The **JDLL slim environments and models** GitHub Actions workflow installs the
 native Windows/Linux/macOS profiles and runs synthetic inference and gradient

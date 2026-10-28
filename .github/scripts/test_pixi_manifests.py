@@ -9,7 +9,7 @@ class PixiManifestTests(unittest.TestCase):
     def test_all_platform_templates_render_and_keep_backend_revisions_in_sync(self):
         pins = {}
         templates = [p for p in TOMLS.glob("jdll-pixi-*.toml") if p.name != "jdll-pixi-stardist.toml"]
-        self.assertEqual(len(templates), 6)
+        self.assertEqual(len(templates), 8)
         for template in templates:
             data = tomllib.loads(render(template, "jdll-ci"))
             features = data["feature"]
@@ -18,7 +18,7 @@ class PixiManifestTests(unittest.TestCase):
             self.assertEqual(features["runtime"]["dependencies"]["python"], "3.11.*")
             core = features["core"]["pypi-dependencies"]
             self.assertIn("ultralytics-opencv-headless", core)
-            self.assertEqual(core["opencv-python"], {"path": "./opencv-python-compat"})
+            self.assertNotIn("opencv-python", core)
             self.assertEqual(core["numpy"], "==2.0.2")
             self.assertEqual(core["zarr"], "==2.18.7")
             self.assertEqual(features["runtime"]["pypi-dependencies"]["tifffile"], "==2025.5.10")
@@ -43,15 +43,19 @@ class PixiManifestTests(unittest.TestCase):
             self.assertTrue(data["feature"]["pytorch"]["pypi-dependencies"]["torch"]["index"].endswith("/cpu"))
 
     def test_all_intel_backends_use_newer_conda_builds_in_the_same_environment(self):
-        for profile, feature, version in (("default", "pytorch", "==2.14.1"),
-                                         ("macos-big-sur", "pytorch-big-sur", "==2.12.0"),
-                                         ("macos-catalina", "pytorch-catalina", "==2.7.1")):
-            data = tomllib.loads(render(TOMLS / "jdll-pixi-mac-x86.toml", "intel-test", environment=profile))
-            self.assertEqual(data["environments"], {"default": ["runtime", feature, "core"]})
-            dependencies = data["feature"][feature]["dependencies"]
+        for suffix, minimum, version, opencv in (("", "12.0", "==2.14.1", "==4.13.0"),
+                                                 ("-big-sur", "11.0", "==2.12.0", "==4.13.0"),
+                                                 ("-catalina", "10.15", "==2.7.1", "==4.11.0")):
+            data = tomllib.loads(render(TOMLS / f"jdll-pixi-mac-x86{suffix}.toml", "intel-test"))
+            self.assertEqual(data["environments"], {"default": ["runtime", "pytorch", "core"]})
+            self.assertEqual(data["system-requirements"]["macos"], minimum)
+            self.assertIn("Intel macOS", data["workspace"]["description"])
+            dependencies = data["feature"]["pytorch"]["dependencies"]
             self.assertEqual(dependencies["pytorch"]["version"], version)
             self.assertIn("torchvision", dependencies)
             self.assertEqual(dependencies["numpy"], "==2.0.2")
+            self.assertEqual(dependencies["py-opencv"], {"version": opencv, "build": "headless*"})
+            self.assertEqual(data["feature"]["core"]["pypi-dependencies"]["opencv-python-headless"], opencv)
 
     def test_stardist_is_isolated_and_keeps_keras_two(self):
         data = tomllib.loads(render(TOMLS / "jdll-pixi-stardist.toml", "stardist-test"))
@@ -76,12 +80,16 @@ class PixiManifestTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             render(TOMLS / "jdll-pixi-mac-arm.toml", "invalid", environment="macos-catalina")
 
-    def test_opencv_alias_is_metadata_only_and_pins_the_single_binary_provider(self):
-        alias = tomllib.loads((TOMLS.parent / "python/opencv-python-compat/pyproject.toml").read_text())
-        self.assertEqual(alias["project"]["name"], "opencv-python")
-        self.assertEqual(alias["project"]["version"], "4.11.0.86+jdll.headless")
-        self.assertEqual(alias["project"]["dependencies"], ["opencv-python-headless==4.11.0.86"])
-        self.assertEqual(alias["tool"]["setuptools"]["packages"], [])
+    def test_old_intel_cli_profiles_resolve_to_explicit_versioned_templates(self):
+        for suffix in ("big-sur", "catalina"):
+            self.assertEqual(render(TOMLS / "jdll-pixi-mac-x86.toml", "intel-test", environment=f"macos-{suffix}"),
+                             render(TOMLS / f"jdll-pixi-mac-x86-{suffix}.toml", "intel-test"))
+
+    def test_opencv_uses_real_headless_packages_without_local_compatibility_projects(self):
+        self.assertFalse((TOMLS.parent / "python/opencv-python-compat/pyproject.toml").exists())
+        data = tomllib.loads(render(TOMLS / "jdll-pixi-mac-arm.toml", "arm-test"))
+        self.assertEqual(data["system-requirements"]["macos"], "12.0")
+        self.assertEqual(data["feature"]["core"]["pypi-dependencies"]["opencv-python-headless"], "==4.10.0.84")
 
 
 if __name__ == "__main__":

@@ -66,6 +66,28 @@ public final class PixiEnvironmentResolver {
 		return currentPixiPlatform();
 	}
 
+	/** Resolve host compatibility once for all shared PyTorch backends. */
+	public static PixiEnvironmentSpec pytorchForCurrentPlatform(String cuda) {
+		String platform = currentPytorchPlatform();
+		String profile = "default";
+		if ("osx-64".equals(platform)) {
+			io.bioimage.modelrunner.system.Version version = PlatformDetection.getOSVersion();
+			profile = intelMacProfile(version.getMajor(), version.getMinor());
+		}
+		return pytorch(platform, cuda, profile);
+	}
+
+	static String intelMacProfile(int major, int minor) {
+		if (major < 10 || (major == 10 && minor < 15)) {
+			throw new UnsupportedOperationException("JDLL's shared Intel Mac environment requires macOS 10.15 or newer; found "
+					+ major + "." + minor);
+		}
+		if (major == 10 && minor == 15) return "macos-catalina";
+		// Some older JVMs report macOS 11+ as 10.16; use the compatible Big Sur stack.
+		if (major == 10 || major == 11) return "macos-big-sur";
+		return "default";
+	}
+
 	/** Profiles describe host OS compatibility, never the selected model. */
 	public static PixiEnvironmentSpec pytorch(String platform, String cuda, String profile) {
 		if (!"default".equals(profile)
@@ -87,13 +109,11 @@ public final class PixiEnvironmentResolver {
 		}
 		String name = "jdll-" + suffix + (hasCuda ? "-" + cuda.replace(".", "") : "");
 		if (!"default".equals(profile)) name += "-" + profile;
-		String template = readClasspathResourceAsString("tomls/jdll-pixi-" + suffix + ".toml");
+		String resourceSuffix = suffix;
+		if (!"default".equals(profile)) resourceSuffix += "-" + profile.substring("macos-".length());
+		String template = readClasspathResourceAsString("tomls/jdll-pixi-" + resourceSuffix + ".toml");
 		String compact = hasCuda ? cuda.replace(".", "") : "";
 		String features = "[\"runtime\", \"pytorch\", \"core\"]";
-		if (!"default".equals(profile)) {
-			String torch = profile.replace("macos-", "pytorch-");
-			features = "[\"runtime\", \"" + torch + "\", \"core\"]";
-		}
 		String manifest = hasCuda ? String.format(Locale.ROOT, template, name, compact, compact, features)
 				: String.format(Locale.ROOT, template, name, features);
 		return new PixiEnvironmentSpec(DEFAULT_SELECTED_ENVIRONMENT, manifest,
