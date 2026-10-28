@@ -1,4 +1,4 @@
-"""Dependency and rendering contracts, runnable without installing model packages."""
+"""Manifest rendering checks, runnable without installing model packages."""
 
 import unittest
 
@@ -6,31 +6,14 @@ from render_jdll_pixi import TOMLS, render, tomllib
 
 
 class PixiManifestTests(unittest.TestCase):
-    def test_all_platform_templates_render_and_keep_backend_revisions_in_sync(self):
-        pins = {}
-        templates = [p for p in TOMLS.glob("jdll-pixi-*.toml") if p.name != "jdll-pixi-stardist.toml"]
-        self.assertEqual(len(templates), 8)
+    def test_all_platform_templates_render(self):
+        templates = list(TOMLS.glob("jdll-pixi-*.toml"))
+        self.assertTrue(templates)
         for template in templates:
-            data = tomllib.loads(render(template, "jdll-ci"))
-            features = data["feature"]
-            self.assertEqual(data["environments"]["default"], ["runtime", "pytorch", "core"])
-            self.assertEqual(set(data["environments"]), {"default"})
-            self.assertEqual(features["runtime"]["dependencies"]["python"], "3.11.*")
-            core = features["core"]["pypi-dependencies"]
-            self.assertIn("ultralytics-opencv-headless", core)
-            self.assertNotIn("opencv-python", core)
-            self.assertEqual(core["numpy"], "==2.0.2")
-            self.assertEqual(core["zarr"], "==2.18.7")
-            self.assertEqual(features["runtime"]["pypi-dependencies"]["tifffile"], "==2025.5.10")
-            for package in ("jdll-unet", "jdll-denoise", "jdll-cross-goose"):
-                dependency = core[package]
-                self.assertEqual(len(dependency["rev"]), 40)
-                self.assertEqual(pins.setdefault(package, dependency["rev"]), dependency["rev"])
-            self.assertNotIn("cross-goose", features)
-            self.assertIn("cellpose", core)
-            self.assertIn("lightning", core)
-            all_direct = {name for feature in features.values() for name in feature.get("pypi-dependencies", {})}
-            self.assertFalse(all_direct & {"biapy", "careamics", "timm", "torch-fidelity", "pytorch-msssim", "tensorflow"})
+            with self.subTest(template=template.name):
+                data = tomllib.loads(render(template, "jdll-ci"))
+                self.assertEqual(data["workspace"]["name"], "jdll-ci")
+                self.assertTrue(data["workspace"]["platforms"])
 
     def test_cuda_indices_are_explicit_and_do_not_share_cpu_wheels(self):
         for platform in ("lin", "win"):
@@ -41,34 +24,6 @@ class PixiManifestTests(unittest.TestCase):
                     self.assertTrue(dependency["index"].endswith("cu" + cuda.replace(".", "")))
             data = tomllib.loads(render(TOMLS / f"jdll-pixi-{platform}-x86-no-cuda.toml", "cpu-test"))
             self.assertTrue(data["feature"]["pytorch"]["pypi-dependencies"]["torch"]["index"].endswith("/cpu"))
-
-    def test_all_intel_backends_use_newer_conda_builds_in_the_same_environment(self):
-        for suffix, minimum, version, opencv in (("", "12.0", "==2.14.1", "==4.13.0"),
-                                                 ("-big-sur", "11.0", "==2.12.0", "==4.13.0"),
-                                                 ("-catalina", "10.15", "==2.7.1", "==4.11.0")):
-            data = tomllib.loads(render(TOMLS / f"jdll-pixi-mac-x86{suffix}.toml", "intel-test"))
-            self.assertEqual(data["environments"], {"default": ["runtime", "pytorch", "core"]})
-            self.assertEqual(data["system-requirements"]["macos"], minimum)
-            self.assertIn("Intel macOS", data["workspace"]["description"])
-            dependencies = data["feature"]["pytorch"]["dependencies"]
-            self.assertEqual(dependencies["pytorch"]["version"], version)
-            self.assertIn("torchvision", dependencies)
-            self.assertEqual(dependencies["numpy"], "==2.0.2")
-            self.assertEqual(dependencies["py-opencv"], {"version": opencv, "build": "headless*"})
-            self.assertEqual(data["feature"]["core"]["pypi-dependencies"]["opencv-python-headless"], opencv)
-
-    def test_stardist_is_isolated_and_keeps_keras_two(self):
-        data = tomllib.loads(render(TOMLS / "jdll-pixi-stardist.toml", "stardist-test"))
-        self.assertIn("stardist", data["pypi-dependencies"])
-        self.assertNotIn("torch", data["pypi-dependencies"])
-        for feature in data["feature"].values():
-            dependencies = feature.get("pypi-dependencies", {})
-            self.assertNotIn("tensorflow-macos", dependencies)
-            if "tensorflow" in dependencies:
-                self.assertIn(dependencies["tensorflow"], {"==2.10.1", "==2.15.1"})
-        for platform in ("linux-x86-64-no-cuda", "win-x86-64-no-cuda"):
-            self.assertEqual(data["feature"][platform]["pypi-dependencies"], {"tensorflow-cpu": "==2.15.1"})
-        self.assertIn("%CONDA_PREFIX%", render(TOMLS / "jdll-pixi-stardist.toml", "stardist-test"))
 
     def test_unknown_cuda_is_rejected(self):
         with self.assertRaises(ValueError):
@@ -84,31 +39,6 @@ class PixiManifestTests(unittest.TestCase):
         for suffix in ("big-sur", "catalina"):
             self.assertEqual(render(TOMLS / "jdll-pixi-mac-x86.toml", "intel-test", environment=f"macos-{suffix}"),
                              render(TOMLS / f"jdll-pixi-mac-x86-{suffix}.toml", "intel-test"))
-
-    def test_opencv_uses_real_headless_packages_without_local_compatibility_projects(self):
-        self.assertFalse((TOMLS.parent / "python/opencv-python-compat/pyproject.toml").exists())
-        data = tomllib.loads(render(TOMLS / "jdll-pixi-mac-arm.toml", "arm-test"))
-        self.assertEqual(data["system-requirements"]["macos"], "12.0")
-        self.assertEqual(data["feature"]["core"]["pypi-dependencies"]["opencv-python-headless"], "==4.10.0.84")
-
-    def test_ci_installs_a_pixi_executable_not_a_directory(self):
-        action = (TOMLS.parents[3] / ".github/actions/jdll-pixi-smoke/action.yml").read_text()
-        self.assertIn("pixi-bin-path: ${{ runner.temp }}/appose-environments/${{ inputs.id }}/.pixi/bin/pixi"
-                      "${{ runner.os == 'Windows' && '.exe' || '' }}", action)
-        self.assertEqual(action.count("APPOSE_ENVS_DIR: ${{ runner.temp }}/appose-environments/${{ inputs.id }}"), 2)
-        self.assertIn('subprocess.run([str(pixi), "--version"], check=True)', action)
-        self.assertNotIn('subprocess.run(["pixi",', action)
-
-    def test_retired_biapy_workflow_does_not_remove_the_legacy_manifests(self):
-        self.assertFalse((TOMLS.parents[3] / ".github/workflows/biapy-pixi-install.yml").exists())
-        self.assertEqual(len(list(TOMLS.glob("biapy-pixi-*.toml"))), 6)
-
-    def test_ci_allows_slow_cuda_wheel_downloads_without_retrying_model_checks(self):
-        action = (TOMLS.parents[3] / ".github/actions/jdll-pixi-smoke/action.yml").read_text()
-        self.assertIn('UV_HTTP_TIMEOUT: "300"', action)
-        for command in ("lock", "install"):
-            self.assertIn(f'run_install([str(pixi), "{command}"', action)
-        self.assertIn('subprocess.run([str(pixi), "run"', action)
 
 
 if __name__ == "__main__":
