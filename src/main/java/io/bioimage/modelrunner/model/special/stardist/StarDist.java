@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.LongStream;
 
-import org.apposed.appose.Appose;
 import org.apposed.appose.BuildException;
 import org.apposed.appose.Environment;
 import org.apposed.appose.Service;
@@ -1623,7 +1622,7 @@ public final class StarDist extends DLModelPytorchProtected {
 		}
 
 		PixiEnvironmentSpec envSpec = resolvePytorchEnv();
-        Environment env = Appose.pixi().wrap(envSpec.getEnvironmentDirectory()).activate(envSpec.getSelectedEnvironment());
+        Environment env = PixiEnvironmentManager.openEnvironment(envSpec, logConsumer);
 		Service python = env.python();
 		if (serviceConsumer != null) {
 			serviceConsumer.accept(python);

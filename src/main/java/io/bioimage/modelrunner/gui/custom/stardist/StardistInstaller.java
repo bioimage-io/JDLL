@@ -85,7 +85,7 @@ public class StardistInstaller  implements ModelInstaller {
      */
     public void installEnvironment(Consumer<String> logConsumer) throws InterruptedException, BuildException {
         PixiEnvironmentSpec spec = StarDist.resolvePytorchEnv();
-        PixiEnvironmentManager.installRequirements(spec, (str) -> {System.out.println(str);});
+        PixiEnvironmentManager.installRequirements(spec, logConsumer);
     }
 
     /**

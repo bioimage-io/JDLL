@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
-import org.apposed.appose.Appose;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import org.apposed.appose.BuildException;
 import org.apposed.appose.Environment;
 import org.apposed.appose.Service;
@@ -398,7 +398,7 @@ public class Yolo extends DLModelPytorchProtected {
 		}
 
 		PixiEnvironmentSpec envSpec = resolvePytorchEnv();
-        Environment env = Appose.pixi().wrap(envSpec.getEnvironmentDirectory()).activate(envSpec.getSelectedEnvironment());
+        Environment env = PixiEnvironmentManager.openEnvironment(envSpec, logConsumer);
 		Service python = env.python();
 		if (serviceConsumer != null) {
 			serviceConsumer.accept(python);
@@ -462,7 +462,7 @@ public class Yolo extends DLModelPytorchProtected {
 		}
 
 		PixiEnvironmentSpec envSpec = resolvePytorchEnv();
-        Environment env = Appose.pixi().wrap(envSpec.getEnvironmentDirectory()).activate(envSpec.getSelectedEnvironment());
+        Environment env = PixiEnvironmentManager.openEnvironment(envSpec, logConsumer);
 		Service python = env.python();
 		YoloTrainingAttemptResult result = new YoloTrainingAttemptResult();
 		if (serviceConsumer != null) {

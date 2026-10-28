@@ -19,7 +19,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import org.apposed.appose.Appose;
 import org.apposed.appose.BuildException;
 import org.apposed.appose.Environment;
 import org.apposed.appose.Service;
@@ -91,7 +90,7 @@ public final class CrossGoose extends DLModelPytorchProtected {
             Consumer<String> logConsumer, Consumer<Service> serviceConsumer)
             throws IOException, BuildException, InterruptedException, TaskException {
         PixiEnvironmentSpec spec = resolvePytorchEnv();
-        Environment environment = Appose.pixi().wrap(spec.getEnvironmentDirectory()).activate(spec.getSelectedEnvironment());
+        Environment environment = PixiEnvironmentManager.openEnvironment(spec, logConsumer);
         Service python = environment.python();
         if (serviceConsumer != null) serviceConsumer.accept(python);
         try {

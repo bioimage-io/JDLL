@@ -19,7 +19,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apposed.appose.Appose;
 import org.apposed.appose.Environment;
 import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
@@ -392,7 +391,7 @@ public class DLModelPytorchProtected extends BaseModel {
         final Environment env;
 
         try {
-    		env = Appose.pixi().wrap(environmentSpec.getEnvironmentDirectory()).activate(environmentSpec.getSelectedEnvironment());
+            env = PixiEnvironmentManager.openEnvironment(environmentSpec, null);
     		python = env.python();
 	
 	        python.debug(System.err::println);

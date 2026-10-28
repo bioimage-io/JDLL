@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import org.apposed.appose.Service.ResponseType;
-import org.apposed.appose.Appose;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import org.apposed.appose.Environment;
 import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
@@ -76,7 +76,7 @@ public final class Denoising extends DLModelPytorchProtected {
      */
     public static DenoisingCapabilities capabilities(Consumer<Service> serviceConsumer) throws Exception {
         PixiEnvironmentSpec spec = resolvePytorchEnv();
-        Environment environment = Appose.pixi().wrap(spec.getEnvironmentDirectory()).activate(spec.getSelectedEnvironment());
+        Environment environment = PixiEnvironmentManager.openEnvironment(spec, null);
         Service service = environment.python();
         if (serviceConsumer != null) serviceConsumer.accept(service);
         try {
