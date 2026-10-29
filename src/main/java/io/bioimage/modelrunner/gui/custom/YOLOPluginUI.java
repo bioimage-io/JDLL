@@ -127,6 +127,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     	super(adapter);
         // Set a modern-looking border layout with padding
     	this.consumer = consumer;
+        if (consumer != null) trainingService.setImageDocumentationUrl(consumer.getImageFormatDocumentationUrl());
     	List<JComponent> componentList = new ArrayList<JComponent>();
 
     	String modelsDir = consumer == null ? null : consumer.getModelsDir();
@@ -627,7 +628,13 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     private <T extends RealType<T> & NativeType<T>>
     RandomAccessibleInterval<T> readImageFileAsRai(File imageFile) throws IOException {
         if (consumer == null) throw new IOException("Filesystem inference requires a host image loader.");
-        return consumer.openImageAsRai(imageFile);
+        try {
+            return consumer.openImageAsRai(imageFile);
+        } catch (IOException e) {
+            if (!io.bioimage.modelrunner.numpy.NpyImageFile.isNpy(imageFile)) throw e;
+            throw new IOException("The host application could not open " + imageFile.getAbsolutePath()
+                    + ". See " + consumer.getImageFormatDocumentationUrl(), e);
+        }
     }
 
     private static String imageProgressBar(int imageIndex, int totalImages) {

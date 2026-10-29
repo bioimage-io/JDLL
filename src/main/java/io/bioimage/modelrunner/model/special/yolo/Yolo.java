@@ -75,6 +75,8 @@ public class Yolo extends DLModelPytorchProtected {
 	
 	private HashMap<String, String> mappings;
 	private Rectangle objectSize;
+    private boolean savedFloatRange;
+    private String inferenceFloatRange = "None";
 		
 	private static final Map<String, Long> PRETRAINED_YOLO_MODELS;
 	public static final double DEFAULT_VALIDATION_PREVIEW_CONFIDENCE = 0.25d;
@@ -200,11 +202,17 @@ public class Yolo extends DLModelPytorchProtected {
 				"cuda".equals(device) ? "True" : "False",
 				"mps".equals(device) ? "True" : "False",
 				weightsPath);
-		return code;
+		return code + TrainingCodeUtils.pythonModule("jdll_yolo_data", "python/yolo_data.py")
+				+ "_jdll_yolo_normalization = jdll_yolo_data.load_normalization(r'" + TrainingCodeUtils.py(weightsPath) + "') or getattr(" + MODEL_VAR_NAME + ".model, 'jdll_preprocessing', None)\n"
+				+ "task.export(jdll_yolo_data=jdll_yolo_data, _jdll_yolo_normalization=_jdll_yolo_normalization)\n"
+                + "task.outputs['preprocessing'] = _jdll_yolo_normalization\n";
 	}
 	
 	protected void postLoad(Task task) {
     	this.mappings = (HashMap<String, String>) task.outputs.get("mappings");
+        Object preprocessing = task.outputs.get("preprocessing");
+        savedFloatRange = preprocessing instanceof Map && ((Map<?, ?>) preprocessing).get("float_min") instanceof Number
+                && ((Map<?, ?>) preprocessing).get("float_max") instanceof Number;
     }
 	
 	/**
@@ -227,9 +235,14 @@ public class Yolo extends DLModelPytorchProtected {
 				SharedMemoryArray shma = shmas.get(i);
 				code += codeToConvertShmaToPython(shma, names.get(i));
 				inShmaList.add(shma);
+				code += names.get(i) + " = jdll_yolo_data.prepare_pixels(" + names.get(i)
+                        + ", _jdll_yolo_normalization if _jdll_yolo_normalization and _jdll_yolo_normalization.get('float_min') is not None else "
+                        + inferenceFloatRange + ")" + System.lineSeparator();
 				code += names.get(i) + "_torch, meta = " + LetterboxPreprocessing.getMethodName()
 				+ "(" + ConvertDims.getMethodName() + "(" + names.get(i)
-			+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase() + "',device=device))" + System.lineSeparator();
+			+ ", '" + inRais.get(i).getAxesOrderString().toLowerCase() + "',device=device, n_channels=next(layer.in_channels for layer in "
+                    + MODEL_VAR_NAME + ".model.modules() if isinstance(layer, torch.nn.Conv2d))))" + System.lineSeparator();
+				code += names.get(i) + "_torch = " + names.get(i) + "_torch.float().div(255)" + System.lineSeparator();
 		}
 		code += OUTPUT_LIST_KEY + " = " + MODEL_VAR_NAME + "(" + names.get(0) + "_torch, device=device)" + System.lineSeparator();;
 		code += ""
@@ -616,6 +629,7 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "import ultralytics" + nl
 				+ "from ultralytics import YOLO" + nl
 				+ "from ultralytics.utils import LOGGER" + nl
+				+ TrainingCodeUtils.pythonModule("jdll_yolo_data", "python/yolo_data.py")
 				+ "model_source = r'" + TrainingCodeUtils.py(modelSource) + "'" + nl
 				+ "dataset_yaml = r'" + TrainingCodeUtils.py(new File(datasetYamlPath).getAbsolutePath()) + "'" + nl
 				+ "output_weights = r'" + TrainingCodeUtils.py(outputFile.getAbsolutePath()) + "'" + nl
@@ -639,6 +653,8 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "imgsz = " + imageSize + nl
 				+ "batch_size = " + batchLiteral(batchRequest, normalizedDevice, modelSource) + nl
 				+ "train_options = json.loads(base64.b64decode('" + optionsBase64 + "').decode('utf-8'))" + nl
+				+ "preview_assets_dir = train_options.pop('jdll_preview_assets', os.path.join(preview_dir, 'images'))" + nl
+				+ "os.makedirs(preview_assets_dir, exist_ok=True)" + nl
 				+ "preview_epoch_period = " + Math.max(1, previewEpochPeriod) + nl
 				+ "preview_sample_count = " + DEFAULT_VALIDATION_PREVIEW_SAMPLE_COUNT + nl
 				+ "preview_confidence = " + DEFAULT_VALIDATION_PREVIEW_CONFIDENCE + nl
@@ -683,7 +699,7 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "  device = str(getattr(trainer, 'device', train_device))" + nl
 				+ "  state['resolved_batch'] = batch" + nl
 				+ "  state['resolved_device'] = device" + nl
-				+ "  return {'type': 'runtime', 'python_version': platform.python_version(), 'ultralytics_version': ultralytics.__version__, 'torch_version': torch.__version__, 'torchvision_version': torchvision.__version__, 'resolved_device': device, 'resolved_batch': batch}" + nl
+				+ "  return {'type': 'runtime', 'python_version': platform.python_version(), 'ultralytics_version': ultralytics.__version__, 'torch_version': torch.__version__, 'torchvision_version': torchvision.__version__, 'resolved_device': device, 'resolved_batch': batch, 'preprocessing': trainer.jdll_sources.normalization}" + nl
 				+ "def _emit_runtime(trainer):" + nl
 				+ "  _task_update(info=_runtime_info(trainer))" + nl
 				+ "def _emit_train_start(trainer):" + nl
@@ -797,7 +813,16 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "    return" + nl
 				+ "  images = []" + nl
 				+ "  for path in state.get('preview_order', []):" + nl
-				+ "    images.append(state.get('preview_results', {}).get(path, {'path': path, 'boxes': []}))" + nl
+				+ "    item = dict(state.get('preview_results', {}).get(path, {'path': path, 'boxes': []}))" + nl
+				+ "    sources = validator.dataloader.dataset.sources" + nl
+				+ "    height, width, _, dtype = sources.info(path)[:4]" + nl
+				+ "    if sources.info(path)[5] == 'npy' or dtype.kind == 'f' or dtype.itemsize > 1 or not os.path.isfile(path):" + nl
+				+ "      item['source_path'] = sources.entry(path)['source']" + nl
+				+ "      item['path'] = jdll_yolo_data.preview_image(sources, path, preview_assets_dir)" + nl
+				+ "      scale = min(1.0, 1024 / max(height, width))" + nl
+				+ "      scales = (max(1, round(width * scale)) / width, max(1, round(height * scale)) / height)" + nl
+				+ "      item['boxes'] = [dict(box, xyxy=[float(v) * scales[i % 2] for i, v in enumerate(box['xyxy'])]) for box in item.get('boxes', [])]" + nl
+				+ "    images.append(item)" + nl
 				+ "  payload = {'epoch': int(state.get('preview_epoch', 0)), 'confidence_threshold': preview_confidence, 'images': images}" + nl
 				+ "  epoch_preview_path = os.path.join(preview_dir, 'epoch_%04d.json' % payload['epoch'])" + nl
 				+ "  for path in (epoch_preview_path, preview_json_path):" + nl
@@ -821,6 +846,8 @@ public class Yolo extends DLModelPytorchProtected {
 					+ "  if os.path.isfile(pre_best):" + nl
 					+ "    _task_update(message='Overwriting YOLO best checkpoint during training: ' + pre_best, info={'type': 'checkpoint', 'kind': 'best', 'path': pre_best, 'overwrite': True})" + nl
 					+ "  train_args = dict(train_options)" + nl
+					+ "  jdll_yolo_data.DOCUMENTATION = train_args.pop('jdll_documentation', jdll_yolo_data.DOCUMENTATION)" + nl
+					+ "  train_args['trainer'] = jdll_yolo_data.trainer_class(dataset_yaml, jdll_yolo_data.load_normalization(output_weights), _task_update, _cancel_requested)" + nl
 					+ "  train_args.update(data=dataset_yaml, epochs=epochs, imgsz=imgsz, batch=batch_size, project=project, name=run_name, exist_ok=" + pyBool(DEFAULT_TRAIN_EXIST_OK) + ", verbose=" + pyBool(DEFAULT_TRAIN_VERBOSE) + ", plots=" + pyBool(DEFAULT_TRAIN_PLOTS) + ", workers=" + DEFAULT_TRAIN_WORKERS + ", device=train_device)" + nl
 					+ "  with open(yolo_log_path, 'a', encoding='utf-8') as yolo_log, contextlib.redirect_stdout(yolo_log), contextlib.redirect_stderr(yolo_log):" + nl
 					+ "    results = model.train(**train_args)" + nl
@@ -850,6 +877,7 @@ public class Yolo extends DLModelPytorchProtected {
 					+ "  task.outputs['torchvision_version'] = torchvision.__version__" + nl
 					+ "  task.outputs['resolved_device'] = state.get('resolved_device')" + nl
 					+ "  task.outputs['resolved_batch'] = state.get('resolved_batch')" + nl
+					+ "  task.outputs['preprocessing'] = trainer.jdll_sources.normalization" + nl
 					+ "  task.outputs['completed_epochs'] = state.get('completed_epochs', 0)" + nl
 					+ "  task.outputs['best_epoch'] = state.get('best_epoch', 0)" + nl
 					+ "  task.outputs['best_metrics'] = state.get('best_metrics', {})" + nl
@@ -971,6 +999,21 @@ public class Yolo extends DLModelPytorchProtected {
     @Override
     protected <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     Merger<Tensor<T>, Tensor<R>> getTileMaker(final List<Tensor<T>> inputs) {
+        inferenceFloatRange = "None";
+        if (!savedFloatRange) {
+            double low = Double.POSITIVE_INFINITY, high = Double.NEGATIVE_INFINITY;
+            for (Tensor<T> input : inputs) {
+                T type = Views.iterable(input.getData()).firstElement();
+                if (!(type instanceof FloatType) && !(type instanceof net.imglib2.type.numeric.real.DoubleType)) continue;
+                for (T pixel : Views.iterable(input.getData())) {
+                    double value = pixel.getRealDouble();
+                    if (!Double.isFinite(value)) throw new IllegalArgumentException("YOLO floating-point inputs contain NaN or Inf");
+                    low = Math.min(low, value);
+                    high = Math.max(high, value);
+                }
+            }
+            if (Double.isFinite(low)) inferenceFloatRange = "{'float_min': " + low + ", 'float_max': " + high + "}";
+        }
         Merger<Tensor<T>, Tensor<R>> merger = new DetectionMerger<T, R>(objectSize);
         merger.configure(inputs);
         return merger;

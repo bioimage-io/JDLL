@@ -48,6 +48,7 @@ public class YoloTrainingService {
     private File cancelSignalFile;
     private Service runningPython;
     private volatile boolean cancelRequested;
+    private String imageDocumentationUrl = io.bioimage.modelrunner.numpy.NpyImageFile.DOCUMENTATION_URL;
 
     /**
      * Creates a new YoloTrainingService instance.
@@ -56,6 +57,10 @@ public class YoloTrainingService {
      */
     public YoloTrainingService(ModelInstaller installer) {
         this.installer = installer;
+    }
+
+    public void setImageDocumentationUrl(String url) {
+        if (url != null && !url.trim().isEmpty()) imageDocumentationUrl = url;
     }
 
     /**
@@ -84,8 +89,13 @@ public class YoloTrainingService {
         YoloDatasetPreparationResult dataset = null;
         File cancelFile = null;
         try {
-            dataset = YoloDatasetPreparer.prepareDetailed(config.getDatasetYamlPath(), config.getModelName(),
-                    config.getModelsDir(), config.getImageSize(), logConsumer);
+            try {
+                dataset = YoloDatasetPreparer.prepareDetailed(config.getDatasetYamlPath(), config.getModelName(),
+                        config.getModelsDir(), config.getImageSize(), logConsumer);
+            } catch (IOException e) {
+                throw new IOException(String.valueOf(e.getMessage()).replace(io.bioimage.modelrunner.numpy.NpyImageFile.DOCUMENTATION_URL,
+                        imageDocumentationUrl), e);
+            }
             results.setDataset(dataset.getSummary());
             File configFile = config.writeConfig(dataset.getYaml());
             log(logConsumer, "Config file saved at: " + configFile.getAbsolutePath());
@@ -114,12 +124,15 @@ public class YoloTrainingService {
                 Consumer<String> attemptLog = message -> log(logConsumer,
                         canonicalizeAttemptPath(message, attemptDir, config.getOutputModelDir()));
                 try {
+                    java.util.Map<String, Object> backendOptions = config.getBackendTrainingOptions();
+                    backendOptions.put("jdll_documentation", imageDocumentationUrl);
+                    backendOptions.put("jdll_preview_assets", new File(config.getOutputModelDir(), "validation_images").getAbsolutePath());
                     YoloTrainingAttemptResult completed = Yolo.trainAttempt(
                             config.getEpochs(), config.getBaseModelPath(),
                             config.isFineTune() ? null : config.getTrainingModelSource(),
                             resolvedYaml.getAbsolutePath(), attemptOutput.getAbsolutePath(),
                             config.getImageSize(), config.getPreviewEpochPeriod(),
-                            config.getBackendTrainingOptions(), batch,
+                            backendOptions, batch,
                             progressConsumer, previewConsumer, attemptLog, config.getDevice(),
                             cancelFile.getAbsolutePath(), this::setRunningPython, runtime -> {
                                 latest.set(runtime);

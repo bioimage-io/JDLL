@@ -68,6 +68,7 @@ public final class YoloTrainingConfig {
     private String ultralyticsVersion;
     private String torchVersion;
     private String torchvisionVersion;
+    private Map<String, Object> preprocessing = Collections.emptyMap();
 
     /**
      * Creates a new YoloTrainingConfig instance.
@@ -283,6 +284,7 @@ public final class YoloTrainingConfig {
         ultralyticsVersion = result.getUltralyticsVersion();
         torchVersion = result.getTorchVersion();
         torchvisionVersion = result.getTorchvisionVersion();
+        if (!result.getPreprocessing().isEmpty()) preprocessing = result.getPreprocessing();
     }
 
     /**
@@ -357,6 +359,7 @@ public final class YoloTrainingConfig {
         root.put("dataset", datasetMap(resolvedDatasetYaml));
         root.put("training", new LinkedHashMap<String, Object>(trainingOptions));
         root.put("runtime", runtimeMap());
+        if (!preprocessing.isEmpty()) root.put("preprocessing", new LinkedHashMap<>(preprocessing));
         return root;
     }
 

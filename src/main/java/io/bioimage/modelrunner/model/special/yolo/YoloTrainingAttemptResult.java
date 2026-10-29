@@ -38,6 +38,7 @@ public final class YoloTrainingAttemptResult {
     private int bestEpoch;
     private Map<String, Double> bestMetrics = Collections.emptyMap();
     private Map<String, Double> finalMetrics = Collections.emptyMap();
+    private Map<String, Object> preprocessing = Collections.emptyMap();
 
     void updateRuntime(Map<String, Object> info) {
         pythonVersion = stringValue(info.get("python_version"), pythonVersion);
@@ -46,6 +47,9 @@ public final class YoloTrainingAttemptResult {
         torchvisionVersion = stringValue(info.get("torchvision_version"), torchvisionVersion);
         resolvedDevice = stringValue(info.get("resolved_device"), resolvedDevice);
         resolvedBatch = integerValue(info.get("resolved_batch"), resolvedBatch);
+        if (info.get("preprocessing") instanceof Map) {
+            preprocessing = new LinkedHashMap<>((Map<String, Object>) info.get("preprocessing"));
+        }
     }
 
     void updateProgress(Map<String, Object> info) {
@@ -110,6 +114,10 @@ public final class YoloTrainingAttemptResult {
 
     public Map<String, Double> getFinalMetrics() {
         return finalMetrics;
+    }
+
+    public Map<String, Object> getPreprocessing() {
+        return Collections.unmodifiableMap(preprocessing);
     }
 
     private static String stringValue(Object value, String fallback) {

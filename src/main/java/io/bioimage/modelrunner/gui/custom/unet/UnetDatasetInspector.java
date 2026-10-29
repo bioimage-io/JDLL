@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
+import io.bioimage.modelrunner.numpy.NpyImageFile;
 
 import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer;
 
@@ -59,7 +60,7 @@ public final class UnetDatasetInspector {
     private static final int MAX_FILES_TO_REVIEW = 48;
     private static final int MAX_SCAN_DEPTH = 6;
     private static final Set<String> IMAGE_EXTENSIONS = new HashSet<String>(Arrays.asList(
-            ".tif", ".tiff", ".png", ".jpg", ".jpeg"));
+            ".tif", ".tiff", ".png", ".jpg", ".jpeg", ".npy"));
 
     private UnetDatasetInspector() {}
 
@@ -128,6 +129,13 @@ public final class UnetDatasetInspector {
     }
 
     private static boolean isMultipageImage(File file) {
+        if (NpyImageFile.isNpy(file)) {
+            try (NpyImageFile array = new NpyImageFile(file)) {
+                return array.resolveVolume(0, 0, -1, false).depth() > 1;
+            } catch (IOException | RuntimeException e) {
+                return false;
+            }
+        }
         try (ImageInputStream input = ImageIO.createImageInputStream(file)) {
             if (input == null) {
                 return hasMultipleTiffDirectories(file);

@@ -52,6 +52,10 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import io.bioimage.modelrunner.numpy.NpyImageFile;
+
 final class YoloDatasetPreparer {
 
     private static final long SPLIT_SEED = 5489L;
@@ -70,12 +74,13 @@ final class YoloDatasetPreparer {
     private static final int MIN_DENSITY_TILE_SIDE_PX = 64;
     private static final String DEFAULT_CLASS_NAME = "object";
     private static final String GENERATED_YAML_NAME = "data.yaml";
+    private static final String SAMPLES_MANIFEST = "jdll_samples.json";
 
     private static final Set<String> IMAGE_EXTENSIONS = new HashSet<String>();
     private static final Set<String> IMAGE_SUFFIXES = new HashSet<String>();
     private static final Set<String> MASK_SUFFIXES = new HashSet<String>();
     static {
-        Collections.addAll(IMAGE_EXTENSIONS, ".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff");
+        Collections.addAll(IMAGE_EXTENSIONS, ".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".npy");
         Collections.addAll(IMAGE_SUFFIXES, "_img", "_image", "_sample", "_images", "_imgs", "_samples");
         Collections.addAll(MASK_SUFFIXES, "_mask", "_masks", "_label", "_labels");
     }
@@ -182,7 +187,8 @@ final class YoloDatasetPreparer {
             return generated;
         }
 
-        List<MaskSample> trainMasks = firstNonEmpty(findMaskSamples(input, ""), findMaskSamples(input, "train"));
+        List<MaskSample> trainMasks = findMaskSamples(input, "train");
+        if (trainMasks.isEmpty()) trainMasks = findMaskSamples(input, "");
         List<MaskSample> valMasks = firstNonEmpty(findMaskSamples(input, "val"),
                 findMaskSamples(input, "validation"),
                 findMaskSamples(input, "valid"));
@@ -568,8 +574,10 @@ final class YoloDatasetPreparer {
 
         sortYoloSamples(trainSamples);
         sortYoloSamples(valSamples);
-        writeLinkedSamples(trainSamples, trainImages, trainLabels);
-        writeLinkedSamples(valSamples, valImages, valLabels);
+        Map<String, Map<String, Object>> references = new LinkedHashMap<>();
+        writeLinkedSamples(trainSamples, trainImages, trainLabels, references);
+        writeLinkedSamples(valSamples, valImages, valLabels, references);
+        writeReferences(root, references);
         File yaml = new File(root, GENERATED_YAML_NAME);
         writeYaml(yaml, root, "images/train", "images/val", names);
         log(logConsumer, "Prepared " + trainSamples.size() + " training and " + valSamples.size()
@@ -584,14 +592,20 @@ final class YoloDatasetPreparer {
         Collections.sort(samples, Comparator.comparing(sample -> sample.image.getAbsolutePath()));
     }
 
-    private static void writeLinkedSamples(List<YoloSample> samples, File imageDir, File labelDir)
+    private static void writeLinkedSamples(List<YoloSample> samples, File imageDir, File labelDir,
+            Map<String, Map<String, Object>> references)
             throws IOException {
         int index = 0;
         for (YoloSample sample : samples) {
             String stem = safeFileName(removeExtension(sample.image.getName())) + "_" + String.format("%05d", index++);
             File imageOut = new File(imageDir, stem + extensionOrDefault(sample.image, ".png"));
             File labelOut = new File(labelDir, stem + ".txt");
-            linkOrCopy(sample.image.toPath(), imageOut.toPath());
+            if (needsRuntimeReader(sample.image)) {
+                ImageSize size = readImageSize(sample.image);
+                reference(references, imageOut, sample.image, null, size.width, size.height);
+            } else {
+                linkOrCopy(sample.image.toPath(), imageOut.toPath());
+            }
             linkOrCopy(sample.label.toPath(), labelOut.toPath());
         }
     }
@@ -619,11 +633,25 @@ final class YoloDatasetPreparer {
         if (splitTrainSamples) {
             log(logConsumer, "Validation split is missing; creating an automatic "
                     + Math.round((1.0 - TRAIN_FRACTION) * 100.0) + "% validation split.");
-            List<GeneratedSample> all = new ArrayList<GeneratedSample>(trainGenerated);
-            Collections.shuffle(all, new Random(SPLIT_SEED));
-            int trainCount = splitIndex(all.size());
-            trainGenerated = new ArrayList<GeneratedSample>(all.subList(0, trainCount));
-            valGenerated = new ArrayList<GeneratedSample>(all.subList(trainCount, all.size()));
+            List<File> sources = new ArrayList<>();
+            for (GeneratedSample sample : trainGenerated)
+                if (!sources.contains(sample.sourceImage)) sources.add(sample.sourceImage);
+            if (sources.size() > 1) {
+                Collections.shuffle(sources, new Random(SPLIT_SEED));
+                Set<File> trainSources = new HashSet<>(sources.subList(0, splitIndex(sources.size())));
+                List<GeneratedSample> training = new ArrayList<>(), validation = new ArrayList<>();
+                for (GeneratedSample sample : trainGenerated)
+                    (trainSources.contains(sample.sourceImage) ? training : validation).add(sample);
+                trainGenerated = training;
+                valGenerated = validation;
+            } else {
+                List<GeneratedSample> all = new ArrayList<>(trainGenerated);
+                Collections.shuffle(all, new Random(SPLIT_SEED));
+                int trainCount = splitIndex(all.size());
+                trainGenerated = new ArrayList<>(all.subList(0, trainCount));
+                valGenerated = new ArrayList<>(all.subList(trainCount, all.size()));
+                log(logConsumer, "Single-source dataset: generated crops are split for validation; overlapping content may make validation optimistic.");
+            }
         }
         if (trainGenerated.isEmpty() || valGenerated.isEmpty()) {
             throw new IllegalArgumentException("Could not create non-empty train and validation splits.");
@@ -642,8 +670,10 @@ final class YoloDatasetPreparer {
 
         sortBySource(trainGenerated);
         sortBySource(valGenerated);
-        writeSamples(trainGenerated, trainImages, trainLabels, logConsumer, "training");
-        writeSamples(valGenerated, valImages, valLabels, logConsumer, "validation");
+        Map<String, Map<String, Object>> references = new LinkedHashMap<>();
+        writeSamples(trainGenerated, trainImages, trainLabels, logConsumer, "training", references);
+        writeSamples(valGenerated, valImages, valLabels, logConsumer, "validation", references);
+        writeReferences(root, references);
         File yaml = new File(root, GENERATED_YAML_NAME);
         writeYaml(yaml, root, "images/train", "images/val", names);
         log(logConsumer, "Prepared " + trainGenerated.size() + " training and " + valGenerated.size()
@@ -957,7 +987,7 @@ final class YoloDatasetPreparer {
     }
 
     private static void writeSamples(List<GeneratedSample> samples, File imageDir, File labelDir,
-            Consumer<String> logConsumer, String splitName)
+            Consumer<String> logConsumer, String splitName, Map<String, Map<String, Object>> references)
             throws IOException {
         int index = 0;
         File cachedSource = null;
@@ -967,7 +997,10 @@ final class YoloDatasetPreparer {
         for (GeneratedSample sample : samples) {
             String stem = safeFileName(removeExtension(sample.sourceImage.getName())) + "_" + String.format("%05d", index++);
             File imageOut;
-            if (sample.crop == null) {
+            if (needsRuntimeReader(sample.sourceImage)) {
+                imageOut = new File(imageDir, stem + extensionOrDefault(sample.sourceImage, ".npy"));
+                reference(references, imageOut, sample.sourceImage, sample.crop, sample.width, sample.height);
+            } else if (sample.crop == null) {
                 imageOut = new File(imageDir, stem + extensionOrDefault(sample.sourceImage, ".png"));
                 linkOrCopy(sample.sourceImage.toPath(), imageOut.toPath());
             } else {
@@ -1255,6 +1288,7 @@ final class YoloDatasetPreparer {
         Map<String, File> images = new HashMap<String, File>();
         Map<String, File> masks = new HashMap<String, File>();
         for (File file : files) {
+            if (!file.getParentFile().equals(splitDir)) continue;
             String stem = removeExtension(file.getName());
             String core = maskCore(stem);
             if (core == null) {
@@ -1324,45 +1358,54 @@ final class YoloDatasetPreparer {
 
     private static MaskSample readMaskSample(File imageFile, File maskFile) throws IOException {
         ImageSize size = readImageSize(imageFile);
-        BufferedImage mask = ImageIO.read(maskFile);
-        if (size == null || mask == null) {
-            return null;
-        }
-        Raster raster = mask.getRaster();
-        Map<Integer, int[]> bounds = new HashMap<Integer, int[]>();
-        Map<Integer, Integer> pixelAreas = new HashMap<Integer, Integer>();
-        int width = Math.min(size.width, mask.getWidth());
-        int height = Math.min(size.height, mask.getHeight());
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int value = raster.getSample(x, y, 0);
-                if (value <= 0) {
-                    continue;
-                }
-                pixelAreas.put(value, pixelAreas.getOrDefault(value, 0) + 1);
-                int[] b = bounds.get(value);
-                if (b == null) {
-                    b = new int[] {x, y, x, y};
-                    bounds.put(value, b);
-                } else {
-                    b[0] = Math.min(b[0], x);
-                    b[1] = Math.min(b[1], y);
-                    b[2] = Math.max(b[2], x);
-                    b[3] = Math.max(b[3], y);
+        try (NpyImageFile numpy = NpyImageFile.isNpy(maskFile) ? new NpyImageFile(maskFile) : null) {
+            BufferedImage mask = numpy == null ? ImageIO.read(maskFile) : null;
+            if (size == null || numpy == null && mask == null) throw invalidMask(maskFile, "Cannot read image/mask pair");
+            if (numpy != null) numpy.resolve(size.width, size.height);
+            Raster raster = mask == null ? null : mask.getRaster();
+            if (mask != null && (mask.getWidth() != size.width || mask.getHeight() != size.height))
+                throw invalidMask(maskFile, "Image and mask sizes differ");
+            Map<Integer, int[]> bounds = new HashMap<Integer, int[]>();
+            Map<Integer, Integer> pixelAreas = new HashMap<Integer, Integer>();
+            int width = size.width;
+            int height = size.height;
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    double raw = numpy == null ? raster.getSampleDouble(x, y, 0) : numpy.value(x, y, 0);
+                    if (!Double.isFinite(raw) || raw != Math.rint(raw) || raw < 0 || raw > Integer.MAX_VALUE)
+                        throw invalidMask(maskFile, "Masks must contain nonnegative integer instance IDs fitting int32");
+                    int value = (int) raw;
+                    if (value <= 0) continue;
+                    pixelAreas.put(value, pixelAreas.getOrDefault(value, 0) + 1);
+                    int[] b = bounds.get(value);
+                    if (b == null) {
+                        b = new int[] {x, y, x, y};
+                        bounds.put(value, b);
+                    } else {
+                        b[0] = Math.min(b[0], x);
+                        b[1] = Math.min(b[1], y);
+                        b[2] = Math.max(b[2], x);
+                        b[3] = Math.max(b[3], y);
+                    }
                 }
             }
-        }
-        List<Box> boxes = new ArrayList<Box>();
-        int objectIndex = 0;
-        for (Map.Entry<Integer, int[]> entry : bounds.entrySet()) {
-            int[] b = entry.getValue();
-            int pixelArea = pixelAreas.getOrDefault(entry.getKey(), 0);
-            Box box = new Box(0, b[0], b[1], b[2] + 1.0, b[3] + 1.0, objectIndex++, pixelArea);
-            if (box.isValid()) {
-                boxes.add(box);
+            List<Box> boxes = new ArrayList<Box>();
+            int objectIndex = 0;
+            for (Map.Entry<Integer, int[]> entry : bounds.entrySet()) {
+                int[] b = entry.getValue();
+                int pixelArea = pixelAreas.getOrDefault(entry.getKey(), 0);
+                Box box = new Box(0, b[0], b[1], b[2] + 1.0, b[3] + 1.0, objectIndex++, pixelArea);
+                if (box.isValid()) boxes.add(box);
             }
+            return new MaskSample(imageFile, size.width, size.height, boxes);
+        } catch (IOException e) {
+            if (String.valueOf(e.getMessage()).contains(NpyImageFile.DOCUMENTATION_URL)) throw e;
+            throw invalidMask(maskFile, "Cannot read mask: " + e.getMessage());
         }
-        return new MaskSample(imageFile, size.width, size.height, boxes);
+    }
+
+    private static IOException invalidMask(File file, String message) {
+        return new IOException(message + ": " + file.getAbsolutePath() + ". See " + NpyImageFile.DOCUMENTATION_URL);
     }
 
     private static List<File> collectImages(File root) throws IOException {
@@ -1376,11 +1419,30 @@ final class YoloDatasetPreparer {
                     .filter(YoloDatasetPreparer::isImage)
                     .forEach(images::add);
         }
+        for (String path : readReferences(root).keySet()) {
+            File image = new File(path);
+            if (image.toPath().startsWith(root.toPath().toAbsolutePath()) && !images.contains(image)) images.add(image);
+        }
+        Set<String> ordinary = new HashSet<>();
+        for (File image : images) if (!NpyImageFile.isNpy(image)) ordinary.add(removeExtension(image.getAbsolutePath()));
+        images.removeIf(image -> NpyImageFile.isNpy(image) && ordinary.contains(removeExtension(image.getAbsolutePath())));
         Collections.sort(images, Comparator.comparing(File::getAbsolutePath));
         return images;
     }
 
     private static ImageSize readImageSize(File imageFile) throws IOException {
+        if (!imageFile.isFile()) {
+            Map<String, Object> reference = readReferences(imageFile.getParentFile()).get(imageFile.getAbsolutePath());
+            if (reference != null) return new ImageSize(((Number) reference.get("width")).intValue(), ((Number) reference.get("height")).intValue());
+        }
+        if (NpyImageFile.isNpy(imageFile)) {
+            try (NpyImageFile numpy = new NpyImageFile(imageFile)) {
+                numpy.resolve(0, 0);
+                if (numpy.channels() != 1 && numpy.channels() != 3)
+                    throw invalidMask(imageFile, "YOLO images require one or three channels");
+                return new ImageSize(numpy.width(), numpy.height());
+            }
+        }
         try (ImageInputStream input = ImageIO.createImageInputStream(imageFile)) {
             if (input == null) {
                 return null;
@@ -1397,6 +1459,56 @@ final class YoloDatasetPreparer {
                 reader.dispose();
             }
         }
+    }
+
+    private static boolean needsRuntimeReader(File image) throws IOException {
+        if (NpyImageFile.isNpy(image) || !image.isFile()) return true;
+        try (ImageInputStream input = ImageIO.createImageInputStream(image)) {
+            if (input == null) return false;
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+            if (!readers.hasNext()) return false;
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(input);
+                javax.imageio.ImageTypeSpecifier type = reader.getRawImageType(0);
+                if (type == null) return false;
+                int dtype = type.getSampleModel().getDataType();
+                return dtype == java.awt.image.DataBuffer.TYPE_FLOAT || dtype == java.awt.image.DataBuffer.TYPE_DOUBLE;
+            } finally { reader.dispose(); }
+        }
+    }
+
+    private static void reference(Map<String, Map<String, Object>> entries, File target, File source,
+            Rectangle crop, int width, int height) throws IOException {
+        Map<String, Object> entry = new LinkedHashMap<>();
+        Map<String, Object> existing = source.isFile() ? null : readReferences(source.getParentFile()).get(source.getAbsolutePath());
+        entry.put("source", existing == null ? source.getAbsolutePath() : existing.get("source"));
+        entry.put("width", width);
+        entry.put("height", height);
+        if (existing != null && existing.get("crop") instanceof List) {
+            List<?> parent = (List<?>) existing.get("crop");
+            int x = ((Number) parent.get(0)).intValue(), y = ((Number) parent.get(1)).intValue();
+            crop = crop == null ? new Rectangle(x, y, width, height)
+                    : new Rectangle(x + crop.x, y + crop.y, crop.width, crop.height);
+        }
+        if (crop != null) entry.put("crop", new int[] {crop.x, crop.y, crop.width, crop.height});
+        entries.put(target.getAbsolutePath(), entry);
+    }
+
+    private static void writeReferences(File root, Map<String, Map<String, Object>> entries) throws IOException {
+        if (!entries.isEmpty()) try (java.io.Writer writer = Files.newBufferedWriter(new File(root, SAMPLES_MANIFEST).toPath(), StandardCharsets.UTF_8)) {
+            new Gson().toJson(entries, writer);
+        }
+    }
+
+    private static Map<String, Map<String, Object>> readReferences(File directory) throws IOException {
+        for (File parent = directory; parent != null; parent = parent.getParentFile()) {
+            File manifest = new File(parent, SAMPLES_MANIFEST);
+            if (manifest.isFile()) try (java.io.Reader reader = Files.newBufferedReader(manifest.toPath(), StandardCharsets.UTF_8)) {
+                return new Gson().fromJson(reader, new TypeToken<Map<String, Map<String, Object>>>() {}.getType());
+            }
+        }
+        return Collections.emptyMap();
     }
 
     private static File createUniqueGeneratedRoot(String sourceName, String modelName, String modelsDir)

@@ -34,6 +34,7 @@ import javax.imageio.stream.ImageInputStream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.bioimage.modelrunner.numpy.NpyImageFile;
 
 /** Lightweight spatial review; ambiguous TIFF axes are left to the Python backend. */
 final class SegmentationImageGeometry {
@@ -53,6 +54,26 @@ final class SegmentationImageGeometry {
     }
 
     static SegmentationImageGeometry read(File file) throws IOException {
+        return read(file, null, false);
+    }
+
+    static int pairedDepth(File image, File mask) throws IOException {
+        SegmentationImageGeometry geometry = read(image);
+        return pairedDepth(geometry, read(mask, geometry, true));
+    }
+
+    int spatialDepth() { return depth; }
+
+    private static SegmentationImageGeometry read(File file, SegmentationImageGeometry guide, boolean mask) throws IOException {
+        if (NpyImageFile.isNpy(file)) {
+            try (NpyImageFile array = new NpyImageFile(file)) {
+                array.resolveVolume(guide == null ? 0 : guide.width, guide == null ? 0 : guide.height,
+                        guide == null || guide.depth == 0 ? -1 : guide.depth, mask);
+                SegmentationImageGeometry geometry = new SegmentationImageGeometry(array.width(), array.height(), array.depth());
+                geometry.explicit = true;
+                return geometry;
+            }
+        }
         try (ImageInputStream input = ImageIO.createImageInputStream(file)) {
             if (input == null) {
                 throw new IOException("Cannot read image header: " + file);

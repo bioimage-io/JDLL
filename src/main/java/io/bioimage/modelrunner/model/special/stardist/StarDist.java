@@ -1925,11 +1925,15 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "  with open(tmp_path, 'wb') as f:" + nl
 				+ "    np.save(f, array)" + nl
 				+ "  os.replace(tmp_path, path)" + nl
-				+ "IMAGE_EXTS = {'.tif', '.tiff', '.png', '.jpg', '.jpeg', '.bmp'}" + nl
+				+ "IMAGE_EXTS = {'.tif', '.tiff', '.png', '.jpg', '.jpeg', '.bmp', '.npy'}" + nl
 				+ "MASK_DIRS = ('masks', 'mask', 'labels', 'label', 'gt')" + nl
 				+ "IMAGE_DIRS = ('images', 'image', 'imgs', 'img', 'data')" + nl
 				+ "def _files(folder):" + nl
 				+ "  return sorted([p for p in Path(folder).iterdir() if p.is_file() and p.suffix.lower() in IMAGE_EXTS])" + nl
+				+ "def _image_files(folder):" + nl
+				+ "  files = _files(folder)" + nl
+				+ "  raster_stems = {p.stem.casefold() for p in files if p.suffix.lower() != '.npy'}" + nl
+				+ "  return [p for p in files if p.suffix.lower() != '.npy' or p.stem.casefold() not in raster_stems]" + nl
 				+ "def _subdir(parent, names):" + nl
 				+ "  for name in names:" + nl
 				+ "    p = Path(parent) / name" + nl
@@ -1945,19 +1949,22 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "def _pairs(image_folder, mask_folder):" + nl
 				+ "  masks = {_mask_key(p): p for p in _files(mask_folder)}" + nl
 				+ "  out = []" + nl
-				+ "  for img in _files(image_folder):" + nl
+				+ "  for img in _image_files(image_folder):" + nl
 				+ "    key = img.stem[:-6] if img.stem.lower().endswith('_image') else img.stem" + nl
 				+ "    if key in masks:" + nl
 				+ "      out.append((img, masks[key]))" + nl
 				+ "  return out" + nl
 				+ "def _split_pairs(folder):" + nl
 				+ "  return _pairs(_subdir(folder, IMAGE_DIRS), _subdir(folder, MASK_DIRS))" + nl;
-		return code + "_reader_formats = {'.tif': 'TIFF', '.tiff': 'TIFF', '.png': 'PNG', '.jpg': 'JPEG', '.jpeg': 'JPEG', '.bmp': 'BMP'}" + nl
+		return code + TrainingCodeUtils.pythonModule("numpy_images", "python/numpy_images.py")
+                + "_reader_formats = {'.tif': 'TIFF', '.tiff': 'TIFF', '.png': 'PNG', '.jpg': 'JPEG', '.jpeg': 'JPEG', '.bmp': 'BMP', '.npy': 'NPY'}" + nl
 				+ "_reader_preferences, _image_ome_metadata = {}, {}" + nl
 				+ "_reader_notices = set()" + nl
 				+ "def _signature_format(path):" + nl
 				+ "  with path.open('rb') as stream:" + nl
 				+ "    header = stream.read(8)" + nl
+				+ "  if header.startswith(b'\\x93NUMPY'):" + nl
+				+ "    return 'NPY'" + nl
 				+ "  if header[:4] in (b'II\\x2a\\x00', b'MM\\x00\\x2a', b'II\\x2b\\x00', b'MM\\x00\\x2b'):" + nl
 				+ "    return 'TIFF'" + nl
 				+ "  if header == b'\\x89PNG\\r\\n\\x1a\\n':" + nl
@@ -1968,6 +1975,9 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "    return 'BMP'" + nl
 				+ "  return None" + nl
 				+ "def _read_format(path, file_format, is_mask):" + nl
+				+ "  if file_format == 'NPY':" + nl
+				+ "    with numpy_images.NumpyImage(path) as image:" + nl
+				+ "      return image.array, image.axes(mask=is_mask, dimensions=n_dim)" + nl
 				+ "  if is_mask and file_format == 'JPEG':" + nl
 				+ "    raise ValueError('JPEG cannot be used as an instance-label mask')" + nl
 				+ "  if file_format == 'TIFF':" + nl

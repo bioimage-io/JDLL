@@ -20,8 +20,11 @@
 package io.bioimage.modelrunner.gui.custom.training;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.BandedSampleModel;
 import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferDouble;
 import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -47,6 +50,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
+import io.bioimage.modelrunner.numpy.NpyImageFile;
 
 /**
  * Thin Java-side normalizer for image/mask segmentation datasets.
@@ -113,8 +117,8 @@ public final class SegmentationDatasetPreparer {
             "_mask", "_masks", "_label", "_labels");
 
     static {
-        Collections.addAll(IMAGE_EXTENSIONS, ".tif", ".tiff", ".png", ".jpg", ".jpeg", ".bmp");
-        Collections.addAll(MASK_EXTENSIONS, ".tif", ".tiff", ".png", ".bmp");
+        Collections.addAll(IMAGE_EXTENSIONS, ".tif", ".tiff", ".png", ".jpg", ".jpeg", ".bmp", ".npy");
+        Collections.addAll(MASK_EXTENSIONS, ".tif", ".tiff", ".png", ".bmp", ".npy");
     }
 
     private SegmentationDatasetPreparer() {}
@@ -214,8 +218,7 @@ public final class SegmentationDatasetPreparer {
     }
 
     private static int unetPairDepth(RawPair pair) throws IOException {
-        return SegmentationImageGeometry.pairedDepth(SegmentationImageGeometry.read(pair.image),
-                SegmentationImageGeometry.read(pair.mask));
+        return SegmentationImageGeometry.pairedDepth(pair.image, pair.mask);
     }
 
     private static Discovery discover(File root, Framework framework) throws IOException {
@@ -319,6 +322,12 @@ public final class SegmentationDatasetPreparer {
             imageFiles = classifiedImages;
             maskFiles = classifiedMasks;
         }
+
+        Set<String> rasterStems = new HashSet<>();
+        for (File image : imageFiles) if (!NpyImageFile.isNpy(image))
+            rasterStems.add(removeExtension(image.getName()).toLowerCase(Locale.ROOT));
+        imageFiles.removeIf(image -> NpyImageFile.isNpy(image)
+                && rasterStems.contains(removeExtension(image.getName()).toLowerCase(Locale.ROOT)));
 
         Map<String, Integer> extensionCounts = new HashMap<String, Integer>();
         Map<String, Integer> suffixCounts = new HashMap<String, Integer>();
@@ -455,7 +464,9 @@ public final class SegmentationDatasetPreparer {
 
     private static PairStats inspectPair(RawPair raw, Framework framework) throws IOException {
         ImageInfo imageInfo = readImageInfo(raw.image);
-        MaskStats maskStats = readMaskStats(raw.mask);
+        MaskStats maskStats = NpyImageFile.isNpy(raw.mask) && imageInfo != null
+                ? readNumpyMaskStats(raw.mask, imageInfo, SegmentationImageGeometry.read(raw.image).spatialDepth(), framework)
+                : readMaskStats(raw.mask);
         PairStats stats = new PairStats();
         if (imageInfo == null || maskStats == null) {
             stats.unreadable = true;
@@ -464,7 +475,7 @@ public final class SegmentationDatasetPreparer {
         stats.shapeMismatch = imageInfo.width != maskStats.width || imageInfo.height != maskStats.height
                 || imageInfo.depth != maskStats.depth;
         stats.depth = imageInfo.depth;
-        if (framework == Framework.UNET) {
+        if (framework == Framework.UNET || NpyImageFile.isNpy(raw.image) || NpyImageFile.isNpy(raw.mask)) {
             stats.depth = unetPairDepth(raw);
             stats.shapeMismatch = stats.depth < 0;
         }
@@ -551,6 +562,39 @@ public final class SegmentationDatasetPreparer {
             } finally {
                 reader.dispose();
             }
+        }
+    }
+
+    private static MaskStats readNumpyMaskStats(File file, ImageInfo image, int depth, Framework framework) throws IOException {
+        try (NpyImageFile array = new NpyImageFile(file)) {
+            array.resolveVolume(image.width, image.height, depth > 0 ? depth : -1, true);
+            MaskStats stats = new MaskStats();
+            stats.width = array.width();
+            stats.height = array.height();
+            stats.depth = array.depth();
+            stats.numBands = array.channels();
+            Set<Integer> labels = new HashSet<>();
+            int[] bounds = {Integer.MAX_VALUE, 0, -2};
+            array.forEachValue(0, value -> {
+                if (!Double.isFinite(value) || value != Math.rint(value) || value > Integer.MAX_VALUE
+                        || value < (framework == Framework.STARDIST ? -1 : 0)) {
+                    throw new IllegalArgumentException("Expected finite integer instance/class IDs fitting int32");
+                }
+                if (value > 0 && value != bounds[2]) {
+                    int label = (int) value;
+                    labels.add(label);
+                    bounds[0] = Math.min(bounds[0], label);
+                    bounds[1] = Math.max(bounds[1], label);
+                    bounds[2] = label;
+                }
+            });
+            stats.objectCount = labels.size();
+            stats.suspiciousContinuousLike = labels.size() >= SUSPICIOUS_UNIQUE_LABEL_COUNT
+                    && labels.size() / ((double) bounds[1] - bounds[0] + 1) >= SUSPICIOUS_DENSE_LABEL_FRACTION;
+            return stats;
+        } catch (IllegalArgumentException e) {
+            throw new IOException("Unsupported NumPy mask: " + file.getAbsolutePath() + ". "
+                    + e.getMessage() + ". See " + NpyImageFile.DOCUMENTATION_URL, e);
         }
     }
 
@@ -832,6 +876,23 @@ public final class SegmentationDatasetPreparer {
     }
 
     private static ImageInfo readImageInfo(File imageFile) throws IOException {
+        if (NpyImageFile.isNpy(imageFile)) {
+            try (NpyImageFile array = new NpyImageFile(imageFile)) {
+                array.resolveVolume(0, 0, -1, false);
+                int channels = array.channels();
+                int effective = Math.min(3, channels);
+                if (channels >= 3) {
+                    int step = Math.max(1, (int) Math.sqrt(array.width() * (double) array.height() / CHANNEL_SAMPLE_PIXELS));
+                    int width = (array.width() + step - 1) / step, height = (array.height() + step - 1) / step;
+                    WritableRaster sample = Raster.createWritableRaster(new BandedSampleModel(DataBuffer.TYPE_DOUBLE, width, height, 3),
+                            new DataBufferDouble(width * height, 3), null);
+                    for (int y = 0; y < height; y++) for (int x = 0; x < width; x++) for (int c = 0; c < 3; c++)
+                        sample.setSample(x, y, c, array.value(x * step, y * step, 0, c));
+                    if (channelsAreGrayscale(sample)) effective = 1;
+                }
+                return new ImageInfo(array.width(), array.height(), array.depth(), channels, effective);
+            }
+        }
         try (ImageInputStream input = ImageIO.createImageInputStream(imageFile)) {
             if (input == null) {
                 return null;

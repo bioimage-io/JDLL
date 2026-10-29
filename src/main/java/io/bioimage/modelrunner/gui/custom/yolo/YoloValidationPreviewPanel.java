@@ -346,7 +346,7 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
             }
             result.add(new PreviewSample(
                     path,
-                    new File(path).getName(),
+                    new File(firstNonEmpty(getString(image, "source_path"), path)).getName(),
                     parseBoxes(image.getAsJsonArray("boxes"))));
         }
         return result;

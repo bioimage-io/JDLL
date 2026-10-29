@@ -37,7 +37,7 @@ import javax.imageio.stream.ImageInputStream;
 public final class YoloImageFiles {
 
     private static final Set<String> IMAGE_EXTENSIONS = new HashSet<String>(Arrays.asList(
-            ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif", ".tiff"));
+            ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif", ".tiff", ".npy"));
 
     private YoloImageFiles() {}
 
@@ -72,6 +72,11 @@ public final class YoloImageFiles {
         }
         ImageInputStream stream = null;
         try {
+            if (io.bioimage.modelrunner.numpy.NpyImageFile.isNpy(file)) {
+                try (io.bioimage.modelrunner.numpy.NpyImageFile numpy = new io.bioimage.modelrunner.numpy.NpyImageFile(file)) {
+                    return true;
+                }
+            }
             stream = ImageIO.createImageInputStream(file);
             if (stream == null) {
                 return false;

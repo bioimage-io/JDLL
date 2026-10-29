@@ -47,6 +47,11 @@ public abstract class ConsumerInterface {
 	 * @return the resulting string.
 	 */
 	public abstract String getModelsDir();
+
+    /** Host-specific guidance for supported image formats and numeric array axes. */
+    public String getImageFormatDocumentationUrl() {
+        return io.bioimage.modelrunner.numpy.NpyImageFile.DOCUMENTATION_URL;
+    }
 	
 	/**
 	 * Updates gui.

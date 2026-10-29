@@ -46,7 +46,7 @@ public class StarDistImageLoadingTest {
         assertTrue(code.contains("if file_format == 'TIFF':"));
         assertTrue(code.contains("series = tif.series[0]"));
         assertTrue(code.contains("return array, str(series.axes).upper()"));
-        assertTrue(code.contains("IMAGE_EXTS = {'.tif', '.tiff', '.png', '.jpg', '.jpeg', '.bmp'}"));
+        assertTrue(code.contains("IMAGE_EXTS = {'.tif', '.tiff', '.png', '.jpg', '.jpeg', '.bmp', '.npy'}"));
     }
 
     /** Set JDLL_TEST_PYTHON to an environment with numpy, Pillow and tifffile. */
@@ -63,6 +63,14 @@ public class StarDistImageLoadingTest {
             if (!finished) process.destroyForcibly();
             assertTrue("Python image decoding tests timed out", finished);
             assertEquals("Python image decoding tests failed", 0, process.exitValue());
+            if ("1".equals(System.getenv("JDLL_STARDIST_NUMPY_SMOKE"))) {
+                process = new ProcessBuilder(python, "src/test/python/test_stardist_numpy_training.py", script.toString())
+                        .inheritIO().start();
+                finished = process.waitFor(180, TimeUnit.SECONDS);
+                if (!finished) process.destroyForcibly();
+                assertTrue("StarDist NumPy training timed out", finished);
+                assertEquals("StarDist NumPy training failed", 0, process.exitValue());
+            }
         } finally {
             Files.deleteIfExists(script);
         }

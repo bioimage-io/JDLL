@@ -1,5 +1,6 @@
 """Exercise the exact generated StarDist loader without starting TensorFlow/training."""
 import ast
+import importlib.util
 from pathlib import Path
 import sys
 import tempfile
@@ -11,10 +12,18 @@ import numpy as np
 from PIL import Image
 import tifffile
 
+sys.dont_write_bytecode = True
+spec = importlib.util.spec_from_file_location("numpy_images", Path(__file__).parents[2] / "main/resources/python/numpy_images.py")
+numpy_images = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(numpy_images)
+data_spec = importlib.util.spec_from_file_location("stardist_data", Path(__file__).parents[2] / "main/resources/python/stardist_data.py")
+stardist_data = importlib.util.module_from_spec(data_spec)
+data_spec.loader.exec_module(stardist_data)
 
 CODE = ast.parse(Path(sys.argv.pop(1)).read_text(encoding="utf-8"))
-FUNCTIONS = {"_signature_format", "_read_format", "_read_array", "_physical_spacing", "_canonical_array"}
-STATE = {"_reader_formats", "_reader_preferences", "_image_ome_metadata", "_reader_notices"}
+FUNCTIONS = {"_signature_format", "_read_format", "_read_array", "_physical_spacing", "_canonical_array",
+             "_files", "_image_files", "_mask_key", "_pairs"}
+STATE = {"_reader_formats", "_reader_preferences", "_image_ome_metadata", "_reader_notices", "IMAGE_EXTS"}
 LOADER = ast.Module(body=[node for node in CODE.body if
     isinstance(node, ast.FunctionDef) and node.name in FUNCTIONS or
     isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id in STATE
@@ -30,6 +39,7 @@ class ImageLoadingTest(unittest.TestCase):
         self.messages = []
         self.ns = dict(np=np, Image=Image, TiffFile=tifffile.TiffFile, Path=Path,
                        TiffFileError=tifffile.TiffFileError, ET=ET, n_dim=3,
+                       numpy_images=numpy_images,
                        _task_update=lambda **kw: self.messages.append(kw))
         exec(compile(LOADER, "<generated StarDist loader>", "exec"), self.ns)
         self.read = self.ns["_read_array"]
@@ -167,6 +177,51 @@ class ImageLoadingTest(unittest.TestCase):
             append_images=[Image.new("RGB", (12, 13), "blue")], duration=100, loop=0)
         with self.assertRaisesRegex(OSError, "Multiple raster frames"):
             self.read(path)
+
+    def test_numpy_images_and_masks_stay_mapped_and_reuse_patch_normalization(self):
+        for dimensions, axes in ((2, "CYX"), (2, "XYC"), (3, "ZCYX"), (3, "XYCZ")):
+            self.ns["n_dim"] = dimensions
+            canonical_axes = "YXC" if dimensions == 2 else "ZYXC"
+            shape = (128, 160, 2) if dimensions == 2 else (4, 128, 160, 2)
+            image = np.random.default_rng(2).normal(2000, 100, shape).astype(np.float32)
+            labels = np.zeros(shape[:-1], np.uint32)
+            labels[..., 30:50, 50:70] = 70000
+            image_path = self.root / f"input-{dimensions}-{axes}.npy"
+            mask_path = self.root / f"mask-{dimensions}-{axes}.npy"
+            np.save(image_path, np.asfortranarray(image.transpose(tuple(canonical_axes.index(axis) for axis in axes))))
+            np.save(mask_path, labels.astype(">u4"))
+            raw, stored_axes = self.read(image_path)
+            np.testing.assert_array_equal(self.ns["_canonical_array"](raw, stored_axes, False), image)
+            store = stardist_data.DatasetStore(self.read, self.ns["_canonical_array"], dimensions, 2,
+                    {"cache_mb": 0}, lambda **event: None, lambda: False)
+            try:
+                inputs, targets = store.pairs([(image_path, mask_path)])
+                selection = (slice(1, 3), slice(12, 42), slice(10, 45)) if dimensions == 3 else (slice(12, 42), slice(10, 45))
+                np.testing.assert_array_equal(targets[0][selection], labels[selection])
+                self.assertEqual(inputs[0][(*selection, slice(None))].shape, tuple(s.stop - s.start for s in selection) + (2,))
+                self.assertEqual({Path(value[0]) for value in store.mapped.values()}, {image_path, mask_path})
+                self.assertFalse(list(store.directory.glob("*.npy")), "NumPy sources must not be copied into the decoded cache")
+                self.assertFalse(np.load(image_path, mmap_mode="r").flags.writeable)
+            finally:
+                store.close()
+
+    def test_invalid_numpy_rank_objects_and_time_axes_name_the_source(self):
+        path = self.root / "unsupported.npy"
+        for array in (np.empty((1,) * 6), np.array([[object()]], object), np.zeros((3, 4, 1, 128, 160), np.uint8)):
+            np.save(path, array)
+            with self.assertRaisesRegex(OSError, "unsupported.npy"):
+                self.read(path)
+
+    def test_raster_images_take_precedence_over_numpy_caches_without_filtering_masks(self):
+        image = self.tiff("images/case.tif")
+        (image.parent / "case.npy").write_bytes(b"stale cache")
+        np.save(image.parent / "other.npy", np.ones((128, 160), np.uint8))
+        self.tiff("masks/case_mask.tif")
+        self.tiff("masks/other_mask.tif")
+        pairs = self.ns["_pairs"](image.parent, self.root / "masks")
+        self.assertEqual([pair[0].name for pair in pairs], ["case.tif", "other.npy"])
+        np.save(self.root / "masks/case_mask.npy", np.ones((128, 160), np.uint16))
+        self.assertEqual(len(self.ns["_files"](self.root / "masks")), 3)
 
 
 if __name__ == "__main__":
