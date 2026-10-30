@@ -32,7 +32,7 @@ torchvision = { version = "==0.19.1", index = "https://download.pytorch.org/whl/
 # All five PyTorch backends share NumPy 2 and one headless cv2 implementation.
 [feature.core.pypi-dependencies]
 numpy = "==2.0.2"
-jdll-unet = { git = "https://github.com/carlosuc3m/jdll-unet.git", rev = "3a499aab726a4fa981be3a48fee0bbf239ded03d", extras = ["region-reading"] }
+jdll-unet = { git = "https://github.com/carlosuc3m/jdll-unet.git", rev = "fdae4cf8d0237f1477695a64e54363577507b37a", extras = ["region-reading"] }
 jdll-denoise = { git = "https://github.com/carlosuc3m/jdll-denoise.git", rev = "e502bbfd4865f08d1a0b6cba41aab1865f596d61", extras = ["bm"] }
 cellpose = "==3.1.1.1"
 ultralytics-opencv-headless = "==8.4.40"

@@ -19,7 +19,7 @@ pip = "*"
 
 [pypi-dependencies]
 # Pin backend APIs; update these revisions together in all biapy manifests.
-jdll-unet = { git = "https://github.com/carlosuc3m/jdll-unet.git", rev = "3a499aab726a4fa981be3a48fee0bbf239ded03d", extras = ["region-reading"] }
+jdll-unet = { git = "https://github.com/carlosuc3m/jdll-unet.git", rev = "fdae4cf8d0237f1477695a64e54363577507b37a", extras = ["region-reading"] }
 jdll-denoise = { git = "https://github.com/carlosuc3m/jdll-denoise.git", rev = "e502bbfd4865f08d1a0b6cba41aab1865f596d61", extras = ["bm"] }
 
 # -----------------------------------------------------------------------------
