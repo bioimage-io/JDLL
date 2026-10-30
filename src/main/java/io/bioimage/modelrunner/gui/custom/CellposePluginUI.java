@@ -84,7 +84,6 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     private static final String INVALID_IMAGE_MESSAGE = "Please provide a valid image file";
     private static final String EMPTY_FOLDER_MESSAGE = "Folder does not contain valid images";
     private static final Color PREVIEW_ERROR_COLOR = new Color(210, 40, 40);
-    private static final String CELLPOSE_MASK_SUFFIX = "_cellpose_labels";
 
     public static final String[] RGB_LIST = {"red", "green", "blue"};
     public static final String[] GRAYSCALE_LIST = {"gray"};
@@ -294,6 +293,8 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
                     ? EMPTY_FOLDER_MESSAGE : INVALID_IMAGE_MESSAGE);
         }
         appendLog("Starting inference on " + images.size() + " image(s).");
+        InferenceRunFiles run = InferenceRunFiles.create(source, "cellpose",
+                settings.run.getModelSelection(), images, this::appendLog);
         int saved = 0;
         for (int index = 0; index < images.size(); index++) {
             if (cancelled || Thread.currentThread().isInterrupted()) {
@@ -306,7 +307,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
             List<Tensor<FloatType>> outputs = inferenceService.run(
                     settings.run.withSizeHints(settings.hints.forImage(imageFile)), image, this::appendLog);
             if (cancelled) return;
-            File outputFile = maskOutputFileFor(imageFile);
+            File outputFile = run.outputFile(imageFile, "_labels.tif");
             writeLabelMask(outputs.get(0), outputFile);
             appendLog("Saved labels: " + outputFile.getAbsolutePath());
             saved++;
@@ -605,10 +606,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
             return Collections.emptyList();
         }
         if (source.isDirectory()) {
-            List<File> images = new ArrayList<>(YoloImageFiles.readableImagesInDirectory(source));
-            images.removeIf(file -> file.getName().toLowerCase(java.util.Locale.ROOT)
-                    .matches(".*_cellpose_labels(?:-[0-9]+)?\\.[^.]+"));
-            return images;
+            return YoloImageFiles.readableImagesInDirectory(source);
         }
         return YoloImageFiles.canReadImage(source)
                 ? Collections.singletonList(source) : Collections.emptyList();
@@ -618,16 +616,6 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     RandomAccessibleInterval<T> readImageFileAsRai(File imageFile) throws IOException {
         if (consumer == null) throw new IOException("Filesystem inference requires a host image loader.");
         return consumer.openImageAsRai(imageFile);
-    }
-
-    private static File maskOutputFileFor(File imageFile) {
-        String name = imageFile.getName();
-        int dot = name.lastIndexOf('.');
-        String base = dot > 0 ? name.substring(0, dot) : name;
-        File output = new File(imageFile.getParentFile(), base + CELLPOSE_MASK_SUFFIX + ".tif");
-        for (int suffix = 2; output.exists(); suffix++)
-            output = new File(imageFile.getParentFile(), base + CELLPOSE_MASK_SUFFIX + "-" + suffix + ".tif");
-        return output;
     }
 
     private static <T extends RealType<T> & NativeType<T>> void writeLabelMask(

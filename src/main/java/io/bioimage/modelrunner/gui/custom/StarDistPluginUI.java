@@ -81,7 +81,6 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     private static final String EMPTY_FOLDER_MESSAGE = "Folder does not contain valid images";
     private static final Color PREVIEW_ERROR_COLOR = new Color(210, 40, 40);
     private static final String APPOSE_STREAM_CLOSED = "java.io.IOException: Stream closed";
-    private static final String STARDIST_MASK_SUFFIX = "_stardist_labels";
     private static final double DEFAULT_PROBABILITY_THRESHOLD = 0.5d;
     private static final double FLUO_PROBABILITY_THRESHOLD = 0.479071463157368d;
     private static final double HE_PROBABILITY_THRESHOLD = 0.6924782541382084d;
@@ -560,8 +559,9 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         }
         Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
                 StarDistPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
-        startInferenceLogTimer();
         logConsumer.accept("Starting inference on " + images.size() + " image(s).");
+        InferenceRunFiles run = InferenceRunFiles.create(source, "stardist", modelPath, images, logConsumer);
+        startInferenceLogTimer();
         int savedMasks = 0;
         try {
             for (int i = 0; i < images.size(); i++) {
@@ -595,7 +595,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                     if (outputs.isEmpty()) {
                         throw new IOException("StarDist did not return a labels image for " + imageFile.getName());
                     }
-                    File outputMask = LabelMaskWriter.write(outputs.get(0), maskOutputFileFor(imageFile));
+                    File outputMask = LabelMaskWriter.write(outputs.get(0), run.outputFile(imageFile, "_labels.tif"));
                     savedMasks++;
                     logConsumer.accept("Saved labels: " + outputMask.getAbsolutePath());
                     if (!emittedPatchProgress[0]) {
@@ -701,20 +701,6 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     RandomAccessibleInterval<T> readImageFileAsRai(File imageFile) throws IOException {
         if (consumer == null) throw new IOException("Filesystem inference requires a host image loader.");
         return consumer.openImageAsRai(imageFile);
-    }
-
-    private static File maskOutputFileFor(File imageFile) {
-        String fileName = imageFile.getName();
-        int dot = fileName.lastIndexOf('.');
-        String baseName = dot > 0 ? fileName.substring(0, dot) : fileName;
-        String extension = outputMaskExtension(fileName);
-        File parent = imageFile.getParentFile();
-        return new File(parent == null ? new File(".") : parent, baseName + STARDIST_MASK_SUFFIX + "." + extension);
-    }
-
-    private static String outputMaskExtension(String fileName) {
-        String lower = fileName == null ? "" : fileName.toLowerCase();
-        return lower.endsWith(".tif") || lower.endsWith(".tiff") ? "tif" : "png";
     }
 
     private static String imageProgressBar(int imageIndex, int totalImages) {

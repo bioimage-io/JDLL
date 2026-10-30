@@ -34,6 +34,8 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
+import io.bioimage.modelrunner.gui.custom.InferenceRunFiles;
+
 public final class YoloImageFiles {
 
     private static final Set<String> IMAGE_EXTENSIONS = new HashSet<String>(Arrays.asList(
@@ -106,7 +108,8 @@ public final class YoloImageFiles {
         if (directory == null || !directory.isDirectory()) {
             return Collections.emptyList();
         }
-        File[] children = directory.listFiles(file -> file.isFile() && hasSupportedImageExtension(file));
+        File[] children = directory.listFiles(file -> hasSupportedImageExtension(file)
+                && !InferenceRunFiles.isAnnotationOrOutput(file));
         if (children == null || children.length == 0) {
             return Collections.emptyList();
         }

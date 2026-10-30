@@ -239,6 +239,15 @@ public abstract class ConsumerInterface {
 	public void saveDetections(Map<String, List<Detection>> detectionsByImagePath) {
 		// Optional hook for host applications to persist ROIs from file-system inference.
 	}
+
+    /**
+     * Optional host-native ROI export into this execution's results directory.
+     * Keys remain original image paths. The legacy hook is deliberately not called:
+     * its implementations may write beside the source images.
+     */
+    public void saveDetections(Map<String, List<Detection>> detectionsByImagePath, File outputDirectory) {
+        // Hosts may override to save additional formats alongside JDLL's CSV/GeoJSON.
+    }
 	
 	/**
 	 * Sets variable names.

@@ -549,10 +549,11 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         }
         Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
                 YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
-        startInferenceLogTimer();
         logConsumer.accept("Starting inference on " + images.size() + " image(s).");
+        InferenceRunFiles run = InferenceRunFiles.create(source, "yolo", modelPath, images, logConsumer);
+        startInferenceLogTimer();
         Map<String, List<Detection>> detectionsByImage = new LinkedHashMap<String, List<Detection>>();
-        File outputCsv = YoloDetectionCsvWriter.outputFileFor(source);
+        File outputCsv = new File(run.getDirectory(), "detections.csv");
         try {
             for (int i = 0; i < images.size(); i++) {
                 if (cancelled || Thread.currentThread().isInterrupted()) {
@@ -598,10 +599,13 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
             return;
         }
         YoloDetectionCsvWriter.write(outputCsv, detectionsByImage);
-        List<File> geoJsonFiles = YoloDetectionGeoJsonWriter.write(detectionsByImage);
-        consumer.saveDetections(detectionsByImage);
+        for (Map.Entry<String, List<Detection>> entry : detectionsByImage.entrySet()) {
+            File geoJson = run.outputFile(new File(entry.getKey()), "_detections.geojson");
+            YoloDetectionGeoJsonWriter.write(geoJson, entry.getKey(), entry.getValue());
+        }
+        consumer.saveDetections(detectionsByImage, run.getDirectory());
         logConsumer.accept("Saved predictions: " + outputCsv.getAbsolutePath());
-        logConsumer.accept("Saved GeoJSON predictions for " + geoJsonFiles.size() + " image(s).");
+        logConsumer.accept("Saved GeoJSON predictions for " + detectionsByImage.size() + " image(s).");
     }
 
     private String selectedInferenceDevice() {

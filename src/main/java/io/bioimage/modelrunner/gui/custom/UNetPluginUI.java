@@ -651,8 +651,10 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         }
         Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
                 UNetPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
-        startInferenceLogTimer();
         logConsumer.accept("Starting inference on " + images.size() + " image(s).");
+        InferenceRunFiles run = InferenceRunFiles.create(source, backend.getDisplayName().toLowerCase(Locale.ROOT),
+                modelPath, images, logConsumer);
+        startInferenceLogTimer();
         int savedMasks = 0;
         try {
             for (int i = 0; i < images.size(); i ++) {
@@ -687,7 +689,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                         throw new IOException(backend.getDisplayName()
                                 + " did not return a labels image for " + imageFile.getName());
                     }
-                    File outputMask = LabelMaskWriter.write(outputs.get(0), maskOutputFileFor(imageFile));
+                    File outputMask = LabelMaskWriter.write(outputs.get(0), run.outputFile(imageFile, "_labels.tif"));
                     savedMasks++;
                     logConsumer.accept("Saved labels: " + outputMask.getAbsolutePath());
                     if (!emittedPatchProgress[0]) {
@@ -732,21 +734,6 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     RandomAccessibleInterval<T> readImageFileAsRai(File imageFile) throws IOException {
         if (consumer == null) throw new IOException("Filesystem inference requires a host image loader.");
         return consumer.openImageAsRai(imageFile);
-    }
-
-    private File maskOutputFileFor(File imageFile) {
-        String fileName = imageFile.getName();
-        int dot = fileName.lastIndexOf('.');
-        String baseName = dot > 0 ? fileName.substring(0, dot) : fileName;
-        String extension = outputMaskExtension(fileName);
-        File parent = imageFile.getParentFile();
-        return new File(parent == null ? new File(".") : parent,
-                baseName + backend.getMaskSuffix() + "." + extension);
-    }
-
-    private static String outputMaskExtension(String fileName) {
-        String lower = fileName == null ? "" : fileName.toLowerCase();
-        return lower.endsWith(".tif") || lower.endsWith(".tiff") ? "tif" : "png";
     }
 
     private static String imageProgressBar(int imageIndex, int totalImages) {

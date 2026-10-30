@@ -67,6 +67,7 @@ public class CellposeInferenceService {
         }
 
         public Float getDiameter() { return diameter; }
+        public String getModelSelection() { return modelSelection; }
 
         public Run withSizeHints(IntFunction<Rectangle2D.Double> hints) {
             Run configured = new Run(modelSelection, channels, diameter, device, intermediates);

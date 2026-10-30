@@ -17,6 +17,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Collections;
 
 import javax.imageio.ImageIO;
 import org.junit.Rule;
@@ -24,6 +25,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import io.bioimage.modelrunner.gui.custom.CellposePluginUI;
+import io.bioimage.modelrunner.gui.custom.InferenceRunFiles;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.numeric.real.FloatType;
@@ -33,11 +35,13 @@ public class CellposeImageIOTest {
 
     @Test
     public void savesAllZTPlanesAsFloatLabelsAndDoesNotReprocessOrOverwriteThem() throws Exception {
-        File source = folder.newFile("source.png");
+        File source = new File(folder.newFolder("images"), "source.png");
         assertTrue(ImageIO.write(new BufferedImage(2, 2, BufferedImage.TYPE_BYTE_GRAY), "png", source));
         float[] values = {1, 70000, 90000, 120000, 130000, 140000};
         Tensor<FloatType> labels = Tensor.build("labels", "xyzt", ArrayImgs.floats(values, 1, 1, 2, 3));
-        File output = (File) method("maskOutputFileFor", File.class).invoke(null, source);
+        InferenceRunFiles run = InferenceRunFiles.create(source, "cellpose", "cyto3",
+                Collections.singletonList(source), null);
+        File output = run.outputFile(source, "_labels.tif");
         method("writeLabelMask", Tensor.class, File.class).invoke(null, labels, output);
         try (javax.imageio.stream.ImageInputStream input = ImageIO.createImageInputStream(output)) {
             javax.imageio.ImageReader reader = ImageIO.getImageReaders(input).next();
@@ -48,10 +52,11 @@ public class CellposeImageIOTest {
                     assertEquals(values[i], reader.read(i).getRaster().getSampleFloat(0, 0, 0), 0);
             } finally { reader.dispose(); }
         }
-        File next = (File) method("maskOutputFileFor", File.class).invoke(null, source);
+        File next = InferenceRunFiles.create(source, "cellpose", "cyto3", Collections.singletonList(source), null)
+                .outputFile(source, "_labels.tif");
         assertNotEquals(output, next);
         method("writeLabelMask", Tensor.class, File.class).invoke(null, labels, next);
-        List<?> inputs = (List<?>) method("systemImages", File.class).invoke(null, folder.getRoot());
+        List<?> inputs = (List<?>) method("systemImages", File.class).invoke(null, source.getParentFile());
         assertEquals(1, inputs.size());
         assertEquals(source, inputs.get(0));
     }
