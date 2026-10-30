@@ -1,4 +1,4 @@
-"""Disk-backed StarDist sources; only sampled crops become normalized float arrays."""
+"""Region-readable StarDist sources with bounded RAM and statistics caches."""
 
 import atexit
 import hashlib
@@ -14,13 +14,101 @@ import numpy as np
 
 
 def available_memory():
+    available = None
     try:
         for line in Path('/proc/meminfo').read_text().splitlines():
             if line.startswith('MemAvailable:'):
-                return int(line.split()[1]) * 1024
-    except OSError:
+                available = int(line.split()[1]) * 1024
+                break
+    except (OSError, ValueError, IndexError):
         pass
-    return None
+    if available is None:
+        try:
+            available = int(os.sysconf('SC_AVPHYS_PAGES') * os.sysconf('SC_PAGE_SIZE'))
+        except (AttributeError, OSError, ValueError):
+            return None
+    for root, limit_name, usage_name in (
+            ('/sys/fs/cgroup', 'memory.max', 'memory.current'),
+            ('/sys/fs/cgroup/memory', 'memory.limit_in_bytes', 'memory.usage_in_bytes')):
+        try:
+            limit = int((Path(root) / limit_name).read_text())
+            used = int((Path(root) / usage_name).read_text())
+            available = min(available, max(0, limit - used))
+        except (OSError, ValueError):
+            pass
+    return max(0, available)
+
+
+def cache_bytes(value):
+    if value == 'auto':
+        available = available_memory()
+        return min(2 * 1024**3, available // 10) if available is not None else 64 * 1024**2
+    size = float(value)
+    if not math.isfinite(size) or size < 0:
+        raise ValueError('data_loading.cache_mb must be auto or a finite nonnegative number.')
+    return int(size * 1024**2)
+
+
+class RegionArray:
+    """A basic-indexed/transposed view that decodes only when converted to an array."""
+    def __init__(self, shape, dtype, read, selections=None, axes=None):
+        self.dtype, self.read = np.dtype(dtype), read
+        self.selections = tuple(range(n) for n in shape) if selections is None else selections
+        self.axes = tuple((i, s) for i, s in enumerate(self.selections)) if axes is None else axes
+        self.shape = tuple(len(s) for _, s in self.axes)
+        self.ndim, self.size = len(self.shape), math.prod(self.shape)
+        self.nbytes = self.size * self.dtype.itemsize
+
+    def _view(self, selections, axes):
+        return RegionArray((), self.dtype, self.read, tuple(selections), tuple(axes))
+
+    def expand_dims(self):
+        return self._view(self.selections, self.axes + ((None, range(1)),))
+
+    def transpose(self, order):
+        if sorted(order) != list(range(self.ndim)):
+            raise ValueError('Axes do not match the TIFF region dimensions.')
+        return self._view(self.selections, [self.axes[i] for i in order])
+
+    def __getitem__(self, selection):
+        if not isinstance(selection, tuple):
+            selection = (selection,)
+        if any(s is Ellipsis for s in selection):
+            if sum(s is Ellipsis for s in selection) != 1:
+                raise IndexError('Only one ellipsis is allowed.')
+            i = next(i for i, s in enumerate(selection) if s is Ellipsis)
+            count = sum(s is not None and s is not Ellipsis for s in selection)
+            selection = selection[:i] + (slice(None),) * (self.ndim - count) + selection[i + 1:]
+        count = sum(s is not None for s in selection)
+        if count > self.ndim:
+            raise IndexError('Too many indices for a TIFF region.')
+        selection += (slice(None),) * (self.ndim - count)
+        selections, axes = list(self.selections), []
+        source_axes = iter(self.axes)
+        for index in selection:
+            if index is None:
+                axes.append((None, range(1)))
+                continue
+            axis, positions = next(source_axes)
+            if isinstance(index, slice) and index.step is not None and index.step < 0:
+                return np.asarray(self)[selection]
+            chosen = positions[index]
+            if axis is not None:
+                selections[axis] = chosen
+            if isinstance(chosen, range):
+                axes.append((axis, chosen))
+        return self._view(selections, axes)
+
+    def __array__(self, dtype=None, copy=None):
+        if not self.size:
+            return np.empty(self.shape, dtype=self.dtype if dtype is None else dtype)
+        selection = tuple(slice(s.start, s.stop, s.step) if isinstance(s, range) else s for s in self.selections)
+        result = np.asarray(self.read(selection))
+        native = [i for i, s in enumerate(self.selections) if isinstance(s, range)]
+        order = [native.index(axis) for axis, _ in self.axes if axis is not None]
+        result = result.transpose(order).reshape(self.shape)
+        result = np.asarray(result, dtype=dtype)
+        return result.copy() if copy else result
 
 
 def blocks(shape, maximum=262144):
@@ -75,10 +163,7 @@ class DatasetStore:
         self.read, self.canonical = read, canonical
         self.dimensions, self.channels = dimensions, channels
         self.options, self.update, self.cancelled = options, update, cancelled
-        budget = options.get('cache_mb', 128)
-        self.budget = int(float(budget) * 1024**2)
-        if self.budget < 0:
-            raise ValueError('data_loading.cache_mb must be nonnegative.')
+        self.budget = cache_bytes(options.get('cache_mb', 'auto'))
         self.directory = Path(tempfile.mkdtemp(prefix='jdll-stardist-data-', dir=options.get('cache_dir')))
         self.cache, self.bytes = OrderedDict(), 0
         self.analysis_cache, self.analysis_bytes = OrderedDict(), 0
@@ -88,21 +173,45 @@ class DatasetStore:
         self.lock = threading.RLock()
         self.sources = {}
         self.mapped = {}
+        self.regions = {}
+        self.reader_notices = set()
         atexit.register(self.close)
 
     def check(self):
         if self.cancelled():
             raise InterruptedError('StarDist dataset preparation cancelled.')
 
-    def decode_path(self, path, size=0):
-        """tifffile can decode compressed strips/tiles directly to this file-backed output."""
-        key = hashlib.sha256(str(Path(path).resolve()).encode()).hexdigest()
-        self.check_disk(size)
-        return str(self.directory / (key + '.decoded'))
+    def tiff_array(self, path, series):
+        return RegionArray(series.shape, series.dtype, lambda selection: self.read_tiff_region(path, selection))
 
-    def check_disk(self, size):
-        if shutil.disk_usage(self.directory).free < size + 256 * 1024**2:
-            raise OSError('Insufficient disk space for the StarDist decoded-data cache at ' + str(self.directory))
+    def read_tiff_region(self, path, selection):
+        from tifffile import TiffFile
+        self.check()
+        with TiffFile(path) as tif:
+            series = tif.series[0]
+            try:
+                import zarr
+                store = series.aszarr(level=0, maxworkers=1)
+                try:
+                    array = zarr.open(store, mode='r')
+                except BaseException:
+                    store.close()
+                    raise
+            except (ImportError, NotImplementedError, TypeError) as error:
+                if str(path) not in self.reader_notices:
+                    self.reader_notices.add(str(path))
+                    self.update(message='TIFF region reading unavailable for %s; using full-image decoding: %s' % (path, error),
+                                info={'type': 'warning', 'path': str(path)})
+                size = math.prod(series.shape) * series.dtype.itemsize
+                available = available_memory()
+                if available is not None and size > available * 0.4:
+                    raise MemoryError('Full TIFF decoding exceeds the available memory budget: ' + str(path))
+                return series.asarray(maxworkers=1)[selection]
+            else:
+                try:
+                    return np.asarray(array[selection])
+                finally:
+                    store.close()
 
     def remember_mapping(self, key, array):
         base = array
@@ -134,21 +243,24 @@ class DatasetStore:
                 return self.cache[key]
             if key in self.mapped:
                 return self.open_mapping(key)
-            destination = self.directory / (hashlib.sha256(repr(key).encode()).hexdigest() + '.npy')
-            if destination.exists():
-                return np.load(destination, mmap_mode='r')
             self.check()
             path = source.mask if mask else source.image
-            array, axes = self.read(path, is_mask=mask)
-            array = self.canonical(array, axes, mask)
-            if not mask:
-                array = array[..., :self.channels]
+            if key in self.regions:
+                array = self.regions[key]
+            else:
+                array, axes = self.read(path, is_mask=mask)
+                array = self.canonical(array, axes, mask)
+                if not mask:
+                    array = array[..., :self.channels]
             spatial = array.shape if mask else array.shape[:-1]
             if source.shape is not None and tuple(spatial) != source.shape:
                 raise ValueError('Image/mask shapes differ for ' + str(path))
-            mapped = self.remember_mapping(key, array)
-            # Keep small sources fast. Large sources remain file-backed without a
-            # whole-volume float32 conversion or a second normalized-volume cache.
+            if isinstance(array, RegionArray):
+                self.regions[key] = array
+            else:
+                self.remember_mapping(key, array)
+            # Keep small sources fast; large TIFFs remain region-readable and
+            # NumPy/uncompressed TIFF mappings continue to reference the originals.
             if array.nbytes <= self.budget:
                 while self.cache and self.bytes + array.nbytes > self.budget:
                     _, old = self.cache.popitem(last=False)
@@ -157,19 +269,7 @@ class DatasetStore:
                 array.flags.writeable = False
                 self.cache[key] = array
                 self.bytes += array.nbytes
-            if mapped:
-                return array
-            # Raster codecs need one full decode; spill once, never decode every crop.
-            self.check_disk(array.nbytes)
-            disk = np.lib.format.open_memmap(destination, mode='w+', dtype=array.dtype, shape=array.shape)
-            for region in blocks(spatial):
-                self.check()
-                disk[region] = array[region]
-            disk.flush()
-            del disk
-            if key in self.cache:
-                return self.cache[key]
-            return np.load(destination, mmap_mode='r')
+            return array
 
     def pairs(self, pairs):
         sources = []
@@ -214,6 +314,7 @@ class DatasetStore:
             self.analysis_cache.clear()
             self.sources.clear()
             self.mapped.clear()
+            self.regions.clear()
             shutil.rmtree(self.directory, ignore_errors=True)
 
     def spatial_split(self, images, labels, patch, fraction):

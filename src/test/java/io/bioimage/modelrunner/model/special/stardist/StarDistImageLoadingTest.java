@@ -36,7 +36,8 @@ public class StarDistImageLoadingTest {
             assertFalse(code.contains("from tifffile import imread"));
             assertTrue(code.contains("Image.open(path, formats=[file_format])"));
             assertTrue(code.contains("return storage.pairs(pairs)"));
-            assertTrue(code.contains("series.asarray(out=destination, maxworkers=1)"));
+            assertTrue(code.contains("store.tiff_array(path, series)"));
+            assertFalse(code.contains("store.decode_path("));
         }
     }
 

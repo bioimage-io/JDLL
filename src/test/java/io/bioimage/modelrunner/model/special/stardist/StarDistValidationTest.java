@@ -84,6 +84,7 @@ public class StarDistValidationTest {
             validation.put("minimum_batches", 1);
             validation.put("minimum_samples", 2);
             config.put("validation", validation);
+            config.put("data_loading", Collections.singletonMap("cache_mb", 0));
             Files.write(script.toPath(), StarDist.buildTrainingCode(data.getAbsolutePath(), null,
                     output.getAbsolutePath(), "cpu", "grayscale", "grayscale", 0.15, config)
                     .getBytes(StandardCharsets.UTF_8));

@@ -1987,8 +1987,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "      series = tif.series[0]" + nl
 				+ "      store = globals().get('storage')" + nl
 				+ "      direct = series.dataoffset is not None and series.keyframe.is_memmappable" + nl
-				+ "      destination = store.decode_path(path, int(np.prod(series.shape)) * series.dtype.itemsize) if store is not None and not direct else 'memmap'" + nl
-				+ "      array = series.asarray(out=destination, maxworkers=1)" + nl
+				+ "      array = store.tiff_array(path, series) if store is not None and not direct else series.asarray(out='memmap' if direct else None, maxworkers=1)" + nl
 				+ "      if n_dim == 3 and not is_mask:" + nl
 				+ "        _image_ome_metadata[str(path)] = tif.ome_metadata" + nl
 				+ "      return array, str(series.axes).upper()" + nl
@@ -2024,7 +2023,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "      _task_update(message='Detected %s data in %s files under %s; using the %s reader (each file is still validated).' % (actual, key[1], path.parent, actual), info={'type': 'warning', 'path': str(path)})" + nl
 				+ "    return result" + nl
 				+ "def _canonical_array(array, source_axes, is_mask):" + nl
-				+ "  array = np.asarray(array)" + nl
+				+ "  array = array if isinstance(array, stardist_data.RegionArray) else np.asarray(array)" + nl
 				+ "  axes = list((source_axes or '').upper().replace('S', 'C'))" + nl
 				+ "  if len(axes) != array.ndim:" + nl
 				+ "    axes = list(('ZYX' if n_dim == 3 else 'YX') + ('' if is_mask or array.ndim == n_dim else 'C'))" + nl
@@ -2048,9 +2047,9 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "    axes.pop(channel)" + nl
 				+ "  target = spatial + ([] if is_mask else ['C'])" + nl
 				+ "  if not is_mask and 'C' not in axes:" + nl
-				+ "    array = np.expand_dims(array, axis=-1)" + nl
+				+ "    array = array.expand_dims() if isinstance(array, stardist_data.RegionArray) else np.expand_dims(array, axis=-1)" + nl
 				+ "    axes.append('C')" + nl
-				+ "  array = np.transpose(array, [axes.index(axis) for axis in target])" + nl
+				+ "  array = array.transpose([axes.index(axis) for axis in target])" + nl
 				+ "  return array" + nl
 				+ "def _physical_spacing(path):" + nl
 				+ "  if n_dim != 3:" + nl

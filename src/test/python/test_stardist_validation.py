@@ -159,7 +159,7 @@ class ValidationTest(unittest.TestCase):
                                       median_object_extents(labels, maximum=3))
         self.assertIsNone(median_object_extents([np.zeros_like(labels[0])]))
 
-    def test_disk_backed_sources_and_training_only_holdout_normalization(self):
+    def test_region_readable_sources_and_training_only_holdout_normalization(self):
         from tifffile import imwrite, TiffFile
         image = np.arange(8 * 32 * 32, dtype=np.uint16).reshape(8, 32, 32)
         label = np.zeros_like(image)
@@ -171,7 +171,7 @@ class ValidationTest(unittest.TestCase):
         def read(path, is_mask=False):
             calls.append(path)
             with TiffFile(path) as tiff:
-                return tiff.series[0].asarray(out=store.decode_path(path)), 'ZYX'
+                return store.tiff_array(path, tiff.series[0]), 'ZYX'
         store = DatasetStore(read, lambda a, axes, mask: a if mask else a[..., None], 3, 1,
                              dict(cache_mb=0, statistics_cache_mb=0), lambda **e: None, lambda: False)
         self.addCleanup(store.close)
@@ -190,6 +190,8 @@ class ValidationTest(unittest.TestCase):
         self.assertEqual(np.float32, first.dtype)
         self.assertEqual((4, 16, 16, 1), first.shape)
         self.assertTrue(all(isinstance(store.open_mapping(key).base, np.memmap) for key in store.mapped))
+        self.assertFalse(list(store.directory.glob('*.decoded')))
+        self.assertFalse(list(store.directory.glob('*.npy')))
 
     def test_full_failure_preserves_checkpoints_and_does_not_abort_training(self):
         model = self.model()

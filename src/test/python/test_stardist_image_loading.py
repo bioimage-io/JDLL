@@ -39,7 +39,7 @@ class ImageLoadingTest(unittest.TestCase):
         self.messages = []
         self.ns = dict(np=np, Image=Image, TiffFile=tifffile.TiffFile, Path=Path,
                        TiffFileError=tifffile.TiffFileError, ET=ET, n_dim=3,
-                       numpy_images=numpy_images,
+                       numpy_images=numpy_images, stardist_data=stardist_data,
                        _task_update=lambda **kw: self.messages.append(kw))
         exec(compile(LOADER, "<generated StarDist loader>", "exec"), self.ns)
         self.read = self.ns["_read_array"]
@@ -211,6 +211,173 @@ class ImageLoadingTest(unittest.TestCase):
             np.save(path, array)
             with self.assertRaisesRegex(OSError, "unsupported.npy"):
                 self.read(path)
+
+    def test_auto_cache_limit_and_explicit_overrides(self):
+        for available, expected in ((None, 64 * 1024**2), (0, 0), (10 * 1024**3, 1024**3),
+                                    (20 * 1024**3, 2 * 1024**3), (64 * 1024**3, 2 * 1024**3)):
+            with patch.object(stardist_data, 'available_memory', return_value=available):
+                self.assertEqual(expected, stardist_data.cache_bytes('auto'))
+        self.assertEqual(0, stardist_data.cache_bytes(0))
+        self.assertEqual(32 * 1024**2, stardist_data.cache_bytes(32))
+        for invalid in (-1, float('nan'), float('inf')):
+            with self.assertRaisesRegex(ValueError, 'cache_mb'):
+                stardist_data.cache_bytes(invalid)
+
+    def store(self, dimensions, channels=1, budget=0):
+        self.ns['n_dim'] = dimensions
+        store = stardist_data.DatasetStore(self.read, self.ns['_canonical_array'], dimensions, channels,
+                {'cache_mb': budget, 'cache_dir': str(self.root)}, lambda **event: self.messages.append(event), lambda: False)
+        self.addCleanup(store.close)
+        self.ns['storage'] = store
+        return store
+
+    def test_compressed_tiff_crops_preserve_axes_values_and_normalization(self):
+        for dimensions, axes in ((2, 'YXC'), (2, 'CYX'), (2, 'TCYX'), (2, 'XYC'),
+                                  (3, 'ZYXC'), (3, 'CZYX'), (3, 'TZCYX'), (3, 'XYZC')):
+            with self.subTest(axes=axes):
+                canonical_axes = 'YXC' if dimensions == 2 else 'ZYXC'
+                shape = (32, 48, 2) if dimensions == 2 else (4, 32, 48, 2)
+                image = np.arange(np.prod(shape), dtype=np.uint16).reshape(shape)
+                image[..., 1] = 0  # Zero-channel normalization must stay unchanged.
+                expanded = image[None] if 'T' in axes else image
+                native_axes = ('T' if 'T' in axes else '') + canonical_axes
+                native = expanded.transpose(tuple(native_axes.index(a) for a in axes))
+                labels = np.zeros(shape[:-1], np.uint32)
+                labels[..., 8:20, 12:30] = 70000
+                # First mask channel is used, irrespective of image channel layout.
+                mask = np.stack((labels, np.ones_like(labels)), axis=-1)
+                path = self.tiff('image-%s.png' % axes, native, compression='deflate',
+                                 photometric='minisblack', metadata={'axes': axes})
+                mask_path = self.tiff('mask-%s.tif' % axes, mask, compression='deflate',
+                                      photometric='minisblack', metadata={'axes': canonical_axes})
+                store = self.store(dimensions, channels=3)
+                with patch.object(tifffile.TiffPageSeries, 'asarray', side_effect=AssertionError('Whole TIFF decode')):
+                    x, y = store.pairs([(path, mask_path)])
+                    region = (slice(1, 3), slice(5, 21), slice(7, 28)) if dimensions == 3 else (slice(5, 21), slice(7, 28))
+                    np.testing.assert_array_equal(y[0][region], labels[region])
+                    normalized = x[0][region]
+                low, high = np.percentile(image[..., 0], [1, 99.8])
+                expected = image[region].astype(np.float32)
+                expected[..., 0] = (expected[..., 0] - low) / (high - low + 1e-20)
+                expected = np.concatenate((expected, np.zeros(expected.shape[:-1] + (1,), np.float32)), axis=-1)
+                np.testing.assert_allclose(normalized, expected, rtol=1e-6, atol=1e-6)
+                self.assertEqual(0, store.bytes)
+                self.assertFalse(list(store.directory.glob('*.npy')))
+                self.assertFalse(list(store.directory.glob('*.decoded')))
+                store.close()
+
+    def test_tiled_and_stripped_tiffs_decode_only_selected_regions(self):
+        image = np.arange(128 * 160, dtype=np.uint16).reshape(128, 160)
+        for options in ({'tile': (32, 32)}, {'rowsperstrip': 8}):
+            path = self.tiff('regions-%s.tif' % len(options.get('tile', ())), image,
+                             compression='deflate', photometric='minisblack', **options)
+            store = self.store(2)
+            with patch.object(tifffile.TiffPageSeries, 'asarray', side_effect=AssertionError('Whole TIFF decode')):
+                with tifffile.TiffFile(path) as tif:
+                    raw = store.tiff_array(path, tif.series[0])
+                region = (slice(37, 54), slice(41, 62))
+                with patch.object(store, 'read_tiff_region', wraps=store.read_tiff_region) as read:
+                    np.testing.assert_array_equal(raw[region], image[region])
+                self.assertEqual(tuple(slice(s.start, s.stop, 1) for s in region), read.call_args.args[1])
+            self.assertFalse(list(store.directory.iterdir()))
+
+    def test_float_normalization_and_ignored_masks_match_cached_full_image_loading(self):
+        rng = np.random.RandomState(7)
+        image = rng.normal(500, 100, (4, 256, 384, 2)).astype(np.float32)
+        labels = np.zeros(image.shape[:-1], np.int32)
+        labels[:, 8:20, 12:30] = 70000
+        labels[:, :2] = -1
+        image_path = self.tiff('float-planar.tif', image.transpose(3, 0, 1, 2), compression='deflate',
+                               photometric='minisblack', metadata={'axes': 'CZYX'})
+        mask_path = self.tiff('ignored.tif', labels, compression='deflate',
+                              photometric='minisblack', metadata={'axes': 'ZYX'})
+        region = (slice(1, 3), slice(0, 32), slice(7, 28))
+        cached = self.store(3, channels=2, budget=16)
+        x, y = cached.pairs([(image_path, mask_path)])
+        expected_image, expected_labels = x[0][region], y[0][region]
+        expected_statistics = x[0].source.fit_normalization()
+        lazy = self.store(3, channels=2)
+        x, y = lazy.pairs([(image_path, mask_path)])
+        np.testing.assert_array_equal(x[0][region], expected_image)
+        np.testing.assert_array_equal(y[0][region], expected_labels)
+        self.assertEqual(expected_statistics, x[0].source.fit_normalization())
+        self.assertEqual(0, lazy.bytes)
+
+    def test_pyramidal_tiff_reads_the_same_full_resolution_level_as_before(self):
+        image = np.arange(128 * 160, dtype=np.uint16).reshape(128, 160)
+        path = self.root / 'pyramid.tif'
+        with tifffile.TiffWriter(path) as writer:
+            writer.write(image, subifds=1, tile=(32, 32), compression='deflate', photometric='minisblack')
+            writer.write(image[::2, ::2], subfiletype=1, tile=(32, 32), compression='deflate', photometric='minisblack')
+        store = self.store(2)
+        with patch.object(tifffile.TiffPageSeries, 'asarray', side_effect=AssertionError('Whole pyramid decode')):
+            x, y = store.pairs([(path, path)])
+            self.assertEqual(image.shape, y[0].shape)
+            np.testing.assert_array_equal(y[0][37:54, 41:62], image[37:54, 41:62])
+        self.assertEqual(0, store.bytes)
+
+    def test_region_array_composed_views_match_numpy_without_decoding_unused_pixels(self):
+        native = np.arange(2 * 3 * 8 * 9, dtype=np.uint16).reshape(2, 3, 8, 9)
+        selections = []
+        def read(selection):
+            selections.append(selection)
+            return native[selection]
+        lazy = stardist_data.RegionArray(native.shape, native.dtype, read)
+        actual = lazy[1, :, 2:8, 1:9:2].transpose((1, 2, 0))[1:4, :2, :2].expand_dims()
+        expected = native[1, :, 2:8, 1:9:2].transpose(1, 2, 0)[1:4, :2, :2, None]
+        self.assertFalse(selections)
+        np.testing.assert_array_equal(actual, expected)
+        self.assertEqual((1, slice(0, 2, 1), slice(3, 6, 1), slice(1, 5, 2)), selections[0])
+        np.testing.assert_array_equal(lazy[..., None], native[..., None])
+        np.testing.assert_array_equal(lazy[:, :, ::-1], native[:, :, ::-1])
+
+    def test_png_ram_cache_is_bounded_reused_and_never_spilled_to_disk(self):
+        image = np.full((12, 13), 72, np.uint8)
+        mask = np.ones((12, 13), np.uint16)
+        image_path, mask_path = self.png('input.png', image), self.png('target.png', mask)
+        store = self.store(2, budget=1)
+        with patch.dict(self.ns, _read_format=unittest.mock.Mock(wraps=self.ns['_read_format'])):
+            x, y = store.pairs([(image_path, mask_path)])
+            _ = x[0][2:5, 3:7]
+            calls = self.ns['_read_format'].call_count
+            for _ in range(3):
+                _ = x[0][2:5, 3:7], y[0][2:5, 3:7]
+            self.assertEqual(calls, self.ns['_read_format'].call_count)
+        self.assertLessEqual(store.bytes, store.budget)
+        # Eviction never writes an image cache, and a later full decode can be cached again.
+        for i in range(3):
+            source = type('Source', (), {'image': self.png('extra%d.png' % i, np.zeros((800, 800), np.uint8)),
+                                         'mask': mask_path, 'shape': (800, 800)})()
+            store.raw(source, False)
+            self.assertLessEqual(store.bytes, store.budget)
+        np.testing.assert_array_equal(y[0][2:5, 3:7], mask[2:5, 3:7])
+        self.assertTrue(all(not array.flags.writeable for array in store.cache.values()))
+        self.assertFalse(list(store.directory.iterdir()))
+
+    def test_tiff_region_backend_fallback_is_explicit_and_memory_guarded(self):
+        path = self.tiff('compressed.tif', np.ones((32, 48), np.uint16), compression='deflate')
+        store = self.store(2)
+        with tifffile.TiffFile(path) as tif:
+            raw = store.tiff_array(path, tif.series[0])
+        with patch.dict(sys.modules, zarr=None):
+            np.testing.assert_array_equal(raw[2:5, 3:7], np.ones((3, 4), np.uint16))
+            np.testing.assert_array_equal(raw[2:5, 3:7], np.ones((3, 4), np.uint16))
+            with patch.object(stardist_data, 'available_memory', return_value=1):
+                with self.assertRaisesRegex(MemoryError, 'compressed.tif'):
+                    np.asarray(raw[2:5, 3:7])
+        self.assertEqual(1, len([e for e in self.messages if e.get('info', {}).get('type') == 'warning']))
+        self.assertFalse(list(store.directory.iterdir()))
+
+    def test_uncompressed_tiff_maps_original_pixels_and_remains_read_only(self):
+        image = np.arange(32 * 48, dtype=np.uint16).reshape(32, 48)
+        path = self.tiff('uncompressed.tif', image, photometric='minisblack')
+        store = self.store(2)
+        x, y = store.pairs([(path, path)])
+        np.testing.assert_array_equal(y[0][2:5, 3:7], image[2:5, 3:7])
+        _ = x[0][2:5, 3:7]
+        self.assertEqual({path}, {Path(value[0]) for value in store.mapped.values()})
+        self.assertFalse(list(store.directory.iterdir()))
+        np.testing.assert_array_equal(tifffile.imread(path), image)
 
     def test_raster_images_take_precedence_over_numpy_caches_without_filtering_masks(self):
         image = self.tiff("images/case.tif")
