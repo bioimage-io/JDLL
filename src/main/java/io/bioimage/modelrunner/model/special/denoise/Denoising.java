@@ -117,6 +117,9 @@ public final class Denoising extends DLModelPytorchProtected {
                 + "if 'torch' not in globals().keys():" + nl
                 + "  import torch" + nl
                 + "  task.export(torch=torch)" + nl
+                + TrainingCodeUtils.resolveDevice("torch", "'" + TrainingCodeUtils.py(config.getDevice()) + "'",
+                        "_jdll_denoise_device", "task.update", false)
+                + "task.export(_jdll_denoise_device=_jdll_denoise_device)" + nl
                 + "if 'shared_memory' not in globals().keys():" + nl
                 + "  from multiprocessing import shared_memory" + nl
                 + "  task.export(shared_memory=shared_memory)" + nl
@@ -175,6 +178,7 @@ public final class Denoising extends DLModelPytorchProtected {
         String configJson = new Gson().toJson(config.toMap());
         return "_jdll_denoise_config = __import__('json').loads(r''' "
                 + TrainingCodeUtils.py(configJson) + " ''')" + nl
+                + "_jdll_denoise_config['device'] = _jdll_denoise_device" + nl
                 + "def _jdll_denoise_callback(event):" + nl
                 + "  task.update(message=str(event.get('message', '')), current=event.get('current'), "
                 + "maximum=event.get('maximum'), info=event)" + nl

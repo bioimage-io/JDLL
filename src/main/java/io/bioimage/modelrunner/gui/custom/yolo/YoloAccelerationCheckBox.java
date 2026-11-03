@@ -24,60 +24,83 @@ import javax.swing.SwingUtilities;
 import java.util.function.Supplier;
 
 import io.bioimage.modelrunner.model.python.DLModelPytorchProtected;
+import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
 import io.bioimage.modelrunner.system.PlatformDetection;
+import io.bioimage.modelrunner.system.GpuCompatibility;
 
 public final class YoloAccelerationCheckBox extends JCheckBox {
 
+    public enum Backend { PYTORCH, TENSORFLOW }
+
     private static final long serialVersionUID = 7698477740479444473L;
+    private boolean accelerationAvailable;
+    private boolean enableRequested = true;
+    private final String acceleratorName;
 
     public YoloAccelerationCheckBox() {
-        this(() -> DLModelPytorchProtected.resolvePytorchEnv()
-        		.getEnvironmentDirectory()
-                .getName()
-                .toLowerCase()
-                .contains("cuda"));
+        this(DLModelPytorchProtected::resolvePytorchEnv, Backend.PYTORCH);
+    }
+
+    public YoloAccelerationCheckBox(Supplier<PixiEnvironmentSpec> environment, Backend backend) {
+        this(() -> (!PlatformDetection.isMacOS() || isAppleSilicon())
+                && AccelerationAvailability.check(environment.get(), backend), accelerationName());
     }
 
     public YoloAccelerationCheckBox(Supplier<Boolean> cudaAvailabilityCheck) {
-        super(accelerationName() + " acceleration", false);
+        this(() -> isAppleSilicon() ? GpuCompatibility.isMetalAvailable()
+                : !PlatformDetection.isMacOS() && GpuCompatibility.isCudaAvailable()
+                        && Boolean.TRUE.equals(cudaAvailabilityCheck.get()), accelerationName());
+    }
+
+    // The supplied probe is complete, allowing deterministic checks without native hardware.
+    YoloAccelerationCheckBox(Supplier<Boolean> availabilityCheck, String acceleratorName) {
+        super(acceleratorName + " acceleration", false);
+        this.acceleratorName = acceleratorName;
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);
         setForeground(YoloUiUtils.SECONDARY_BUTTON_FG);
         setFocusPainted(false);
-        setToolTipText("Enable hardware acceleration when available; falls back to CPU if unavailable.");
-        configureInitialAvailability(cudaAvailabilityCheck);
+        setToolTipText("Checking hardware acceleration availability...");
+        configureInitialAvailability(availabilityCheck);
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        enableRequested = enabled;
+        super.setEnabled(enabled && accelerationAvailable);
+    }
+
+    @Override
+    public void setSelected(boolean selected) {
+        super.setSelected(selected && accelerationAvailable);
+    }
+
+    public boolean isAccelerationAvailable() {
+        return accelerationAvailable;
     }
 
     private static String accelerationName() {
         return isAppleSilicon() ? "MPS" : "CUDA";
     }
 
-    private void configureInitialAvailability(Supplier<Boolean> cudaAvailabilityCheck) {
+    private void configureInitialAvailability(Supplier<Boolean> availabilityCheck) {
         setSelected(false);
-        if (isAppleSilicon()) {
-            setEnabled(true);
-            setVisible(true);
-            return;
-        }
-        if (PlatformDetection.isMacOS()) {
-            setEnabled(false);
-            setVisible(false);
-            return;
-        }
-        setEnabled(false);
-        setVisible(true);
+        super.setEnabled(false);
+        setVisible(!PlatformDetection.isMacOS() || isAppleSilicon());
         Thread cudaCheck = new Thread(() -> {
             boolean cudaAvailable = false;
             try {
-                cudaAvailable = Boolean.TRUE.equals(cudaAvailabilityCheck.get());
-            } catch (Exception e) {
+                cudaAvailable = Boolean.TRUE.equals(availabilityCheck.get());
+            } catch (Exception | LinkageError e) {
                 cudaAvailable = false;
             }
             final boolean enabled = cudaAvailable;
             SwingUtilities.invokeLater(() -> {
-                setEnabled(enabled);
-                setSelected(false);
-                setVisible(true);
+                accelerationAvailable = enabled;
+                if (!enabled) setSelected(false);
+                setToolTipText(enabled ? "Use " + acceleratorName + " acceleration."
+                        : acceleratorName + " acceleration is unavailable: the GPU, driver or Python backend could not be used.");
+                YoloAccelerationCheckBox.super.setEnabled(enableRequested && enabled);
                 repaint();
             });
         }, "jdll-cuda-compatibility-check");

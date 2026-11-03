@@ -110,24 +110,7 @@ public final class StarDist extends DLModelPytorchProtected {
 			+ "  import tensorflow as tf" + System.lineSeparator()
 			+ "  task.export(tf=tf)" + System.lineSeparator()
 			+ "_jdll_requested_device = '%s'" + System.lineSeparator()
-			+ "_jdll_tf_device = '/CPU:0'" + System.lineSeparator()
-			+ "try:" + System.lineSeparator()
-			+ "  if _jdll_requested_device == 'cpu':" + System.lineSeparator()
-			+ "    try:" + System.lineSeparator()
-			+ "      tf.config.set_visible_devices([], 'GPU')" + System.lineSeparator()
-			+ "    except Exception:" + System.lineSeparator()
-			+ "      pass" + System.lineSeparator()
-			+ "  elif _jdll_requested_device in ('cuda', 'mps', 'gpu'):" + System.lineSeparator()
-			+ "    _jdll_gpus = tf.config.list_physical_devices('GPU')" + System.lineSeparator()
-			+ "    if _jdll_gpus:" + System.lineSeparator()
-			+ "      for _jdll_gpu in _jdll_gpus:" + System.lineSeparator()
-			+ "        try:" + System.lineSeparator()
-			+ "          tf.config.experimental.set_memory_growth(_jdll_gpu, True)" + System.lineSeparator()
-			+ "        except Exception:" + System.lineSeparator()
-			+ "          pass" + System.lineSeparator()
-			+ "      _jdll_tf_device = '/GPU:0'" + System.lineSeparator()
-			+ "except Exception:" + System.lineSeparator()
-			+ "  _jdll_tf_device = '/CPU:0'" + System.lineSeparator()
+			+ TrainingCodeUtils.resolveDevice("tensorflow", "_jdll_requested_device", "_jdll_tf_device", "task.update")
 			+ "task.export(_jdll_tf_device=_jdll_tf_device)" + System.lineSeparator()
 			+ "if 'StarDist2D' not in globals().keys() or 'StarDist3D' not in globals().keys():" + System.lineSeparator()
 			+ "  from stardist.models import StarDist2D, StarDist3D, Config2D, Config3D" + System.lineSeparator()
@@ -1847,24 +1830,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ TrainingCodeUtils.apposeStdoutCapture()
 				+ "import tensorflow as tf" + nl
 				+ "_jdll_requested_device = '" + TrainingCodeUtils.py(normalizedDevice) + "'" + nl
-				+ "_jdll_tf_device = '/CPU:0'" + nl
-				+ "try:" + nl
-				+ "  if _jdll_requested_device == 'cpu':" + nl
-				+ "    try:" + nl
-				+ "      tf.config.set_visible_devices([], 'GPU')" + nl
-				+ "    except Exception:" + nl
-				+ "      pass" + nl
-				+ "  elif _jdll_requested_device in ('cuda', 'mps', 'gpu'):" + nl
-				+ "    _jdll_gpus = tf.config.list_physical_devices('GPU')" + nl
-				+ "    if _jdll_gpus:" + nl
-				+ "      for _jdll_gpu in _jdll_gpus:" + nl
-				+ "        try:" + nl
-				+ "          tf.config.experimental.set_memory_growth(_jdll_gpu, True)" + nl
-				+ "        except Exception:" + nl
-				+ "          pass" + nl
-				+ "      _jdll_tf_device = '/GPU:0'" + nl
-				+ "except Exception:" + nl
-				+ "  _jdll_tf_device = '/CPU:0'" + nl
+				+ TrainingCodeUtils.resolveDevice("tensorflow", "_jdll_requested_device", "_jdll_tf_device", "task.update")
 				+ "from csbdeep.utils import normalize" + nl
 				+ "from stardist import Rays_GoldenSpiral, calculate_extents" + nl
 				+ "from stardist.models import Config2D, Config3D, StarDist2D, StarDist3D" + nl
@@ -1902,7 +1868,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "if data_workspace is not None:" + nl
 				+ "  data_options['cache_dir'] = data_workspace" + nl
 				+ "full_validation_request = config.pop('_jdll_full_validation_request', None)" + nl
-				+ "is_accelerated = _jdll_requested_device != 'cpu'" + nl
+				+ "is_accelerated = _jdll_tf_device != '/CPU:0'" + nl
 				+ "progress_every_n_steps = 5 if is_accelerated else 1" + nl
 				+ "log_every_n_steps = 50 if is_accelerated else 10" + nl
 				+ "# StarDist use_gpu enables gputools/OpenCL preprocessing, not TensorFlow CUDA." + nl

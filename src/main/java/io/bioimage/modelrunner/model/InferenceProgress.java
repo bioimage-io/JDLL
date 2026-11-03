@@ -30,6 +30,7 @@ public final class InferenceProgress {
     public enum Phase {
         MODEL_LOADING,
         MODEL_LOADED,
+        DEVICE_SELECTED,
         INFERENCE_START,
         PATCH_START,
         PATCH_END,
@@ -69,6 +70,10 @@ public final class InferenceProgress {
      */
     public static InferenceProgress modelLoaded(final String detail) {
         return new InferenceProgress(Phase.MODEL_LOADED, -1, -1, detail);
+    }
+
+    public static InferenceProgress deviceSelected(final String detail) {
+        return new InferenceProgress(Phase.DEVICE_SELECTED, -1, -1, detail);
     }
 
     /**

@@ -32,6 +32,7 @@ import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.BaseModel;
 import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.java.DLModelJava.TilingConsumer;
+import io.bioimage.modelrunner.model.special.common.TrainingCodeUtils;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentResolver;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
@@ -463,6 +464,8 @@ public class DLModelPytorchProtected extends BaseModel {
             String code = buildModelCode();
             code += RECOVER_OUTPUTS_CODE;
             final Task task = python.task(code);
+            task.listen(this::handleDeviceEvent);
+            configureTask(task);
             task.waitFor();
             ensureTaskSucceeded(task);
             postLoad(task);
@@ -508,15 +511,8 @@ public class DLModelPytorchProtected extends BaseModel {
                 + "  import torch" + System.lineSeparator()
                 + "  task.export(torch=torch)" + System.lineSeparator()
                 + "_jdll_requested_device = '" + device + "'" + System.lineSeparator()
-                + "device = torch.device('cpu')" + System.lineSeparator()
-                + "try:" + System.lineSeparator()
-                + "  if _jdll_requested_device == 'cuda' and torch.cuda.is_available():" + System.lineSeparator()
-                + "    device = torch.device('cuda')" + System.lineSeparator()
-                + "  elif _jdll_requested_device == 'mps':" + System.lineSeparator()
-                + "    if hasattr(torch.backends, 'mps') and torch.backends.mps.is_built() and torch.backends.mps.is_available():" + System.lineSeparator()
-                + "      device = torch.device('mps')" + System.lineSeparator()
-                + "except Exception:" + System.lineSeparator()
-                + "  device = torch.device('cpu')" + System.lineSeparator()
+                + TrainingCodeUtils.resolveDevice("torch", "_jdll_requested_device", "_jdll_resolved_device", "task.update")
+                + "device = torch.device(_jdll_resolved_device)" + System.lineSeparator()
                 + "task.export(device=device)" + System.lineSeparator();
 
         if (modelFile != null) {
@@ -546,6 +542,9 @@ public class DLModelPytorchProtected extends BaseModel {
         code += MODEL_VAR_NAME + "=" + callable + "(" + codeForKwargs() + ")" + System.lineSeparator();
         code += "if any(isinstance(m, torch.nn.ConvTranspose3d) for m in "
                 + MODEL_VAR_NAME + ".modules()):" + System.lineSeparator();
+        code += "  if device.type != 'cpu':" + System.lineSeparator();
+        code += "    jdll_devices.report(_jdll_requested_device, 'cpu', 'PyTorch', task.update, "
+                + "'This model uses the ConvTranspose3d CPU compatibility path.')" + System.lineSeparator();
         code += "  device = torch.device('cpu')" + System.lineSeparator();
         code += "  task.export(device=device)" + System.lineSeparator();
         code += MODEL_VAR_NAME + ".to(device)" + System.lineSeparator();
@@ -769,6 +768,13 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     protected void configureTask(final Task task) {
         // Optional hook for backends that report structured task updates.
+    }
+
+    private void handleDeviceEvent(final org.apposed.appose.TaskEvent event) {
+        if (event.responseType == org.apposed.appose.Service.ResponseType.UPDATE && event.info != null
+                && "device".equals(event.info.get("type")) && event.message != null) {
+            emitProgress(InferenceProgress.deviceSelected(event.message));
+        }
     }
 
     /**

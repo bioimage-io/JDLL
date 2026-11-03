@@ -155,6 +155,7 @@ public final class CrossGoose extends DLModelPytorchProtected {
                 + "from jdll_cross_goose.appose_api import infer as jdll_cross_goose_infer" + nl
                 + "from jdll_cross_goose.appose_api import load_model as jdll_cross_goose_load_model" + nl
                 + "_jdll_cross_goose_device = '" + TrainingCodeUtils.py(device) + "'" + nl
+                + TrainingCodeUtils.resolveDevice("torch", "_jdll_cross_goose_device", "_jdll_cross_goose_device", "task.update")
                 + MODEL_VAR_NAME + ", _jdll_cross_goose_model_config = jdll_cross_goose_load_model(r'"
                 + TrainingCodeUtils.py(modelPath) + "', _jdll_cross_goose_device)" + nl
                 + "task.export(jdll_cross_goose_infer=jdll_cross_goose_infer)" + nl
@@ -252,6 +253,8 @@ public final class CrossGoose extends DLModelPytorchProtected {
                 + TrainingCodeUtils.pytorchMemoryCleanupFunction("_jdll_cleanup_pytorch_memory")
                 + "_jdll_cross_goose_config = json.loads(r'''"
                 + TrainingCodeUtils.toJson(config) + "''')" + nl
+                + TrainingCodeUtils.resolveDevice("torch", "_jdll_cross_goose_config.get('device', 'cpu')",
+                        "_jdll_cross_goose_config['device']", "task.update")
                 + "try:" + nl
                 + "  _jdll_cross_goose_result = jdll_cross_goose_train(_jdll_cross_goose_config, task=task)" + nl
                 + "  for _jdll_kind, _jdll_key in (('last', 'last_checkpoint'), ('best', 'best_checkpoint')):" + nl

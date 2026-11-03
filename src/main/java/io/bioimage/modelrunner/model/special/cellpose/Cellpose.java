@@ -19,6 +19,8 @@
  */
 package io.bioimage.modelrunner.model.special.cellpose;
 
+import io.bioimage.modelrunner.model.special.common.TrainingCodeUtils;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -139,20 +141,9 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			+ "  from multiprocessing import shared_memory" + System.lineSeparator()
 			+ "  task.export(shared_memory=shared_memory)" + System.lineSeparator()
 			+ "_jdll_requested_device = '%s'" + System.lineSeparator()
-			+ "_jdll_cellpose_device = torch.device('cpu')" + System.lineSeparator()
-			+ "_jdll_cellpose_gpu = False" + System.lineSeparator()
-			+ "try:" + System.lineSeparator()
-			+ "  if _jdll_requested_device == 'cuda' and torch.cuda.is_available():" + System.lineSeparator()
-			+ "    _jdll_cellpose_device = torch.device('cuda')" + System.lineSeparator()
-			+ "    _jdll_cellpose_gpu = True" + System.lineSeparator()
-			+ "  elif _jdll_requested_device == 'mps':" + System.lineSeparator()
-			+ "    if hasattr(torch.backends, 'mps') and torch.backends.mps.is_built() and torch.backends.mps.is_available():" + System.lineSeparator()
-			+ "      _jdll_cellpose_device = torch.device('mps')" + System.lineSeparator()
-			+ "      _jdll_cellpose_gpu = True" + System.lineSeparator()
-			+ "except Exception:" + System.lineSeparator()
-			+ "  _jdll_cellpose_device = torch.device('cpu')" + System.lineSeparator()
-			+ "  _jdll_cellpose_gpu = False" + System.lineSeparator()
-			+ "device = _jdll_cellpose_device" + System.lineSeparator()
+			+ TrainingCodeUtils.resolveDevice("torch", "_jdll_requested_device", "_jdll_resolved_device", "task.update")
+			+ "device = torch.device(_jdll_resolved_device)" + System.lineSeparator()
+			+ "_jdll_cellpose_gpu = device.type != 'cpu'" + System.lineSeparator()
 			+ "task.export(device=device)" + System.lineSeparator()
 			+ MODEL_VAR_NAME + " = denoise.CellposeDenoiseModel(gpu=_jdll_cellpose_gpu, pretrained_model=%s, device=device)" + System.lineSeparator()
 			+ "task.export(" + MODEL_VAR_NAME + "=" + MODEL_VAR_NAME +")" + System.lineSeparator();

@@ -27,6 +27,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.sun.jna.Function;
+import com.sun.jna.NativeLibrary;
+import com.sun.jna.Pointer;
+import com.sun.jna.ptr.IntByReference;
+
 /**
  * Cross-platform, dependency-free checks for NVIDIA GPU + driver compatibility with CUDA Toolkit versions.
  *
@@ -81,6 +86,34 @@ public final class GpuCompatibility {
 
     // Prevent instantiation
     private GpuCompatibility() {}
+
+    /** Checks the live driver, not just hardware presence or an installed driver version. */
+    public static boolean isCudaAvailable() {
+        if (PlatformDetection.isMacOS()) return false;
+        try (NativeLibrary cuda = NativeLibrary.getInstance(PlatformDetection.isWindows() ? "nvcuda" : "cuda")) {
+            int convention = PlatformDetection.isWindows() ? Function.ALT_CONVENTION : Function.C_CONVENTION;
+            if (cuda.getFunction("cuInit", convention).invokeInt(new Object[] {0}) != 0) return false;
+            IntByReference count = new IntByReference();
+            return cuda.getFunction("cuDeviceGetCount", convention).invokeInt(new Object[] {count}) == 0
+                    && count.getValue() > 0;
+        } catch (RuntimeException | LinkageError error) {
+            return false;
+        }
+    }
+
+    /** Checks that Metal can actually provide a device; Python checks framework support again. */
+    public static boolean isMetalAvailable() {
+        if (!PlatformDetection.isMacOS()) return false;
+        try (NativeLibrary metal = NativeLibrary.getInstance("/System/Library/Frameworks/Metal.framework/Metal");
+                NativeLibrary objc = NativeLibrary.getInstance("/usr/lib/libobjc.A.dylib")) {
+            Pointer device = metal.getFunction("MTLCreateSystemDefaultDevice").invokePointer(new Object[0]);
+            if (device == null) return false;
+            objc.getFunction("objc_release").invokeVoid(new Object[] {device});
+            return true;
+        } catch (RuntimeException | LinkageError error) {
+            return false;
+        }
+    }
 
     // ---------- Public API ----------
 

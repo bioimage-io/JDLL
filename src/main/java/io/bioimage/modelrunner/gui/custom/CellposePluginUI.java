@@ -99,7 +99,6 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     private File selectedSystemImageFile;
     private javax.swing.SwingWorker<Integer, Void> channelWorker;
     private boolean windowCloseHookInstalled;
-    private boolean accelerationAvailableBeforeRun;
 
     private static final class Settings {
         final CellposeInferenceService.Run run;
@@ -369,15 +368,12 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     private void setInferenceRunning(boolean running) {
         inferenceRunning = running;
         CellposeInferencePanel panel = getInferencePanel();
-        if (running) {
-            accelerationAvailableBeforeRun = getAccelerationCheckBox().isEnabled();
-        }
         panel.getModelSelectionPanel().getModelComboBox().setEnabled(!running);
         panel.getModelSelectionPanel().getBrowseButton().setEnabled(!running);
         panel.getOptionsPanel().getCytoplasmComboBox().setEnabled(!running);
         panel.getOptionsPanel().getNucleiComboBox().setEnabled(!running);
         panel.getOptionsPanel().getDisplayIntermediateOutputsCheckBox().setEnabled(!running);
-        getAccelerationCheckBox().setEnabled(!running && accelerationAvailableBeforeRun);
+        getAccelerationCheckBox().setEnabled(!running);
         panel.getImageSourcePanel().setInteractionEnabled(!running);
         panel.getActionPanel().getCancelButton().setEnabled(running);
         panel.updateImageActionState();

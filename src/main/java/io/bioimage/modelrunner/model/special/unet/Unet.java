@@ -302,6 +302,7 @@ public final class Unet extends DLModelPytorchProtected {
                 + "from jdll_unet.appose_api import infer as jdll_unet_infer" + nl
                 + "from jdll_unet.infer import load_model as jdll_unet_load_model" + nl
                 + "_jdll_unet_device = '" + TrainingCodeUtils.py(device) + "'" + nl
+                + TrainingCodeUtils.resolveDevice("torch", "_jdll_unet_device", "_jdll_unet_device", "task.update")
                 + MODEL_VAR_NAME + ", _jdll_unet_model_config = jdll_unet_load_model(r'"
                 + TrainingCodeUtils.py(modelPath) + "', _jdll_unet_device)" + nl
                 + "_jdll_unet_task = str(_jdll_unet_model_config.get('task', 'binary_semantic'))" + nl
@@ -510,6 +511,8 @@ public final class Unet extends DLModelPytorchProtected {
                 + "from jdll_unet.appose_api import train as jdll_unet_train" + nl
                 + TrainingCodeUtils.pytorchMemoryCleanupFunction("_jdll_cleanup_pytorch_memory")
                 + "_jdll_unet_config = json.loads(r'''" + TrainingCodeUtils.toJson(config) + "''')" + nl
+                + TrainingCodeUtils.resolveDevice("torch", "_jdll_unet_config.get('device', 'cpu')",
+                        "_jdll_unet_config['device']", "task.update")
                 + TrainingCodeUtils.pythonModule("validation_control", "python/validation_control.py")
                 + "_jdll_request_dir = _jdll_unet_config.pop('_jdll_validation_requests', None)" + nl
                 + "_jdll_control = validation_control.file_control(_jdll_request_dir) if _jdll_request_dir else None" + nl

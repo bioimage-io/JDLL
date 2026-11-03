@@ -294,6 +294,7 @@ public class UnetInferenceService implements DenseSegmentationInferenceService {
                         ? patchProgressBar(progress.getPatchIndex(), progress.getTotalPatches())
                         : patchProgressText(progress.getPatchIndex(), progress.getTotalPatches()));
                 break;
+            case DEVICE_SELECTED:
             case TASK_RETRY:
                 logConsumer.accept(progress.getDetail());
                 break;

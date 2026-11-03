@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 import java.util.function.IntFunction;
 
 import io.bioimage.modelrunner.exceptions.RunModelException;
+import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.model.special.cellpose.Cellpose;
 import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.Cursor;
@@ -124,6 +125,9 @@ public class CellposeInferenceService {
         if (model == null || !model.isLoaded()) {
             accept(log, "Loading Cellpose model.");
             model = createModel(path, device);
+            model.setInferenceProgressConsumer(event -> {
+                if (event.getPhase() == InferenceProgress.Phase.DEVICE_SELECTED) accept(log, event.getDetail());
+            });
             model.loadModel();
             loadedModelPath = path;
             loadedDevice = device;

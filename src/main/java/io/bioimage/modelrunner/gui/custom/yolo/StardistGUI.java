@@ -56,7 +56,7 @@ public class StardistGUI extends JPanel {
     protected final YoloInferencePanel inferencePanel = new YoloInferencePanel(false);
     protected final StardistTrainPanel trainPanel = new StardistTrainPanel();
     protected final YoloAccelerationCheckBox accelerationCheckBox = new YoloAccelerationCheckBox(
-            () -> StarDist.resolvePytorchEnv().getSelectedEnvironment().toLowerCase().contains("cuda"));
+            StarDist::resolvePytorchEnv, YoloAccelerationCheckBox.Backend.TENSORFLOW);
 
     /**
      * Creates a new StardistGUI instance.

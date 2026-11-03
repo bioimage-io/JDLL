@@ -112,13 +112,8 @@ public class Yolo extends DLModelPytorchProtected {
 			+ "from multiprocessing import shared_memory" + System.lineSeparator()
 			+ "import os" + System.lineSeparator()
 			+ "import torch" + System.lineSeparator()
-			+ "device = 'cpu'" + System.lineSeparator()
-			+ "if %s and torch.cuda.is_available():" + System.lineSeparator()
-			+ "  device = 'cuda'" + System.lineSeparator()
-			+ "elif %s:" + System.lineSeparator()
-			+ "  from torch.backends import mps" + System.lineSeparator()
-			+ "  if mps.is_built() and mps.is_available():" + System.lineSeparator()
-			+ "    device = 'mps'" + System.lineSeparator()
+			+ "_jdll_requested_device = '%s'" + System.lineSeparator()
+			+ TrainingCodeUtils.resolveDevice("torch", "_jdll_requested_device", "device", "task.update")
 			+ "from ultralytics import YOLO" + System.lineSeparator()
 			+ MODEL_VAR_NAME + " = YOLO(r'%s')" + System.lineSeparator()
 			+ "task.export(shared_memory=shared_memory)" + System.lineSeparator()
@@ -199,8 +194,7 @@ public class Yolo extends DLModelPytorchProtected {
 	 */
 	protected String buildModelCode() throws IOException {
 		String code = String.format(LOAD_MODEL_CODE_ABSTRACT,
-				"cuda".equals(device) ? "True" : "False",
-				"mps".equals(device) ? "True" : "False",
+				device,
 				weightsPath);
 		return code + TrainingCodeUtils.pythonModule("jdll_yolo_data", "python/yolo_data.py")
 				+ "_jdll_yolo_normalization = jdll_yolo_data.load_normalization(r'" + TrainingCodeUtils.py(weightsPath) + "') or getattr(" + MODEL_VAR_NAME + ".model, 'jdll_preprocessing', None)\n"
@@ -660,8 +654,9 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "preview_confidence = " + DEFAULT_VALIDATION_PREVIEW_CONFIDENCE + nl
 				+ "cancel_signal_path = r'" + TrainingCodeUtils.py(cancelSignalPath == null ? "" : cancelSignalPath) + "'" + nl
 				+ "requested_device = '" + TrainingCodeUtils.py(normalizedDevice) + "'" + nl
-				+ "train_device = 0 if requested_device == 'cuda' else requested_device" + nl
-				+ "is_accelerated = requested_device != 'cpu'" + nl
+				+ TrainingCodeUtils.resolveDevice("torch", "requested_device", "resolved_device", "task.update", false)
+				+ "train_device = 0 if resolved_device == 'cuda' else resolved_device" + nl
+				+ "is_accelerated = resolved_device != 'cpu'" + nl
 				+ "progress_every_n_steps = " + DEFAULT_ACCELERATED_PROGRESS_EVERY_N_STEPS + " if is_accelerated else " + DEFAULT_CPU_PROGRESS_EVERY_N_STEPS + nl
 				+ "log_every_n_steps = " + DEFAULT_ACCELERATED_LOG_EVERY_N_STEPS + " if is_accelerated else " + DEFAULT_CPU_LOG_EVERY_N_STEPS + nl
 				+ "state = {'step': 0, 'total_steps': 0, 'preview_paths': set(), 'preview_order': [], 'preview_results': {}, 'preview_epoch': 0, 'capture_preview': False, 'completed_epochs': 0, 'best_epoch': 0, 'best_score': None, 'best_metrics': {}, 'final_metrics': {}, 'resolved_batch': None, 'resolved_device': None}" + nl

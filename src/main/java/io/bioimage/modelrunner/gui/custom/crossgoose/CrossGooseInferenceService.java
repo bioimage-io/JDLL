@@ -175,6 +175,7 @@ public final class CrossGooseInferenceService implements DenseSegmentationInfere
                 break;
             case MERGE_START: logConsumer.accept("Merging patch predictions."); break;
             case INFERENCE_END: logConsumer.accept("Inference finished."); break;
+            case DEVICE_SELECTED:
             case TASK_RETRY: logConsumer.accept(progress.getDetail()); break;
             default: break;
         }

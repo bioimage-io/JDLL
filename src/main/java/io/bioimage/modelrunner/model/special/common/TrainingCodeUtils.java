@@ -30,6 +30,19 @@ import java.util.function.Consumer;
  */
 public final class TrainingCodeUtils {
 
+    /** Selects a device in the actual backend environment and emits a structured diagnostic. */
+    public static String resolveDevice(String backend, String requested, String target, String update) {
+        return resolveDevice(backend, requested, target, update, true);
+    }
+
+    /** Keeps backends that explicitly prohibit CPU fallback strict, but reports their failure clearly. */
+    public static String resolveDevice(String backend, String requested, String target, String update,
+            boolean allowCpuFallback) {
+        return pythonModule("jdll_devices", "python/device_selection.py")
+                + target + " = jdll_devices." + backend + "_device(" + requested + ", " + update
+                + (allowCpuFallback ? "" : ", allow_cpu_fallback=False") + ")\n";
+    }
+
     /** Loads a bundled helper as a Python module without installing a separate package. */
     public static String pythonModule(String name, String resource) {
         String encoded = java.util.Base64.getEncoder().encodeToString(
