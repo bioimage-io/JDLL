@@ -232,7 +232,7 @@ public final class Unet extends DLModelPytorchProtected {
         validateTrainingConfig(config);
         PixiEnvironmentSpec envSpec = resolvePytorchEnv();
         Environment env = PixiEnvironmentManager.openEnvironment(envSpec, logConsumer);
-		Service python = env.python();
+		Service python = PixiEnvironmentManager.pythonService(env);
         if (serviceConsumer != null) {
             serviceConsumer.accept(python);
         }

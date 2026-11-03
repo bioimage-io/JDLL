@@ -29,6 +29,17 @@ public final class PixiEnvironmentManager {
     }
 
     /**
+     * Creates an unstarted worker with NumPy initialized before Appose reads stdin.
+     * Importing NumPy for the first time from a task can deadlock on Windows.
+     *
+     * @param environment the installed Python environment.
+     * @return an unstarted service configured for early NumPy initialization.
+     */
+    public static Service pythonService(Environment environment) {
+        return Objects.requireNonNull(environment, "environment").python().init("import numpy as np");
+    }
+
+    /**
      * Checks whether the environment described by the given spec appears to be
      * installed.
      *

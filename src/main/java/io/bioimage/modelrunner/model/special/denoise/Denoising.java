@@ -77,7 +77,7 @@ public final class Denoising extends DLModelPytorchProtected {
     public static DenoisingCapabilities capabilities(Consumer<Service> serviceConsumer) throws Exception {
         PixiEnvironmentSpec spec = resolvePytorchEnv();
         Environment environment = PixiEnvironmentManager.openEnvironment(spec, null);
-        Service service = environment.python();
+        Service service = PixiEnvironmentManager.pythonService(environment);
         if (serviceConsumer != null) serviceConsumer.accept(service);
         try {
             String nl = System.lineSeparator();

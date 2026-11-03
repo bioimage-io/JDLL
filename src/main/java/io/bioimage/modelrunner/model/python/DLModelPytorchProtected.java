@@ -393,7 +393,7 @@ public class DLModelPytorchProtected extends BaseModel {
 
         try {
             env = PixiEnvironmentManager.openEnvironment(environmentSpec, null);
-    		python = env.python();
+            python = PixiEnvironmentManager.pythonService(env);
 	
 	        python.debug(System.err::println);
         } catch (Exception ex) {
@@ -450,7 +450,6 @@ public class DLModelPytorchProtected extends BaseModel {
     public void loadModel() throws LoadModelException {
     	if (python == null) {
             createPythonService();
-            python.init("import numpy as np" + System.lineSeparator());
     	}
         if (loaded) {
             return;

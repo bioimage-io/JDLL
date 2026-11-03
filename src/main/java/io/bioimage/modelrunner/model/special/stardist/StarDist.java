@@ -1626,11 +1626,10 @@ public final class StarDist extends DLModelPytorchProtected {
 
 		PixiEnvironmentSpec envSpec = resolvePytorchEnv();
         Environment env = PixiEnvironmentManager.openEnvironment(envSpec, logConsumer);
-		Service python = env.python();
+		Service python = PixiEnvironmentManager.pythonService(env);
 		if (serviceConsumer != null) {
 			serviceConsumer.accept(python);
 		}
-		python.init("import numpy as np");
 		java.nio.file.Path workspace = java.nio.file.Files.createTempDirectory("jdll-stardist-");
 		try {
 			config = new LinkedHashMap<String, Object>(config);

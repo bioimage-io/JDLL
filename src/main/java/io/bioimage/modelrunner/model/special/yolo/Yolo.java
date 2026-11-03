@@ -412,7 +412,7 @@ public class Yolo extends DLModelPytorchProtected {
 
 		PixiEnvironmentSpec envSpec = resolvePytorchEnv();
         Environment env = PixiEnvironmentManager.openEnvironment(envSpec, logConsumer);
-		Service python = env.python();
+		Service python = PixiEnvironmentManager.pythonService(env);
 		if (serviceConsumer != null) {
 			serviceConsumer.accept(python);
 		}
@@ -476,7 +476,7 @@ public class Yolo extends DLModelPytorchProtected {
 
 		PixiEnvironmentSpec envSpec = resolvePytorchEnv();
         Environment env = PixiEnvironmentManager.openEnvironment(envSpec, logConsumer);
-		Service python = env.python();
+		Service python = PixiEnvironmentManager.pythonService(env);
 		YoloTrainingAttemptResult result = new YoloTrainingAttemptResult();
 		if (serviceConsumer != null) {
 			serviceConsumer.accept(python);
