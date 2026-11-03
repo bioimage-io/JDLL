@@ -43,7 +43,7 @@ imagecodecs = "==2025.3.30"
 zarr = "==2.18.7"
 bm3d = "==4.0.3"
 bm4d = "==4.2.5"
-jdll-cross-goose = { git = "https://github.com/carlosuc3m/jdll-cross-goose.git", rev = "951f5bc4c62ff07f50bbebfcfeeda719c41272f4" }
+jdll-cross-goose = { git = "https://github.com/carlosuc3m/jdll-cross-goose.git", rev = "8faef06b51dd7b7e6ed73ec763e714f183a5ead2" }
 lightning = "==2.5.0"
 pytorch-lightning = "==2.5.0"
 torchmetrics = "==1.4.3"

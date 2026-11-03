@@ -53,7 +53,7 @@ public final class CrossGoose extends DLModelPytorchProtected {
     private CrossGoose(String modelPath, Consumer<InferenceProgress> progressConsumer, String device) {
         super(modelPath, modelPath, modelPath, checkpointIdentity(modelPath), new LinkedHashMap<String, Object>(), true, device);
         this.modelPath = modelPath;
-        modelFolder = new File(modelPath).getAbsolutePath();
+        modelFolder = CrossGooseModelRegistry.modelDirectory(new File(modelPath)).getAbsolutePath();
         setMaxSharedMemoryPixelCount(Long.MAX_VALUE);
         environmentSpec = resolvePytorchEnv();
         envPath = environmentSpec.getEnvironmentDirectory().getAbsolutePath();
@@ -78,12 +78,25 @@ public final class CrossGoose extends DLModelPytorchProtected {
     public static CrossGoose fromFile(String modelPath, Consumer<InferenceProgress> progressConsumer,
             String device) throws IOException, BuildException, LoadModelException {
         File directory = CrossGooseModelRegistry.modelDirectory(new File(modelPath));
-        if (directory == null) {
+        if (directory == null || !CrossGooseModelRegistry.isModelPath(modelPath)) {
             throw new IOException("Path does not point to a Cross-GOOSE model directory: " + modelPath);
         }
-        CrossGoose model = new CrossGoose(directory.getAbsolutePath(), progressConsumer, device);
-        model.loadModel();
+        CrossGoose model = new CrossGoose(modelPathForLoading(new File(modelPath)).getCanonicalPath(),
+                progressConsumer, device);
+        try {
+            model.loadModel();
+        } catch (LoadModelException | RuntimeException error) {
+            try { model.close(); }
+            catch (RuntimeException cleanup) { error.addSuppressed(cleanup); }
+            throw error;
+        }
         return model;
+    }
+
+    static File modelPathForLoading(File path) {
+        if (path.isFile()) return path;
+        File best = new File(path, "checkpoints/best.ckpt");
+        return best.isFile() ? best : path;
     }
 
     public static boolean isInstalled() {
@@ -107,17 +120,35 @@ public final class CrossGoose extends DLModelPytorchProtected {
             Consumer<UnetValidationPreview> previewConsumer,
             Consumer<String> logConsumer, Consumer<Service> serviceConsumer)
             throws IOException, BuildException, InterruptedException, TaskException {
+        train(config, progressConsumer, previewConsumer, logConsumer, serviceConsumer, null);
+    }
+
+    public static void train(Map<String, Object> config,
+            Consumer<UnetTrainingProgress> progressConsumer,
+            Consumer<UnetValidationPreview> previewConsumer,
+            Consumer<String> logConsumer, Consumer<Service> serviceConsumer,
+            Consumer<Map<String, Object>> validationConsumer)
+            throws IOException, BuildException, InterruptedException, TaskException {
+        if (config == null || config.get("output_dir") == null
+                || config.get("dataset_path") == null || !new File(config.get("dataset_path").toString()).isDirectory()) {
+            throw new IllegalArgumentException("Cross-GOOSE training requires output_dir and an existing dataset folder.");
+        }
         PixiEnvironmentSpec spec = resolvePytorchEnv();
         Environment environment = PixiEnvironmentManager.openEnvironment(spec, logConsumer);
         Service python = PixiEnvironmentManager.pythonService(environment);
-        if (serviceConsumer != null) serviceConsumer.accept(python);
         try {
+            if (serviceConsumer != null) serviceConsumer.accept(python);
+            if (Thread.currentThread().isInterrupted()) throw new InterruptedException("Cross-GOOSE training cancelled.");
             Task task = python.task(buildTrainingCode(config));
-            task.listen(event -> handleTrainingEvent(event, progressConsumer, previewConsumer, logConsumer));
+            task.listen(event -> handleTrainingEvent(event, progressConsumer, previewConsumer, logConsumer,
+                    validationConsumer));
             task.waitFor();
         } finally {
-            if (python.isAlive()) python.close();
-            if (serviceConsumer != null) serviceConsumer.accept(null);
+            try {
+                if (python.isAlive()) python.close();
+            } finally {
+                if (serviceConsumer != null) serviceConsumer.accept(null);
+            }
         }
     }
 
@@ -189,7 +220,7 @@ public final class CrossGoose extends DLModelPytorchProtected {
                 .append("def _jdll_cross_goose_callback(event):").append(nl)
                 .append("  task.update(message=str(event.get('message', '')), current=event.get('current'), ")
                 .append("maximum=event.get('maximum'), info=event)").append(nl)
-                .append("  return True").append(nl)
+                .append("  return not task.cancel_requested").append(nl)
                 .append("_jdll_cross_goose_infer_config = {'model_path': r'")
                 .append(TrainingCodeUtils.py(modelPath))
                 .append("', 'device': _jdll_cross_goose_device}").append(nl);
@@ -201,7 +232,7 @@ public final class CrossGoose extends DLModelPytorchProtected {
                 .append("_jdll_cross_goose_result = jdll_cross_goose_infer(")
                 .append("_jdll_cross_goose_infer_config, {'image': ").append(input)
                 .append("}, model=").append(MODEL_VAR_NAME)
-                .append(", callback=_jdll_cross_goose_callback)").append(nl)
+                .append(", callback=_jdll_cross_goose_callback, cancellation=lambda: task.cancel_requested)").append(nl)
                 .append("_jdll_cross_goose_outputs = _jdll_cross_goose_result.get('outputs', ")
                 .append("_jdll_cross_goose_result)").append(nl)
                 .append("_jdll_cross_goose_labels = _jdll_cross_goose_outputs['labels']").append(nl)
@@ -253,16 +284,25 @@ public final class CrossGoose extends DLModelPytorchProtected {
                 + TrainingCodeUtils.pytorchMemoryCleanupFunction("_jdll_cleanup_pytorch_memory")
                 + "_jdll_cross_goose_config = json.loads(r'''"
                 + TrainingCodeUtils.toJson(config) + "''')" + nl
+                + TrainingCodeUtils.pythonModule("validation_control", "python/validation_control.py")
+                + "_jdll_request_dir = _jdll_cross_goose_config.pop('_jdll_validation_requests', None)" + nl
+                + "_jdll_control = validation_control.file_control(_jdll_request_dir) if _jdll_request_dir else None" + nl
                 + TrainingCodeUtils.resolveDevice("torch", "_jdll_cross_goose_config.get('device', 'cpu')",
                         "_jdll_cross_goose_config['device']", "task.update")
+                + "def _jdll_cross_goose_callback(event):" + nl
+                + "  task.update(message=str(event.get('message', '')), current=event.get('current', 0), "
+                + "maximum=event.get('maximum', 1), info=event)" + nl
+                + "  return not task.cancel_requested" + nl
                 + "try:" + nl
-                + "  _jdll_cross_goose_result = jdll_cross_goose_train(_jdll_cross_goose_config, task=task)" + nl
+                + "  _jdll_cross_goose_result = jdll_cross_goose_train(_jdll_cross_goose_config, "
+                + "callback=_jdll_cross_goose_callback, cancellation=lambda: task.cancel_requested, control=_jdll_control)" + nl
                 + "  for _jdll_kind, _jdll_key in (('last', 'last_checkpoint'), ('best', 'best_checkpoint')):" + nl
                 + "    _jdll_path = _jdll_cross_goose_result.get(_jdll_key)" + nl
                 + "    if _jdll_path:" + nl
                 + "      task.update(message='Cross-GOOSE %s checkpoint: %s' % (_jdll_kind, _jdll_path), "
                 + "info={'type': 'checkpoint', 'kind': _jdll_kind, 'path': _jdll_path})" + nl
                 + "  task.outputs['result'] = _jdll_cross_goose_result.get('model_dir')" + nl
+                + "  task.outputs['model_dir'] = _jdll_cross_goose_result.get('model_dir')" + nl
                 + "finally:" + nl
                 + "  try:" + nl
                 + "    del _jdll_cross_goose_result" + nl
@@ -271,12 +311,26 @@ public final class CrossGoose extends DLModelPytorchProtected {
                 + "  _jdll_cleanup_pytorch_memory()" + nl;
     }
 
-    private static void handleTrainingEvent(TaskEvent event,
+    static void handleTrainingEvent(TaskEvent event,
             Consumer<UnetTrainingProgress> progressConsumer,
-            Consumer<UnetValidationPreview> previewConsumer, Consumer<String> logConsumer) {
+            Consumer<UnetValidationPreview> previewConsumer, Consumer<String> logConsumer,
+            Consumer<Map<String, Object>> validationConsumer) {
         if (!ResponseType.UPDATE.equals(event.responseType) || event.info == null) return;
-        if (event.message != null && logConsumer != null) logConsumer.accept(event.message);
+        if (event.message != null && !event.message.trim().isEmpty() && logConsumer != null) {
+            logConsumer.accept(event.message);
+        }
         Object type = event.info.get("type");
+        if ("configuration".equals(type) && logConsumer != null && event.info.get("config") instanceof Map) {
+            Map<?, ?> config = (Map<?, ?>) event.info.get("config");
+            for (String section : new String[] {"model", "data", "optimizer", "trainer", "adapter"}) {
+                if (config.containsKey(section)) logConsumer.accept("Resolved Cross-GOOSE " + section + ": "
+                        + TrainingCodeUtils.toJson(config.get(section)));
+            }
+        }
+        if (validationConsumer != null && ("validation".equals(type) || "checkpoint".equals(type)
+                || "preview".equals(type) || "validation_plan".equals(type) || "full_validation".equals(type))) {
+            validationConsumer.accept(new LinkedHashMap<String, Object>(event.info));
+        }
         if ("progress".equals(type) && progressConsumer != null) {
             progressConsumer.accept(new UnetTrainingProgress(
                     TrainingCodeUtils.asInt(event.info.get("epoch"), (int) event.current),

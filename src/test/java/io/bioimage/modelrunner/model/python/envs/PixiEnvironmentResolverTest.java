@@ -17,6 +17,7 @@ public class PixiEnvironmentResolverTest {
     @Test public void crossGooseAcceptsModelDirectoriesAndUsesTheMainEnvironment() throws Exception {
         java.io.File directory = temporary.newFolder("cross-goose-model");
         assertTrue(new java.io.File(directory, "weights.ckpt").createNewFile());
+        assertTrue(new java.io.File(directory, "config.yaml").createNewFile());
         Constructor<CrossGoose> constructor = CrossGoose.class.getDeclaredConstructor(String.class, Consumer.class, String.class);
         constructor.setAccessible(true);
         CrossGoose model = constructor.newInstance(directory.getAbsolutePath(), null, "cpu");

@@ -63,7 +63,8 @@ public final class SegmentationDatasetPreparer {
 
     public enum Framework {
         STARDIST,
-        UNET
+        UNET,
+        CROSS_GOOSE
     }
 
     public enum Dimensionality {
@@ -115,6 +116,7 @@ public final class SegmentationDatasetPreparer {
     private static final List<String> STARDIST_IMAGE_SUFFIXES = Collections.singletonList("_image");
     private static final List<String> STARDIST_MASK_SUFFIXES = Arrays.asList(
             "_mask", "_masks", "_label", "_labels");
+    private static final List<String> CROSS_GOOSE_IMAGE_SUFFIXES = Arrays.asList("_image", "_img");
 
     static {
         Collections.addAll(IMAGE_EXTENSIONS, ".tif", ".tiff", ".png", ".jpg", ".jpeg", ".bmp", ".npy");
@@ -157,14 +159,19 @@ public final class SegmentationDatasetPreparer {
         summary.explicitValidationSplit = !discovery.val.rawPairs.isEmpty();
         Split train = validateSplit("train", discovery.train, summary, target);
         Split val = validateSplit("val", discovery.val, summary, target);
-        if (target == Framework.UNET && summary.missingMasks > 0) {
-            throw new IllegalArgumentException("UNet training requires one mask per image. Missing masks: "
+        if (target != Framework.STARDIST && summary.missingMasks > 0) {
+            throw new IllegalArgumentException((target == Framework.CROSS_GOOSE ? "Cross-GOOSE" : "UNet")
+                    + " training requires one mask per image. Missing masks: "
                     + summary.missingMasks + firstItems(summary.missingMaskExamples));
         }
         if (train.pairs.isEmpty()) {
             throw new IllegalArgumentException("No valid training image/mask pairs remain after dataset checks.");
         }
         Dimensionality dimensionality = resolveDimensionality(train, val, target);
+        if (target == Framework.CROSS_GOOSE && dimensionality != Dimensionality.TWO_D) {
+            throw new IllegalArgumentException("Cross-GOOSE training requires 2D image/mask pairs; "
+                    + "volumetric or unresolved image geometry is not supported.");
+        }
         summary.dimensionality = dimensionality;
 
         boolean backendCanPairDirectly = backendCanPairDirectly(train, target)
@@ -241,7 +248,7 @@ public final class SegmentationDatasetPreparer {
         LayoutResult rootSeparated = findSeparated(root, framework);
         if (!rootSeparated.rawPairs.isEmpty()) {
             return new Discovery(rootSeparated, new LayoutResult("val", true, Collections.<RawPair>emptyList()),
-                    rootSeparated.directlyDigestible, "images/masks folders");
+                    framework != Framework.CROSS_GOOSE && rootSeparated.directlyDigestible, "images/masks folders");
         }
 
         LayoutResult rootMixed = findMixed(root, "root mixed folder");
@@ -288,6 +295,9 @@ public final class SegmentationDatasetPreparer {
             for (String maskAlias : MASK_ALIASES) {
                 boolean direct = "train".equals(splitName) || "val".equals(splitName)
                         || (framework == Framework.STARDIST && "validation".equals(splitName));
+                if (framework == Framework.CROSS_GOOSE) {
+                    direct &= "images".equals(imageAlias) && "masks".equals(maskAlias);
+                }
                 layouts.add(new SplitLayout(new File(splitRoot, imageAlias), new File(splitRoot, maskAlias), direct));
                 layouts.add(new SplitLayout(new File(new File(root, imageAlias), splitName),
                         new File(new File(root, maskAlias), splitName), false));
@@ -475,7 +485,7 @@ public final class SegmentationDatasetPreparer {
         stats.shapeMismatch = imageInfo.width != maskStats.width || imageInfo.height != maskStats.height
                 || imageInfo.depth != maskStats.depth;
         stats.depth = imageInfo.depth;
-        if (framework == Framework.UNET || NpyImageFile.isNpy(raw.image) || NpyImageFile.isNpy(raw.mask)) {
+        if (framework != Framework.STARDIST || NpyImageFile.isNpy(raw.image) || NpyImageFile.isNpy(raw.mask)) {
             stats.depth = unetPairDepth(raw);
             stats.shapeMismatch = stats.depth < 0;
         }
@@ -645,14 +655,20 @@ public final class SegmentationDatasetPreparer {
 
     private static boolean backendCanPairDirectly(Split split, Framework framework) {
         List<String> imageSuffixes = framework == Framework.STARDIST
-                ? STARDIST_IMAGE_SUFFIXES : UNET_IMAGE_SUFFIXES;
+                ? STARDIST_IMAGE_SUFFIXES : framework == Framework.CROSS_GOOSE
+                        ? CROSS_GOOSE_IMAGE_SUFFIXES : UNET_IMAGE_SUFFIXES;
         List<String> maskSuffixes = framework == Framework.STARDIST
-                ? STARDIST_MASK_SUFFIXES : UNET_MASK_SUFFIXES;
+                ? STARDIST_MASK_SUFFIXES : framework == Framework.CROSS_GOOSE
+                        ? STARDIST_MASK_SUFFIXES : UNET_MASK_SUFFIXES;
         for (Pair pair : split.pairs) {
             String imageStem = removeExtension(pair.image.getName()).toLowerCase(Locale.ROOT);
             String maskStem = removeExtension(pair.mask.getName()).toLowerCase(Locale.ROOT);
             String imageKey = stripSuffix(imageStem, imageSuffixes);
             String maskKey = stripSuffix(maskStem, maskSuffixes);
+            if (framework == Framework.CROSS_GOOSE) {
+                if (!imageKey.equals(maskKey)) return false;
+                continue;
+            }
             if (!imageStem.equals(maskStem) && !imageStem.equals(maskKey)
                     && !imageKey.equals(maskStem) && !imageKey.equals(maskKey)) {
                 return false;

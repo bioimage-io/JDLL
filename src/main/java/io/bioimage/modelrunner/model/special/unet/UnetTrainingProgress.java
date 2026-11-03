@@ -31,6 +31,7 @@ public final class UnetTrainingProgress {
     public static final String VAL_MEAN_DICE = "val/mean_dice";
     public static final String VAL_FOREGROUND_DICE = "val/foreground_dice";
     public static final String VAL_IOU = "val/iou";
+    public static final String VAL_AP_075 = "val/ap_0.75";
     public static final String UNET_TOTAL_LOSS_LABEL = "UNet loss";
 
     private final int epoch;
@@ -147,7 +148,9 @@ public final class UnetTrainingProgress {
             return dice;
         }
         dice = firstPresent(metrics, VAL_FOREGROUND_DICE);
-        return dice != null ? dice : firstPresent(metrics, VAL_IOU);
+        if (dice != null) return dice;
+        Double iou = firstPresent(metrics, VAL_IOU);
+        return iou != null ? iou : firstPresent(metrics, VAL_AP_075);
     }
 
     /**
@@ -167,6 +170,9 @@ public final class UnetTrainingProgress {
         }
         if (metrics.containsKey(VAL_IOU)) {
             return "IoU";
+        }
+        if (metrics.containsKey(VAL_AP_075)) {
+            return "AP@0.75";
         }
         return metrics.isEmpty() ? "Metric" : metrics.keySet().iterator().next();
     }

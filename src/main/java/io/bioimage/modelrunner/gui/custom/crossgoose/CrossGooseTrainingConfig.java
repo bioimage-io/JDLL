@@ -49,6 +49,10 @@ public final class CrossGooseTrainingConfig implements DenseSegmentationTraining
             String modelsDir, String device) {
         String normalizedName = CrossGooseModelRegistry.removeCheckpointExtension(
                 modelName == null ? "" : modelName.trim()).trim();
+        if (normalizedName.isEmpty() || normalizedName.contains("/") || normalizedName.contains("\\")
+                || normalizedName.contains("..") || ".".equals(normalizedName)) {
+            throw new IllegalArgumentException("Please provide a Cross-GOOSE model name without path separators or '..'.");
+        }
         File familyRoot = modelsDir == null ? new File(CrossGooseModelRegistry.MODELS_SUBDIR)
                 : new File(modelsDir, CrossGooseModelRegistry.MODELS_SUBDIR);
         File output = TrainingModelPaths.uniqueModelDir(familyRoot, normalizedName, ".ckpt");

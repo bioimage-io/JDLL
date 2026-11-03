@@ -33,7 +33,10 @@ public final class CrossGooseBackend implements DenseSegmentationBackend {
         return CrossGooseModelRegistry.buildModelEntries(modelsDir);
     }
 
-    @Override public File findModelFile(File path) { return CrossGooseModelRegistry.modelDirectory(path); }
+    @Override public File findModelFile(File path) {
+        return path != null && CrossGooseModelRegistry.isModelPath(path.getAbsolutePath())
+                ? path.getAbsoluteFile() : null;
+    }
 
     @Override
     public String modelLabel(File selected) {

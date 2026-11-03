@@ -61,6 +61,16 @@ public class SegmentationNpyDatasetTest {
             assertEquals(70000, numpy.value(12, 40, 3, 0), 0);
         }
         for (Framework framework : Framework.values()) {
+            if (framework == Framework.CROSS_GOOSE) {
+                try {
+                    SegmentationDatasetPreparer.prepare(root.getAbsolutePath(), "vol",
+                            temporary.getRoot().getAbsolutePath(), 0.15, framework, null);
+                    fail("Cross-GOOSE must reject volumes before passing them to its 2D backend");
+                } catch (IllegalArgumentException expected) {
+                    assertTrue(expected.getMessage().contains("requires 2D"));
+                }
+                continue;
+            }
             PreparedDataset dataset = SegmentationDatasetPreparer.prepare(root.getAbsolutePath(), "vol",
                     temporary.getRoot().getAbsolutePath(), 0.15, framework, null);
             assertTrue(dataset.is3D());
@@ -96,7 +106,7 @@ public class SegmentationNpyDatasetTest {
             java.util.List<String> messages = new java.util.ArrayList<>();
             PreparedDataset dataset = SegmentationDatasetPreparer.prepare(root.getAbsolutePath(), "cache",
                     temporary.getRoot().getAbsolutePath(), 0.15, framework, messages::add);
-            assertFalse(dataset.isGenerated());
+            assertEquals(framework == Framework.CROSS_GOOSE, dataset.isGenerated());
             assertTrue(messages.stream().anyMatch(message -> message.contains("source_images=2")));
         }
     }

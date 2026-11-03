@@ -943,7 +943,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         Double trainLoss = progress.getTrainingTotalLoss();
         if (trainLoss != null) {
             trainPanel.getLossGraphPanel().addTrainValue(
-                    UnetTrainingProgress.UNET_TOTAL_LOSS_LABEL,
+                    backend.getDisplayName() + " loss",
                     progress.getStep(),
                     progress.getEpoch(),
                     trainLoss);
@@ -951,7 +951,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         Double validationLoss = progress.getValidationTotalLoss();
         if (validationLoss != null) {
             trainPanel.getLossGraphPanel().addValidationValue(
-                    UnetTrainingProgress.UNET_TOTAL_LOSS_LABEL,
+                    backend.getDisplayName() + " loss",
                     progress.getStep(),
                     progress.getEpoch(),
                     validationLoss);

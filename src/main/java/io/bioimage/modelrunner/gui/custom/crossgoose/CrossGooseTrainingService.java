@@ -24,6 +24,7 @@ import org.apposed.appose.TaskException;
 
 import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer;
 import io.bioimage.modelrunner.gui.custom.training.SegmentationDatasetPreparer.PreparedDataset;
+import io.bioimage.modelrunner.gui.custom.training.ValidationRequests;
 import io.bioimage.modelrunner.gui.custom.unet.DenseSegmentationTrainingConfig;
 import io.bioimage.modelrunner.gui.custom.unet.DenseSegmentationTrainingService;
 import io.bioimage.modelrunner.model.special.crossgoose.CrossGoose;
@@ -35,6 +36,7 @@ public final class CrossGooseTrainingService implements DenseSegmentationTrainin
 
     private final CrossGooseInstaller installer;
     private Service runningPython;
+    private ValidationRequests validationRequests;
 
     public CrossGooseTrainingService(CrossGooseInstaller installer) {
         this.installer = installer;
@@ -45,6 +47,15 @@ public final class CrossGooseTrainingService implements DenseSegmentationTrainin
             Consumer<UnetTrainingProgress> progressConsumer,
             Consumer<UnetValidationPreview> previewConsumer, Consumer<String> logConsumer)
             throws IOException, ExecutionException, InterruptedException, BuildException, TaskException {
+        train(values, progressConsumer, previewConsumer, logConsumer, null);
+    }
+
+    @Override
+    public void train(DenseSegmentationTrainingConfig values,
+            Consumer<UnetTrainingProgress> progressConsumer,
+            Consumer<UnetValidationPreview> previewConsumer, Consumer<String> logConsumer,
+            Consumer<Map<String, Object>> validationConsumer)
+            throws IOException, ExecutionException, InterruptedException, BuildException, TaskException {
         if (!(values instanceof CrossGooseTrainingConfig)) {
             throw new IllegalArgumentException("Expected a Cross-GOOSE training configuration.");
         }
@@ -54,11 +65,26 @@ public final class CrossGooseTrainingService implements DenseSegmentationTrainin
         if (config.isFineTune() && !installer.isModelInstalled(config.getBaseModelPath())) {
             installer.installModelWeights(config.getBaseModelPath(), logConsumer);
         }
+        if (Thread.currentThread().isInterrupted()) throw new InterruptedException("Cross-GOOSE training cancelled.");
         PreparedDataset dataset = SegmentationDatasetPreparer.prepare(config.getDatasetPath(),
                 config.getModelName(), config.getModelsDir(), 0.15d,
-                SegmentationDatasetPreparer.Framework.UNET, logConsumer);
-        CrossGoose.train(pythonConfig(config, dataset.getDatasetRoot()), progressConsumer,
-                previewConsumer, logConsumer, this::setRunningPython);
+                SegmentationDatasetPreparer.Framework.CROSS_GOOSE, logConsumer);
+        try (ValidationRequests requests = new ValidationRequests()) {
+            synchronized (this) { validationRequests = requests; }
+            Map<String, Object> valuesForPython = pythonConfig(config, dataset.getDatasetRoot());
+            valuesForPython.put("_jdll_validation_requests", requests.getDirectory());
+            CrossGoose.train(valuesForPython, progressConsumer, previewConsumer, logConsumer,
+                    this::setRunningPython, event -> {
+                        requests.accept(event);
+                        if (validationConsumer != null) validationConsumer.accept(event);
+                    });
+        } finally {
+            synchronized (this) { validationRequests = null; }
+        }
+    }
+
+    @Override public synchronized String requestFullValidation() throws IOException {
+        return validationRequests == null ? null : validationRequests.request();
     }
 
     @Override public void close() {
@@ -88,16 +114,18 @@ public final class CrossGooseTrainingService implements DenseSegmentationTrainin
         }
     }
 
-    private static Map<String, Object> pythonConfig(CrossGooseTrainingConfig config, File dataset) {
+    static Map<String, Object> pythonConfig(CrossGooseTrainingConfig config, File dataset) {
         Map<String, Object> values = new LinkedHashMap<String, Object>();
         values.put("model_name", config.getModelName());
-        values.put("output_dir", config.getOutputModelDir());
+        values.put("output_dir", new File(config.getOutputModelDir()).getParent());
+        values.put("model_dir", config.getOutputModelDir());
         values.put("dataset_path", dataset.getAbsolutePath());
         values.put("architecture", CrossGooseModelRegistry.DEFAULT_ARCHITECTURE);
         values.put("starting_point", config.isFineTune() ? "fine_tune" : "scratch");
         if (config.isFineTune()) values.put("base_model", config.getBaseModelPath());
         values.put("device", config.getDevice());
         values.put("epochs", config.getEpochs());
+        values.put("num_workers", 0);
         return values;
     }
 
