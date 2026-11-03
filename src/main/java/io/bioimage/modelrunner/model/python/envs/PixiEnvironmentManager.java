@@ -36,7 +36,14 @@ public final class PixiEnvironmentManager {
      * @return an unstarted service configured for early NumPy initialization.
      */
     public static Service pythonService(Environment environment) {
-        return Objects.requireNonNull(environment, "environment").python().init("import numpy as np");
+        return pythonService(environment, "");
+    }
+
+    /** Adds backend-specific initialization without replacing the required NumPy import. */
+    public static Service pythonService(Environment environment, String initialization) {
+        String script = "import numpy as np";
+        if (initialization != null && !initialization.trim().isEmpty()) script += "\n" + initialization;
+        return Objects.requireNonNull(environment, "environment").python().init(script);
     }
 
     /**

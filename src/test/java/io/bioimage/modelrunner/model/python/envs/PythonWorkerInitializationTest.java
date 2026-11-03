@@ -10,10 +10,19 @@ import org.junit.Test;
 
 public class PythonWorkerInitializationTest {
     @Test public void registersNumpyInitializationBeforeReturningAnUnstartedWorker() {
+        assertInitialization(null, "import numpy as np");
+    }
+
+    @Test public void backendInitializationKeepsNumpyFirstInOneInitCall() {
+        assertInitialization("import numba", "import numpy as np\nimport numba");
+    }
+
+    private void assertInitialization(String extra, String expected) {
         AtomicReference<String> initialization = new AtomicReference<>();
         Service worker = new Service(new File("."), "unused") {
             @Override public synchronized Service init(String script) {
                 assertFalse(isAlive());
+                assertNull("Appose init replaces the previous script", initialization.get());
                 initialization.set(script);
                 return this;
             }
@@ -23,8 +32,9 @@ public class PythonWorkerInitializationTest {
                     assertEquals("python", method.getName());
                     return worker;
                 });
-        assertSame(worker, PixiEnvironmentManager.pythonService(environment));
-        assertEquals("import numpy as np", initialization.get());
+        assertSame(worker, extra == null ? PixiEnvironmentManager.pythonService(environment)
+                : PixiEnvironmentManager.pythonService(environment, extra));
+        assertEquals(expected, initialization.get());
         assertFalse(worker.isAlive());
     }
 }

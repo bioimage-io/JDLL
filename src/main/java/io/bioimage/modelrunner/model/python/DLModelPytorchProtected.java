@@ -394,12 +394,17 @@ public class DLModelPytorchProtected extends BaseModel {
 
         try {
             env = PixiEnvironmentManager.openEnvironment(environmentSpec, null);
-            python = PixiEnvironmentManager.pythonService(env);
+            python = PixiEnvironmentManager.pythonService(env, pythonInitializationScript());
 	
 	        python.debug(System.err::println);
         } catch (Exception ex) {
         	throw new LoadModelException(Messages.stackTrace(ex));
         }
+    }
+
+    /** Extra imports that must run before the worker's stdin loop, not in a task. */
+    protected String pythonInitializationScript() {
+        return "";
     }
 
     /**

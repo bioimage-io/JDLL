@@ -44,6 +44,7 @@ import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentSpec;
 import io.bioimage.modelrunner.model.python.methods.ConvertDims;
 import io.bioimage.modelrunner.model.special.common.TrainingCodeUtils;
+import io.bioimage.modelrunner.system.PlatformDetection;
 import io.bioimage.modelrunner.tensor.Tensor;
 import io.bioimage.modelrunner.tensor.shm.SharedMemoryArray;
 import io.bioimage.modelrunner.utils.JSONUtils;
@@ -232,7 +233,8 @@ public final class Unet extends DLModelPytorchProtected {
         validateTrainingConfig(config);
         PixiEnvironmentSpec envSpec = resolvePytorchEnv();
         Environment env = PixiEnvironmentManager.openEnvironment(envSpec, logConsumer);
-		Service python = PixiEnvironmentManager.pythonService(env);
+		Service python = PixiEnvironmentManager.pythonService(env,
+                nativeInitializationScript(PlatformDetection.isWindows()));
         if (serviceConsumer != null) {
             serviceConsumer.accept(python);
         }
@@ -248,6 +250,18 @@ public final class Unet extends DLModelPytorchProtected {
                 serviceConsumer.accept(null);
             }
         }
+    }
+
+    @Override
+    protected String pythonInitializationScript() {
+        return nativeInitializationScript(PlatformDetection.isWindows());
+    }
+
+    static String nativeInitializationScript(boolean windows) {
+        if (!windows) return "";
+        // scipy.special deadlocks during UNet import on Windows with Appose's stdin reader active.
+        // NumPy is prepended by PixiEnvironmentManager; Appose init() replaces, rather than appends.
+        return "from scipy import ndimage as _jdll_ndi, special as _jdll_special\n";
     }
 
     @Override

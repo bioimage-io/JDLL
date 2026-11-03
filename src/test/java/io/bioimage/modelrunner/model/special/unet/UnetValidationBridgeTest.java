@@ -50,6 +50,15 @@ public class UnetValidationBridgeTest {
         return (String) method.invoke(null, config);
     }
 
+    @Test public void preloadsScipySubmodulesOnWindowsOnly() {
+        assertEquals("", Unet.nativeInitializationScript(false));
+        String script = Unet.nativeInitializationScript(true);
+        assertTrue(script.contains("from scipy import ndimage"));
+        assertTrue(script.contains("special"));
+        assertFalse(script.contains("numba"));
+        assertFalse(script.contains("skimage"));
+    }
+
     @Test
     public void forwardsControlSeparatelyFromTrainingConfiguration() throws Exception {
         String script = code(Collections.singletonMap("_jdll_validation_requests", "/tmp/requests"));
