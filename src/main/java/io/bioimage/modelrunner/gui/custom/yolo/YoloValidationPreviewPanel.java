@@ -84,6 +84,9 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
     private long elapsedMillis;
     private double secondsPerIteration = Double.NaN;
     private Color selectedBoxColor = GREEN_BOX_COLOR;
+    private Color selectedMaskColor;
+    private BufferedImage currentImage;
+    private BufferedImage currentPrediction;
 
     /**
      * Creates a new YoloValidationPreviewPanel instance.
@@ -116,6 +119,8 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
      */
     public void clearPreview() {
         samples.clear();
+        currentImage = null;
+        currentPrediction = null;
         currentIndex = 0;
         previewEpoch = 0;
         imagePanel.setEmptyMessage(WAITING_MESSAGE);
@@ -143,6 +148,8 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
             previewEpoch = getInt(root, "epoch", previewEpoch);
             if (samples.isEmpty()) {
                 currentIndex = 0;
+                currentImage = null;
+                currentPrediction = null;
                 imagePanel.setEmptyMessage(WAITING_MESSAGE);
                 imagePanel.clearImage();
             } else {
@@ -153,6 +160,8 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
             updateButtons();
         } catch (Exception e) {
             samples.clear();
+            currentImage = null;
+            currentPrediction = null;
             imagePanel.setEmptyMessage(ERROR_MESSAGE);
             imagePanel.clearImage();
             updateStatusPanel();
@@ -221,14 +230,23 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
         }
         currentIndex = wrap(requestedIndex, samples.size());
         PreviewSample sample = samples.get(currentIndex);
+        currentImage = null;
+        currentPrediction = null;
         try {
-            BufferedImage image = ImageIO.read(new File(sample.imagePath));
-            if (image == null) {
+            currentImage = ImageIO.read(new File(sample.imagePath));
+            if (currentImage == null) {
                 throw new IOException("Unsupported image format: " + sample.imagePath);
             }
-            imagePanel.setBufferedImage(image, buildImageTitle(sample), false);
-            imagePanel.setReadOnlyBoxes(sample.boxes, selectedBoxColor);
+            if (sample.predictionPath != null) {
+                currentPrediction = ImageIO.read(new File(sample.predictionPath));
+                if (currentPrediction == null) {
+                    throw new IOException("Unsupported prediction format: " + sample.predictionPath);
+                }
+            }
+            renderCurrentSample();
         } catch (IOException e) {
+            currentImage = null;
+            currentPrediction = null;
             imagePanel.setEmptyMessage(ERROR_MESSAGE);
             imagePanel.clearImage();
         }
@@ -238,21 +256,66 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
 
     private void updateButtons() {
         boolean enabled = samples.size() > 1;
-        boolean hasBoxes = samplesHaveBoxes();
+        boolean hasAnnotations = currentImage != null && (!samples.get(currentIndex).boxes.isEmpty()
+                || currentPrediction != null);
         previousButton.setEnabled(enabled);
         nextButton.setEnabled(enabled);
-        annotationColorButton.setVisible(hasBoxes);
-        annotationColorButton.setEnabled(hasBoxes);
+        annotationColorButton.setVisible(hasAnnotations);
+        annotationColorButton.setEnabled(hasAnnotations);
     }
 
     private void setSelectedBoxColor(Color color) {
         selectedBoxColor = color == null ? GREEN_BOX_COLOR : color;
+        selectedMaskColor = selectedBoxColor;
         annotationColorButton.setForeground(selectedBoxColor);
-        if (!samples.isEmpty()) {
-            PreviewSample sample = samples.get(currentIndex);
-            imagePanel.setTitle(buildImageTitle(sample));
-            imagePanel.setReadOnlyBoxes(sample.boxes, selectedBoxColor);
+        if (currentImage != null) {
+            if (currentPrediction == null) {
+                imagePanel.setReadOnlyBoxes(samples.get(currentIndex).boxes, selectedBoxColor);
+            } else {
+                YoloImageDisplayPanel.Viewport viewport = imagePanel.getViewport();
+                renderCurrentSample();
+                imagePanel.setViewport(viewport);
+            }
         }
+    }
+
+    private void renderCurrentSample() {
+        PreviewSample sample = samples.get(currentIndex);
+        imagePanel.setBufferedImage(currentPrediction == null ? currentImage
+                : maskOverlay(currentImage, currentPrediction, selectedMaskColor), buildImageTitle(sample), false);
+        imagePanel.setReadOnlyBoxes(sample.boxes, selectedBoxColor);
+        annotationColorButton.setForeground(currentPrediction != null && selectedMaskColor == null
+                ? firstMaskColor(currentPrediction) : selectedBoxColor);
+    }
+
+    private static Color firstMaskColor(BufferedImage prediction) {
+        for (int y = 0; y < prediction.getHeight(); y++) {
+            for (int x = 0; x < prediction.getWidth(); x++) {
+                int rgb = prediction.getRGB(x, y) & 0xffffff;
+                if (rgb != 0) return new Color(rgb);
+            }
+        }
+        return GREEN_BOX_COLOR;
+    }
+
+    private static BufferedImage maskOverlay(BufferedImage source, BufferedImage prediction, Color color) {
+        BufferedImage overlay = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_RGB);
+        for (int y = 0; y < overlay.getHeight(); y++) {
+            int maskY = y * prediction.getHeight() / overlay.getHeight();
+            for (int x = 0; x < overlay.getWidth(); x++) {
+                int background = source.getRGB(x, y);
+                int foreground = prediction.getRGB(x * prediction.getWidth() / overlay.getWidth(), maskY) & 0xffffff;
+                if (foreground != 0) {
+                    int tint = color == null ? foreground : color.getRGB();
+                    int r = (int) (0.6 * ((background >> 16) & 255) + 0.4 * ((tint >> 16) & 255));
+                    int g = (int) (0.6 * ((background >> 8) & 255) + 0.4 * ((tint >> 8) & 255));
+                    int b = (int) (0.6 * (background & 255) + 0.4 * (tint & 255));
+                    background = (r << 16) | (g << 8) | b;
+                }
+                overlay.setRGB(x, y, background);
+            }
+        }
+        return overlay;
     }
 
     protected static JButton createAnnotationColorButton(Color color, java.util.function.Consumer<Color> selected) {
@@ -367,18 +430,15 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
             if (path == null) {
                 continue;
             }
-            result.add(new PreviewSample(path, new File(path).getName(), Collections.emptyList()));
-        }
-        return result;
-    }
-
-    private boolean samplesHaveBoxes() {
-        for (PreviewSample sample : samples) {
-            if (sample.boxes != null && !sample.boxes.isEmpty()) {
-                return true;
+            String image = getString(item, "image_path");
+            String prediction = getString(item, "prediction_path");
+            if (image != null && prediction != null && new File(image).isFile() && new File(prediction).isFile()) {
+                result.add(new PreviewSample(image, new File(image).getName(), Collections.emptyList(), prediction));
+            } else {
+                result.add(new PreviewSample(path, new File(path).getName(), Collections.emptyList()));
             }
         }
-        return false;
+        return result;
     }
 
     private static List<Rectangle2D.Double> parseBoxes(JsonArray boxArray) {
@@ -588,11 +648,17 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
         private final String imagePath;
         private final String title;
         private final List<Rectangle2D.Double> boxes;
+        private final String predictionPath;
 
         private PreviewSample(String imagePath, String title, List<Rectangle2D.Double> boxes) {
+            this(imagePath, title, boxes, null);
+        }
+
+        private PreviewSample(String imagePath, String title, List<Rectangle2D.Double> boxes, String predictionPath) {
             this.imagePath = imagePath;
             this.title = title;
             this.boxes = boxes == null ? Collections.<Rectangle2D.Double>emptyList() : boxes;
+            this.predictionPath = predictionPath;
         }
     }
 }
