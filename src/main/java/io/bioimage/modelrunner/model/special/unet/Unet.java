@@ -357,7 +357,17 @@ public final class Unet extends DLModelPytorchProtected {
                 + ", '" + inRais.get(0).getAxesOrderString().toLowerCase(Locale.ROOT)
                 + "', out_order='" + outOrder + "', output_type='numpy', contiguous=True, n_channels="
                 + inputChannels + ")" + nl;
-        code += "_jdll_unet_infer_config = {'model_path': r'" + TrainingCodeUtils.py(modelPath)
+        code += inferenceCode(modelPath, objectSize, inputName);
+        code += String.format("handle_output(np.asarray(_jdll_unet_labels).astype('float32'), %s, %s, %s, %s)",
+                SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY) + nl;
+        code += taskOutputsCode();
+        return code;
+    }
+
+    /** The Python API call is independent of the shared-memory input/output transport. */
+    static String inferenceCode(String modelPath, Double objectSize, String inputName) {
+        String nl = System.lineSeparator();
+        String code = "_jdll_unet_infer_config = {'model_path': r'" + TrainingCodeUtils.py(modelPath)
                 + "', 'device': _jdll_unet_device}" + nl;
         if (objectSize != null) {
             code += "_jdll_unet_infer_config['object_size'] = " + objectSize + nl;
@@ -371,13 +381,8 @@ public final class Unet extends DLModelPytorchProtected {
         code += "_jdll_unet_outputs = _jdll_unet_result['outputs']" + nl;
         code += "if _jdll_unet_task == 'instance_friendly':" + nl;
         code += "  _jdll_unet_labels = _jdll_unet_outputs['labels']" + nl;
-        code += "elif _jdll_unet_task == 'multiclass_semantic':" + nl;
-        code += "  _jdll_unet_labels = _jdll_unet_outputs['mask']" + nl;
         code += "else:" + nl;
-        code += "  _jdll_unet_labels = (_jdll_unet_outputs['labels'] if 'labels' in _jdll_unet_outputs else _jdll_unet_outputs['mask'])" + nl;
-        code += String.format("handle_output(np.asarray(_jdll_unet_labels).astype('float32'), %s, %s, %s, %s)",
-                SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY) + nl;
-        code += taskOutputsCode();
+        code += "  _jdll_unet_labels = _jdll_unet_outputs['mask']" + nl;
         return code;
     }
 
