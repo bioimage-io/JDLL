@@ -451,11 +451,12 @@ public final class GpuCompatibility {
         return Files.exists(p);
     }
 
-    private static Optional<String> mapWindowsWmiDriverVersionToNvidia(String wmi) {
-        // Typical: 31.0.15.3114 -> NVIDIA 531.14  (take last 5 digits: 53114 -> 531.14)
-        Matcher m = Pattern.compile(".*\\.(\\d{5})\\s*$").matcher(wmi.trim());
+    static Optional<String> mapWindowsWmiDriverVersionToNvidia(String wmi) {
+        // Combine the last digit of the third part with the zero-padded fourth part.
+        // For example, 31.0.15.3114 -> 53114 -> 531.14.
+        Matcher m = Pattern.compile("^\\d+\\.\\d+\\.\\d*(\\d)\\.(\\d{1,4})$").matcher(wmi.trim());
         if (!m.find()) return Optional.empty();
-        String five = m.group(1);
+        String five = m.group(1) + String.format(Locale.ROOT, "%04d", Integer.parseInt(m.group(2)));
         String maj = five.substring(0, 3);
         String min = five.substring(3);
         return Optional.of(maj + "." + min);
