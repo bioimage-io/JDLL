@@ -42,8 +42,12 @@ class DeviceSelectionTest(unittest.TestCase):
 
     def test_cpu_does_not_probe_gpu(self):
         torch = self.torch()
+        torch.cuda.is_available = MagicMock(side_effect=AssertionError('CPU must not probe CUDA'))
+        torch.backends.mps.is_available = MagicMock(side_effect=AssertionError('CPU must not probe MPS'))
         with patch.dict(sys.modules, torch=torch):
             self.assertEqual('cpu', devices.torch_device('cpu', self.update))
+        torch.cuda.is_available.assert_not_called()
+        torch.backends.mps.is_available.assert_not_called()
         torch.ones.assert_not_called()
         self.assertEqual('selected', self.events[-1]['info']['status'])
 

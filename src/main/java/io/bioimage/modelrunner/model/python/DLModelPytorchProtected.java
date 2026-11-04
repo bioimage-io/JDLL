@@ -320,6 +320,14 @@ public class DLModelPytorchProtected extends BaseModel {
             final Map<String, Object> kwargs,
             final boolean customJDLL, 
             String device) {
+        this(modelFile, callable, importModule, weightsPath, kwargs, customJDLL, device, null);
+    }
+
+    /** Supply a backend-specific environment without first resolving the shared PyTorch stack. */
+    protected DLModelPytorchProtected(
+            final String modelFile, final String callable, final String importModule, final String weightsPath,
+            final Map<String, Object> kwargs, final boolean customJDLL, String device,
+            final PixiEnvironmentSpec environmentSpec) {
 
         if (!customJDLL && (new File(modelFile).isFile() == false || !modelFile.endsWith(".py")) && importModule == null) {
             throw new IllegalArgumentException("The model file does not correspond to an existing .py file.");
@@ -351,8 +359,8 @@ public class DLModelPytorchProtected extends BaseModel {
         this.weightsPath = new File(weightsPath).getAbsolutePath();
         this.kwargs = kwargs;
 
-        this.environmentSpec = resolvePytorchEnv();
-        this.envPath = environmentSpec.getEnvironmentDirectory().getAbsolutePath();
+        this.environmentSpec = environmentSpec == null ? resolvePytorchEnv() : environmentSpec;
+        this.envPath = this.environmentSpec.getEnvironmentDirectory().getAbsolutePath();
         
         this.tileCounter = new TilingConsumer();
 		String normalizedDevice = device == null ? "cpu" : device.trim().toLowerCase(Locale.ROOT);
@@ -1360,12 +1368,16 @@ public class DLModelPytorchProtected extends BaseModel {
      */
     public static PixiEnvironmentSpec resolvePytorchEnv() {
         if (PixiEnvironmentResolver.useLegacy()) return resolveLegacyPytorchEnv();
-        return PixiEnvironmentResolver.pytorchForCurrentPlatform(
-                GpuCompatibility.pickCudaVersion(CUDA_COMPAT_VERSIONS));
+        return PixiEnvironmentManager.resolveForOperation("pytorch:slim", () ->
+                PixiEnvironmentResolver.pytorchForCurrentPlatform(GpuCompatibility.pickCudaVersion(CUDA_COMPAT_VERSIONS)));
     }
 
     /** Explicit access to the unchanged pre-slim environment family. */
     public static PixiEnvironmentSpec resolveLegacyPytorchEnv() {
+        return PixiEnvironmentManager.resolveForOperation("pytorch:legacy", DLModelPytorchProtected::buildLegacyPytorchEnv);
+    }
+
+    private static PixiEnvironmentSpec buildLegacyPytorchEnv() {
         final String cudaVersion = GpuCompatibility.pickCudaVersion(CUDA_COMPAT_VERSIONS);
 
         final String pixiTomlContent;

@@ -46,10 +46,7 @@ public class CellposeInstaller {
 
     public String installAndResolve(String model, Consumer<String> logConsumer)
             throws IOException, ExecutionException, InterruptedException, BuildException {
-        if (!Cellpose.isInstalled()) {
-            accept(logConsumer, "Installing Cellpose environment.");
-            PixiEnvironmentManager.installRequirements(Cellpose.resolvePytorchEnv(), logConsumer);
-        }
+        PixiEnvironmentManager.installRequirements(Cellpose.resolvePytorchEnv(), logConsumer);
         File custom = model == null ? null : new File(model);
         if (custom != null && custom.isFile()) {
             return custom.getAbsolutePath();

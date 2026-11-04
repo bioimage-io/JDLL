@@ -77,7 +77,6 @@ public final class Unet extends DLModelPytorchProtected {
                 ? Math.max(1, modelInputChannels / Math.max(1, contextSlices))
                 : modelInputChannels;
         setMaxSharedMemoryPixelCount(Long.MAX_VALUE);
-        this.environmentSpec = resolvePytorchEnv();
         super.setInferenceProgressConsumer(inferenceProgressConsumer);
     }
 

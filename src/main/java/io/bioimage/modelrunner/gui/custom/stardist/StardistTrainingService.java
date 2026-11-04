@@ -96,9 +96,7 @@ public class StardistTrainingService {
                 logConsumer);
         File datasetRoot = dataset.getDatasetRoot();
 
-        if (!installer.isEnvironmentInstalled()) {
-            installer.installEnvironment(logConsumer);
-        }
+        installer.installEnvironment(logConsumer);
 
         Map<String, Object> trainingConfig =
                 new LinkedHashMap<String, Object>(StarDist.defaultTrainingConfig(config.getEpochs()));

@@ -26,8 +26,6 @@ public final class DenoisingInstaller {
     }
 
     public void installIfNeeded(Consumer<String> consumer) throws InterruptedException, BuildException {
-        if (!isInstalled()) {
-            PixiEnvironmentManager.installRequirements(DLModelPytorchProtected.resolvePytorchEnv(), consumer);
-        }
+        PixiEnvironmentManager.installRequirements(DLModelPytorchProtected.resolvePytorchEnv(), consumer);
     }
 }

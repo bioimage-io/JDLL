@@ -115,9 +115,7 @@ public class UnetTrainingService implements DenseSegmentationTrainingService {
         if (!(input instanceof UnetTrainingConfig)) throw new IllegalArgumentException("Expected UNet configuration");
         UnetTrainingConfig config = (UnetTrainingConfig) input;
         validate(config);
-        if (!installer.isEnvironmentInstalled()) {
-            installer.installEnvironment(logConsumer);
-        }
+        installer.installEnvironment(logConsumer);
         if (config.isFineTune() && !installer.isModelInstalled(config.getBaseModelPath())) {
             installer.installModelWeights(config.getBaseModelPath(), logConsumer);
         }

@@ -8,17 +8,25 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.io.File;
 
-/** Run-scoped setup reporting, including builds triggered inside model factories. */
+/** Run-scoped setup reporting and environment reuse, including builds inside model factories. */
 public final class EnvironmentSetupLog {
     private static final ThreadLocal<Scope> CURRENT = new ThreadLocal<>();
 
     private EnvironmentSetupLog() {}
 
-    /** Bind callbacks to the calling worker only; always close the returned scope. */
+    /** Bind callbacks and environment reuse to the calling worker; always close the returned scope. */
     public static Scope open(Consumer<String> messages, Consumer<Progress> progress) {
         Scope scope = new Scope(messages, progress, CURRENT.get());
         CURRENT.set(scope);
         return scope;
+    }
+
+    /** Report startup work to the current operation, without forwarding worker stdout/stderr. */
+    static void startingPython() {
+        Scope scope = CURRENT.get();
+        if (scope != null && scope.messages != null) {
+            scope.messages.accept("Starting Python worker and loading model dependencies; first use can take longer.");
+        }
     }
 
     public static final class Scope implements AutoCloseable {
@@ -26,6 +34,8 @@ public final class EnvironmentSetupLog {
         private final Consumer<Progress> progress;
         private final Scope previous;
         private final Set<String> ready = new HashSet<>();
+        private final PixiEnvironmentManager.Operation operation = PixiEnvironmentManager.beginOperation();
+        private boolean closed;
 
         private Scope(Consumer<String> messages, Consumer<Progress> progress, Scope previous) {
             this.messages = messages;
@@ -34,9 +44,12 @@ public final class EnvironmentSetupLog {
         }
 
         @Override public void close() {
+            if (closed) return;
             try {
                 if (progress != null) progress.accept(null);
             } finally {
+                operation.close();
+                closed = true;
                 if (previous == null) CURRENT.remove();
                 else CURRENT.set(previous);
             }

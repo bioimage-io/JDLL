@@ -61,7 +61,7 @@ public final class CrossGooseTrainingService implements DenseSegmentationTrainin
         }
         CrossGooseTrainingConfig config = (CrossGooseTrainingConfig) values;
         validate(config);
-        if (!installer.isEnvironmentInstalled()) installer.installEnvironment(logConsumer);
+        installer.installEnvironment(logConsumer);
         if (config.isFineTune() && !installer.isModelInstalled(config.getBaseModelPath())) {
             installer.installModelWeights(config.getBaseModelPath(), logConsumer);
         }

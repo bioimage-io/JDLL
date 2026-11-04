@@ -33,9 +33,32 @@ import org.junit.Test;
 
 import io.bioimage.modelrunner.gui.custom.stardist.StardistValidationPreviewPanel;
 import io.bioimage.modelrunner.gui.custom.unet.UnetTrainPanel;
+import io.bioimage.modelrunner.gui.custom.StarDistPluginUI;
+import io.bioimage.modelrunner.gui.custom.UNetPluginUI;
+import io.bioimage.modelrunner.gui.custom.YOLOPluginUI;
 import net.imglib2.img.array.ArrayImgs;
 
 public class TrainingUiTest {
+    @Test public void inferenceStartsWithImmediateFeedbackAndTheTimerAlreadyRunning() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            for (Object ui : new Object[] {new YOLOPluginUI(null, null), new StarDistPluginUI(null, null),
+                    new UNetPluginUI(null, null)}) {
+                try {
+                    invoke(ui, "startInferenceUiState", null, null);
+                    YoloInferencePanel panel = (YoloInferencePanel) field(ui, "inferencePanel");
+                    javax.swing.JEditorPane text = (javax.swing.JEditorPane) field(panel.getLogPanel(), "editorPane");
+                    assertTrue(text.getDocument().getText(0, text.getDocument().getLength()).contains("Preparing"));
+                    javax.swing.Timer timer = (javax.swing.Timer) field(panel.getLogPanel(), "elapsedTimer");
+                    assertTrue(timer.isRunning());
+                    invoke(ui, "finishInferenceUiState", null, null);
+                    assertFalse(timer.isRunning());
+                } catch (Exception e) {
+                    throw new AssertionError(e);
+                }
+            }
+        });
+    }
+
     @Test
     public void trainingViewButtonsHighlightOnlyTheVisibleView() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
@@ -302,9 +325,16 @@ public class TrainingUiTest {
 
     private static Object field(Object target, String name) throws Exception {
         Class<?> type = target instanceof YoloImageDisplayPanel ? YoloImageDisplayPanel.class : target.getClass();
-        Field field = type.getDeclaredField(name);
-        field.setAccessible(true);
-        return field.get(target);
+        while (type != null) {
+            try {
+                Field field = type.getDeclaredField(name);
+                field.setAccessible(true);
+                return field.get(target);
+            } catch (NoSuchFieldException e) {
+                type = type.getSuperclass();
+            }
+        }
+        throw new NoSuchFieldException(name);
     }
 
     private static void field(Object target, String name, Object value) throws Exception {

@@ -276,12 +276,15 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     }
 
     private void startInferenceUiState() {
+        inferencePanel.getLogPanel().startRunTimer();
+        inferencePanel.getLogPanel().appendHtml("Preparing StarDist inference...");
         inferenceSizeHints = inferencePanel.getImageDisplayPanel().getSizeHints();
         inferenceRunning = true;
         updateTabLocks();
     }
 
     private void finishInferenceUiState() {
+        inferencePanel.getLogPanel().stopRunTimer();
         inferenceRunning = false;
         updateTabLocks();
     }
@@ -532,7 +535,6 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         inferenceService.setObjectSizeByTime(inferenceSizeHints.forImage(null));
     	Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
     			StarDistPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
-        startInferenceLogTimer();
         try {
             List<Tensor<T>> detections = inferenceService.run(modelPath, rai, logConsumer, true,
                     selectedInferenceDevice());
@@ -561,7 +563,6 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                 StarDistPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
         logConsumer.accept("Starting inference on " + images.size() + " image(s).");
         InferenceRunFiles run = InferenceRunFiles.create(source, "stardist", modelPath, images, logConsumer);
-        startInferenceLogTimer();
         int savedMasks = 0;
         try {
             for (int i = 0; i < images.size(); i++) {
@@ -728,19 +729,6 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         }
         builder.append('/').append(safeTotal);
         return builder.toString();
-    }
-
-    private void startInferenceLogTimer() {
-        Runnable start = () -> StarDistPluginUI.this.inferencePanel.getLogPanel().startRunTimer();
-        if (SwingUtilities.isEventDispatchThread()) {
-            start.run();
-            return;
-        }
-        try {
-            SwingUtilities.invokeAndWait(start);
-        } catch (Exception e) {
-            SwingUtilities.invokeLater(start);
-        }
     }
 
     /**

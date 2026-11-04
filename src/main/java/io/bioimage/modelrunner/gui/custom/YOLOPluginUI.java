@@ -269,12 +269,15 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
     }
 
     private void startInferenceUiState() {
+        inferencePanel.getLogPanel().startRunTimer();
+        inferencePanel.getLogPanel().appendHtml("Preparing YOLO inference...");
         inferenceSizeHints = inferencePanel.getImageDisplayPanel().getSizeHints();
         inferenceRunning = true;
         updateTabLocks();
     }
 
     private void finishInferenceUiState() {
+        inferencePanel.getLogPanel().stopRunTimer();
         inferenceRunning = false;
         updateTabLocks();
     }
@@ -525,7 +528,6 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         inferenceService.setObjectSizeByTime(inferenceSizeHints.forImage(null));
     	Consumer<String> logConsumer = str -> SwingUtilities.invokeLater(() ->
     			YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
-        startInferenceLogTimer();
         List<Detection> detections;
         try {
             detections = inferenceService.run(modelPath, rai, logConsumer, true, selectedInferenceDevice());
@@ -551,7 +553,6 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                 YOLOPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
         logConsumer.accept("Starting inference on " + images.size() + " image(s).");
         InferenceRunFiles run = InferenceRunFiles.create(source, "yolo", modelPath, images, logConsumer);
-        startInferenceLogTimer();
         Map<String, List<Detection>> detectionsByImage = new LinkedHashMap<String, List<Detection>>();
         File outputCsv = new File(run.getDirectory(), "detections.csv");
         try {
@@ -666,19 +667,6 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
         }
         builder.append('/').append(safeTotal);
         return builder.toString();
-    }
-
-    private void startInferenceLogTimer() {
-        Runnable start = () -> YOLOPluginUI.this.inferencePanel.getLogPanel().startRunTimer();
-        if (SwingUtilities.isEventDispatchThread()) {
-            start.run();
-            return;
-        }
-        try {
-            SwingUtilities.invokeAndWait(start);
-        } catch (Exception e) {
-            SwingUtilities.invokeLater(start);
-        }
     }
 
     /**

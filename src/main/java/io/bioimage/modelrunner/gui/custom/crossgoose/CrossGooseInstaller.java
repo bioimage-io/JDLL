@@ -31,7 +31,7 @@ public final class CrossGooseInstaller implements ModelInstaller {
     @Override
     public void installIfNeeded(String modelPath, Consumer<String> logConsumer)
             throws IOException, ExecutionException, InterruptedException, BuildException {
-        if (!isEnvironmentInstalled()) installEnvironment(logConsumer);
+        installEnvironment(logConsumer);
         if (!isModelInstalled(modelPath)) installModelWeights(modelPath, logConsumer);
     }
 

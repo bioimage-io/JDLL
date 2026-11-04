@@ -55,8 +55,6 @@ public final class CrossGoose extends DLModelPytorchProtected {
         this.modelPath = modelPath;
         modelFolder = CrossGooseModelRegistry.modelDirectory(new File(modelPath)).getAbsolutePath();
         setMaxSharedMemoryPixelCount(Long.MAX_VALUE);
-        environmentSpec = resolvePytorchEnv();
-        envPath = environmentSpec.getEnvironmentDirectory().getAbsolutePath();
         setInferenceProgressConsumer(progressConsumer);
     }
 

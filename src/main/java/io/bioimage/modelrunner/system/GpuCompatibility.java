@@ -325,16 +325,23 @@ public final class GpuCompatibility {
      * Returns the first CUDA version from the provided list that can be installed
      * in the current environment.
      *
-     * <p>The versions are checked in order, and the first one for which
-     * {@code GpuCompatibility.canInstallCudaInEnv(String)} returns {@code true}
-     * is returned.</p>
+     * <p>The versions are checked in order against one hardware/driver snapshot,
+     * avoiding repeated PowerShell queries on Windows. Each call checks afresh.</p>
      *
      * @param compatibleCudas the compatible cudas.
      * @return the resulting string.
      */
     public static String pickCudaVersion(List<String> compatibleCudas) {
+        Os os = Os.detect();
+        if (compatibleCudas.isEmpty() || os.family == OsFamily.MAC) return null;
+        // The driver DLL is mandatory anyway; avoid PowerShell entirely when it is absent.
+        if (os.family == OsFamily.WINDOWS && !hasLibCudaDriverApi()) return null;
+        if (!hasCudaCapableNvidiaGpu() || !areNvidiaDriversInstalled()
+                || (os.family != OsFamily.WINDOWS && !hasLibCudaDriverApi())) return null;
+        List<String> available = getCompatibleCudaVersions();
         for (String cv : compatibleCudas) {
-            if (GpuCompatibility.canInstallCudaInEnv(cv)) {
+            Version version = Version.parseMajorMinor(cv).orElse(null);
+            if (version != null && available.contains(version.major + "." + version.minor)) {
                 return cv;
             }
         }

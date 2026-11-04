@@ -103,9 +103,7 @@ public class YoloTrainingService {
             for (String line : config.toLogLines(dataset.getYaml())) {
                 log(logConsumer, "  " + line);
             }
-            if (!installer.isEnvironmentInstalled()) {
-                installer.installEnvironment(logConsumer);
-            }
+            installer.installEnvironment(logConsumer);
             if (config.isFineTune() && !installer.isModelInstalled(config.getBaseModelPath())) {
                 installer.installModelWeights(config.getBaseModelPath(), logConsumer);
             }

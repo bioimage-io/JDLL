@@ -22,7 +22,16 @@ public class PixiEnvironmentSmokeTest {
         String selected = System.getenv("JDLL_PIXI_SMOKE_ENVIRONMENT");
         PixiEnvironmentSpec spec = new PixiEnvironmentSpec(selected == null ? "default" : selected,
                 new String(Files.readAllBytes(manifest.toPath()), StandardCharsets.UTF_8), manifest.getParentFile());
-        Environment environment = PixiEnvironmentManager.openEnvironment(spec, System.out::println);
+        try (PixiEnvironmentManager.Operation operation = PixiEnvironmentManager.beginOperation()) {
+            Environment environment = PixiEnvironmentManager.openEnvironment(spec, System.out::println);
+            assertSame("Installer and worker must reuse the same opened environment", environment,
+                    PixiEnvironmentManager.openEnvironment(spec, System.out::println));
+            assertTrue(PixiEnvironmentManager.isInstalled(spec));
+            verifyWorker(environment);
+        }
+    }
+
+    private static void verifyWorker(Environment environment) throws Exception {
         // NumPy must initialize before the worker reads stdin to avoid a Windows deadlock.
         try (Service service = PixiEnvironmentManager.pythonService(environment).debug(System.err::println)) {
             Task task = service.task("import sys\n"

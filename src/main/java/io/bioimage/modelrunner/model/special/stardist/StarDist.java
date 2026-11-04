@@ -157,7 +157,7 @@ public final class StarDist extends DLModelPytorchProtected {
 
 	private StarDist(String modelIdentity, String modelSource, Map<String, Object> config,
 			Dimensionality dimensionality, Consumer<InferenceProgress> inferenceProgressConsumer, String device) throws IOException {
-		super(modelIdentity, modelIdentity, modelIdentity, modelIdentity, config, true, device);
+		super(modelIdentity, modelIdentity, modelIdentity, modelIdentity, config, true, device, resolvePytorchEnv());
 		File identityFile = new File(modelIdentity);
 		File parent = identityFile.getParentFile();
 		modelFolder = parent == null ? identityFile.getAbsoluteFile().getParent() : parent.getAbsolutePath();
@@ -166,8 +166,6 @@ public final class StarDist extends DLModelPytorchProtected {
 		this.nChannels = inferNChannels(this.config);
 		this.dimensionality = dimensionality;
 		this.objectScaleMetadata = modelSource == null ? null : loadObjectScaleMetadata(modelSource, dimensionality);
-		this.environmentSpec = resolvePytorchEnv();
-		this.envPath = environmentSpec.getEnvironmentDirectory().getAbsolutePath();
 		super.setInferenceProgressConsumer(inferenceProgressConsumer);
 	}
 
@@ -1388,6 +1386,10 @@ public final class StarDist extends DLModelPytorchProtected {
 	 */
 	public static PixiEnvironmentSpec resolvePytorchEnv() {
 		boolean legacy = PixiEnvironmentResolver.useLegacy();
+		return PixiEnvironmentManager.resolveForOperation("stardist:" + legacy, () -> buildEnvironmentSpec(legacy));
+	}
+
+	private static PixiEnvironmentSpec buildEnvironmentSpec(boolean legacy) {
 		String resource = legacy ? PIXI_TOML : "tomls/jdll-pixi-stardist.toml";
 		String name = legacy ? COMMON_STARDIST_ENV_NAME : "jdll-stardist";
 		String pixiTomlContent = String.format(java.util.Locale.ROOT,
