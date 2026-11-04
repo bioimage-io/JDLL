@@ -38,7 +38,6 @@ public class CellposeInferencePanel extends YoloInferencePanel {
     private CellposeInferencePanel(CellposeOptionsPanel optionsPanel) {
         super(false, false, optionsPanel, OPTIONS_ROW_UNITS);
         this.optionsPanel = optionsPanel;
-        getModelSelectionPanel().setModelLabelText("Cellpose model");
         setDrawLabelText("Draw reference cell");
     }
 

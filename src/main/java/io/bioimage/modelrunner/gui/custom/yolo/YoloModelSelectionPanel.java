@@ -40,7 +40,7 @@ public class YoloModelSelectionPanel extends JPanel {
     private static final double LABEL_WIDTH_RATIO = 0.18;
     private static final double BUTTON_WIDTH_RATIO = 0.14;
 
-    protected final JLabel modelLabel = new JLabel("YOLO model");
+    protected final JLabel modelLabel = new JLabel("Model");
     protected final JComboBox<YoloModelSelectionEntry> modelComboBox = new JComboBox<YoloModelSelectionEntry>();
     protected final JButton browseButton = new JButton("Browse");
 

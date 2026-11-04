@@ -36,9 +36,22 @@ import io.bioimage.modelrunner.gui.custom.unet.UnetTrainPanel;
 import io.bioimage.modelrunner.gui.custom.StarDistPluginUI;
 import io.bioimage.modelrunner.gui.custom.UNetPluginUI;
 import io.bioimage.modelrunner.gui.custom.YOLOPluginUI;
+import io.bioimage.modelrunner.gui.custom.CrossGoosePluginUI;
+import io.bioimage.modelrunner.gui.custom.CellposePluginUI;
 import net.imglib2.img.array.ArrayImgs;
 
 public class TrainingUiTest {
+    @Test public void inferenceModelLabelsAreConsistentAcrossWorkflows() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            YoloInferencePanel[] panels = {new YoloGUI(null).getInferencePanel(),
+                    new StardistGUI(null).getInferencePanel(), new UNetPluginUI(null, null).getInferencePanel(),
+                    new CrossGoosePluginUI(null, null).getInferencePanel(), new CellposePluginUI(null, null).getInferencePanel()};
+            for (YoloInferencePanel panel : panels) {
+                assertEquals("Model", panel.getModelSelectionPanel().modelLabel.getText());
+            }
+        });
+    }
+
     @Test public void inferenceStartsWithImmediateFeedbackAndTheTimerAlreadyRunning() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             for (Object ui : new Object[] {new YOLOPluginUI(null, null), new StarDistPluginUI(null, null),

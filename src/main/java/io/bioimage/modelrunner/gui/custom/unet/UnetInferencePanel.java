@@ -30,6 +30,5 @@ public class UnetInferencePanel extends YoloInferencePanel {
      */
     protected UnetInferencePanel() {
         super(false, false);
-        getModelSelectionPanel().setModelLabelText("UNet model");
     }
 }
