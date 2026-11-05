@@ -54,8 +54,8 @@ they are not directly installable until their format placeholders are resolved.
   regular OpenCV with `opencv-python-headless`. No JDLL compatibility package or
   dependency suppression is needed. There is only one native `cv2` implementation.
   Intel Macs use conda-forge's headless OpenCV builds; these expose both standard
-  package metadata names for the same implementation. CI verifies that conda owns
-  those metadata files and the `cv2` module, rejecting conflicting OpenCV wheels.
+  package metadata names for the same implementation. Do not install conflicting
+  OpenCV wheels into that environment.
 - StarDist has a separate TensorFlow/Keras 2 environment, not a copy of PyTorch.
   CPU-only Linux/Windows profiles use `tensorflow-cpu`, without CUDA runtimes.
 - Linux and Windows have CPU and CUDA 11.8/12.1/12.4 wheel profiles. Apple Silicon
@@ -82,29 +82,6 @@ variable `JDLL_PYTHON_ENVIRONMENT=legacy` before starting the host application.
 Use `slim` (the default) to select the new environments. Local backend source paths
 remain explicit development overrides, not installation requirements.
 
-For a standalone installation test, using Python 3.11+:
-
-```bash
-python .github/scripts/render_jdll_pixi.py --template jdll-pixi-lin-x86-no-cuda.toml --output /tmp/jdll-check/pixi.toml
-pixi install --manifest-path /tmp/jdll-check/pixi.toml
-pixi run --manifest-path /tmp/jdll-check/pixi.toml python .github/scripts/smoke_jdll_models.py --report /tmp/jdll-check/results.json
-```
-
-All five PyTorch backends, including Cross-GOOSE, are installed and tested by those
-commands in the same `default` environment. For an Intel Mac, render the template
-matching the OS range in the table above. These are OS compatibility profiles for
-the entire main environment, not model-specific environments. The former
-`--environment macos-catalina` and `--environment macos-big-sur` options remain
-accepted with the base Intel template and resolve to the versioned templates.
-
-The **JDLL slim environments and models** GitHub Actions workflow installs the
-native Windows/Linux/macOS profiles and runs synthetic inference and gradient
-checks without downloading pretrained weights. CUDA-wheel jobs on hosted runners
-exercise CPU execution, not GPU execution. Actual CUDA, MPS/Metal and older-macOS
-tests are opt-in jobs requiring appropriately labelled self-hosted runners.
-Compatibility profiles executed on newer Macs are not tests of the older OS.
-Each job retains the rendered manifest, resolved lockfile, package inventory and
-model results as artifacts. The original BiaPy installation workflow is unchanged.
 As mentioned above, JDLL was originally developed for the purpose of seamlessly integrating Deep Learning capabilities into other software applications. Its main objective was to empower these software applications to effectively execute Deep Learning models. For that use case, JDLL was mainly oriented for application developers that wanted to incorporate DL methods in their softwares.
 
 But after a couple of stable releases, the JDLL team noticed that because of its user-friendly interface, the library could be accessible not just to software developers but also to everyday users with basic scripting knowledge in languages like Python or Matlab. This makes it suitable for anyone interested in crafting processing routines that require Deep Learning models. Using a Java based or Java compatible scripting laguage such as Jython, one can easily use JDLL to run DL models.
