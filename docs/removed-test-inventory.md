@@ -20,9 +20,12 @@ Fixtures, mocks, supporting methods, and exact assertions remain in that history
 All paths below are original paths, not links to files still present.
 
 Removed infrastructure includes `src/test/`, the explicit JUnit dependency,
-Pixi test scripts/helpers, the Pixi smoke composite action/workflow, and the
-automated example/engine-download workflows. Test-only README instructions were
-removed. Normal build/deployment and engine-version maintenance remain.
+Python CI unit tests, and the automated example/engine-download workflows.
+Test-only README instructions were removed. At the user's subsequent request,
+the Pixi installation/model smoke workflow, its composite action, and its three
+Python helpers are retained as an exception. They no longer invoke the deleted
+unit suites or the JUnit-based Java worker check. Normal build/deployment and
+engine-version maintenance remain.
 Production `TestArtifact.java` models BioImage.IO test artifacts; it is not a
 test implementation and remains. SDK usage examples and runtime validation,
 dataset validation, GPU probing, and error checks also remain.
@@ -576,7 +579,7 @@ Original directory: `.github/scripts/`.
 - `test_model_specific_environments_are_rejected`: Invalid model-specific profile requests cannot replace shared environment profiles.
 - `test_old_intel_cli_profiles_resolve_to_explicit_versioned_templates`: Old Intel CLI profile aliases render the corresponding explicit templates.
 
-## Real Model And Installation Smoke Checks
+## Real Model And Installation Smoke Checks (Retained)
 
 Original file: `.github/scripts/smoke_jdll_models.py`.
 Synthetic weights/data avoided pretrained downloads; these checked runnable
@@ -592,19 +595,21 @@ not biological prediction quality.
 - `check_dependencies` and `shared_conda_opencv_metadata`: Check installed requirement versions/markers and reject conflicting OpenCV providers while allowing one correctly owned conda implementation.
 - Runner/reporting: Checks requested CUDA/MPS availability, records package/platform versions, per-model duration/failure details, and exits unsuccessfully on failed model checks.
 
-Removed `.github/actions/jdll-pixi-smoke/action.yml` rendered a host manifest,
-locked/installed Pixi, ran the above checks, optionally exercised the Java Appose
-shared-memory test, and archived manifests/locks/package inventories/results.
-Its helpers were `.github/scripts/render_jdll_pixi.py` (template rendering) and
+Retained `.github/actions/jdll-pixi-smoke/action.yml` renders a host manifest,
+locks/installs Pixi, runs the above checks, and archives manifests/locks/package
+inventories/results. The old optional JUnit-based Java Appose shared-memory step
+remains removed. Its helpers are `.github/scripts/render_jdll_pixi.py` (template rendering) and
 `.github/scripts/pixi_ci.py` (bounded retries for transient installation failures).
 Those helpers were CI/test support rather than production environment selection.
 
-Removed `.github/workflows/jdll-pixi-install.yml` ran contract tests plus Linux,
+Retained `.github/workflows/jdll-pixi-install.yml` runs a Java package build plus Linux,
 Windows, Apple Silicon, Intel Mac compatibility profiles, separate StarDist
 profiles, and CUDA 11.8/12.1/12.4 wheel installations. Hosted CUDA-wheel jobs
 checked CPU execution only. Actual CUDA, MPS/Metal, and older-macOS execution
 required opt-in self-hosted runners. A newer Mac compatibility profile was not
 evidence that the corresponding older macOS release ran successfully.
+The original Java/Python contract-test job is replaced by the package build;
+the unit test files are not restored.
 
 ## Other Removed Automated Verification Workflows
 

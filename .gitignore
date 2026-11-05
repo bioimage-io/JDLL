@@ -20,3 +20,6 @@ prep.sh
 # local design notes
 /docs/appose/
 /paper_draft
+
+# Python bytecode from installation CI helpers.
+.github/scripts/__pycache__/
