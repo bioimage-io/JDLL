@@ -60,6 +60,7 @@ runs:
         from pathlib import Path
         import subprocess
         import sys
+        import tempfile
 
         root = Path(os.environ["GITHUB_WORKSPACE"])
         sys.path.insert(0, str(root / ".github/scripts"))
@@ -88,12 +89,16 @@ runs:
                 # Exercise the installed Git and the libc++ that failed in the Appose worker.
                 # A regular Python import can pick up Apple's system libc++ and mask the mismatch.
                 subprocess.run([str(prefix / "bin/git"), "--version"], check=True)
-                subprocess.run([str(prefix / "bin/python"), "-c",
-                                "from cellpose import denoise\n"
-                                "from numba import njit\n"
-                                "assert njit(lambda x: x + 1)(41) == 42\n"
-                                "print('Cellpose import and Numba JIT passed with the Pixi libc++')"],
-                               env={**os.environ, "DYLD_LIBRARY_PATH": str(prefix / "lib")}, check=True)
+                with tempfile.TemporaryDirectory() as dylibs:
+                    # Override only libc++; wheels such as OpenCV also load system libraries.
+                    runtime = (prefix / "lib/libc++.1.dylib").resolve(strict=True)
+                    (Path(dylibs) / "libc++.1.dylib").symlink_to(runtime)
+                    subprocess.run([str(prefix / "bin/python"), "-c",
+                                    "from cellpose import denoise\n"
+                                    "from numba import njit\n"
+                                    "assert njit(lambda x: x + 1)(41) == 42\n"
+                                    "print('Cellpose import and Numba JIT passed with the Pixi libc++')"],
+                                   env={**os.environ, "DYLD_LIBRARY_PATH": dylibs}, check=True)
             subprocess.run([str(pixi), "run", "--locked", "--manifest-path", str(manifest),
                             "--environment", environment, "python",
                             str(root / ".github/scripts/smoke_jdll_models.py"),
