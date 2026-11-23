@@ -83,6 +83,17 @@ runs:
             subprocess.run([str(pixi), "list", "--manifest-path", str(manifest),
                             "--environment", environment, "--json"], check=True,
                            stdout=(directory / "packages.json").open("w", encoding="utf-8"))
+            if sys.platform == "darwin" and "cellpose" in os.environ["JDLL_MODELS"].split():
+                prefix = directory / ".pixi/envs" / environment
+                # Exercise the installed Git and the libc++ that failed in the Appose worker.
+                # A regular Python import can pick up Apple's system libc++ and mask the mismatch.
+                subprocess.run([str(prefix / "bin/git"), "--version"], check=True)
+                subprocess.run([str(prefix / "bin/python"), "-c",
+                                "from cellpose import denoise\n"
+                                "from numba import njit\n"
+                                "assert njit(lambda x: x + 1)(41) == 42\n"
+                                "print('Cellpose import and Numba JIT passed with the Pixi libc++')"],
+                               env={**os.environ, "DYLD_LIBRARY_PATH": str(prefix / "lib")}, check=True)
             subprocess.run([str(pixi), "run", "--locked", "--manifest-path", str(manifest),
                             "--environment", environment, "python",
                             str(root / ".github/scripts/smoke_jdll_models.py"),

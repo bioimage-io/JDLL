@@ -23,6 +23,8 @@ macos = "10.15"
 python = "3.11.*"
 # Git is needed to install the revision-pinned Python backends.
 git = ">=2.45"
+# llvmlite 0.43's macOS wheel needs libc++'s legacy __vector_base_common symbols.
+libcxx = { version = "==21.1.8", build = "hc69e625_4" }
 
 [feature.runtime.pypi-dependencies]
 appose = "==0.11.0"
