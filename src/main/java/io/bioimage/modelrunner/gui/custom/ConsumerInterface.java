@@ -215,6 +215,23 @@ public abstract class ConsumerInterface {
 	public int getImageFileChannels(File imageFile) throws IOException {
 		return Math.toIntExact(openImageAsRai(imageFile).dimension(2));
 	}
+
+    /** Native source channels. Three independent microscopy channels need not encode RGB. */
+    public static final class ImageChannels {
+        public final int count;
+        public final boolean rgb;
+
+        public ImageChannels(int count, boolean rgb) {
+            if (count < 1 || (rgb && count != 3)) throw new IllegalArgumentException("Invalid image channel layout.");
+            this.count = count;
+            this.rgb = rgb;
+        }
+    }
+
+    /** Metadata for the same series as openImageAsRai. Hosts can identify RGB from the source metadata. */
+    public ImageChannels getImageFileChannelInfo(File imageFile) throws IOException {
+        return new ImageChannels(getImageFileChannels(imageFile), false);
+    }
 	
 	/**
 	 * Performs display image.

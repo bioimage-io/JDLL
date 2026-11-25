@@ -13,6 +13,7 @@ package io.bioimage.modelrunner.gui.custom.cellpose;
 
 import javax.swing.JComboBox;
 
+import io.bioimage.modelrunner.gui.custom.ConsumerInterface.ImageChannels;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImgs;
@@ -26,30 +27,23 @@ public final class CellposeChannels {
     private CellposeChannels() { }
 
     public static void configure(JComboBox<String> primary, JComboBox<String> nuclei, int count) {
-        if (count < 1) throw new IllegalArgumentException("The image has no channels.");
-        String first = (String) primary.getSelectedItem();
-        String second = (String) nuclei.getSelectedItem();
+        configure(primary, nuclei, new ImageChannels(count, false));
+    }
+
+    public static void configure(JComboBox<String> primary, JComboBox<String> nuclei, ImageChannels source) {
+        int first = primary.getSelectedIndex();
+        int second = nuclei.getSelectedIndex();
         primary.removeAllItems();
         nuclei.removeAllItems();
-        primary.addItem("gray");
         nuclei.addItem("none");
-        for (int c = 1; c <= count; c++) {
-            String name = count == 3 ? new String[] {"red", "green", "blue"}[c - 1] : "channel " + c;
+        String[] rgb = {"red", "green", "blue"};
+        for (int c = 0; c < source.count; c++) {
+            String name = source.count == 1 ? "gray" : source.rgb ? rgb[c] : "channel " + (c + 1);
             primary.addItem(name);
             nuclei.addItem(name);
         }
-        selectExisting(primary, first);
-        selectExisting(nuclei, second);
-    }
-
-    private static void selectExisting(JComboBox<String> combo, String selected) {
-        for (int i = 0; i < combo.getItemCount(); i++) {
-            if (combo.getItemAt(i).equals(selected)) {
-                combo.setSelectedIndex(i);
-                return;
-            }
-        }
-        combo.setSelectedIndex(0);
+        primary.setSelectedIndex(first >= 0 && first < source.count ? first : 0);
+        nuclei.setSelectedIndex(second >= 0 && second <= source.count ? second : 0);
     }
 
     public static int parse(String channel) {

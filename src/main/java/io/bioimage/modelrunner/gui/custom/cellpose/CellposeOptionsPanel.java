@@ -37,6 +37,7 @@ public class CellposeOptionsPanel extends JPanel {
     private final JLabel cytoplasmLabel = new JLabel("Cytoplasm channel");
     private final JComboBox<String> cytoplasmComboBox = new JComboBox<String>();
     private final JLabel nucleiLabel = new JLabel("Nuclei channel");
+    private boolean nucleiModel;
     private final JComboBox<String> nucleiComboBox = new JComboBox<String>();
     private final JCheckBox displayIntermediateOutputs =
             new JCheckBox("Display intermediate outputs");
@@ -60,6 +61,31 @@ public class CellposeOptionsPanel extends JPanel {
         add(displayIntermediateOutputs);
     }
 
+    public void setNucleiModel(boolean nucleiModel) {
+        this.nucleiModel = nucleiModel;
+        cytoplasmLabel.setVisible(!nucleiModel);
+        nucleiComboBox.setVisible(!nucleiModel);
+        nucleiLabel.setLabelFor(nucleiModel ? cytoplasmComboBox : nucleiComboBox);
+        revalidate();
+        repaint();
+    }
+
+    public int[] selectedChannels() {
+        int first = cytoplasmComboBox.getSelectedIndex();
+        int second = nucleiModel ? 0 : nucleiComboBox.getSelectedIndex();
+        if (first < 0 || second < 0)
+            throw new IllegalArgumentException("Select channels available in this image before running Cellpose.");
+        // The first menu contains only physical channels. Only the second menu starts with "none".
+        return new int[]{first + 1, second};
+    }
+
+    public void selectSavedChannels(int[] channels) {
+        // Older models can store 0 (mean intensity) for the primary channel.
+        int first = Math.max(1, channels[0]) - 1;
+        cytoplasmComboBox.setSelectedIndex(first < cytoplasmComboBox.getItemCount() ? first : -1);
+        nucleiComboBox.setSelectedIndex(channels[1] < nucleiComboBox.getItemCount() ? channels[1] : -1);
+    }
+
     /**
      * Lays out the two channel selectors and output option.
      */
@@ -73,7 +99,7 @@ public class CellposeOptionsPanel extends JPanel {
 
         cytoplasmLabel.setBounds(0, 0, columnWidth, rowHeight);
         cytoplasmComboBox.setBounds(columnWidth + GAP, 0, columnWidth, rowHeight);
-        nucleiLabel.setBounds(2 * (columnWidth + GAP), 0, columnWidth, rowHeight);
+        nucleiLabel.setBounds(nucleiModel ? 0 : 2 * (columnWidth + GAP), 0, columnWidth, rowHeight);
         nucleiComboBox.setBounds(3 * (columnWidth + GAP), 0, remainder, rowHeight);
         displayIntermediateOutputs.setBounds(0, rowHeight + GAP, width, rowHeight);
 

@@ -48,6 +48,7 @@ import javax.swing.SwingUtilities;
 import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.custom.cellpose.CellposeInferencePanel;
 import io.bioimage.modelrunner.gui.custom.cellpose.CellposeChannels;
+import io.bioimage.modelrunner.gui.custom.ConsumerInterface.ImageChannels;
 import io.bioimage.modelrunner.gui.custom.cellpose.CellposeInferenceService;
 import io.bioimage.modelrunner.gui.custom.cellpose.CellposeInstaller;
 import io.bioimage.modelrunner.gui.custom.gui.CellposeGUI;
@@ -85,7 +86,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     private Thread workerThread;
     private File selectedSystemPath;
     private File selectedSystemImageFile;
-    private javax.swing.SwingWorker<Integer, Void> channelWorker;
+    private javax.swing.SwingWorker<ImageChannels, Void> channelWorker;
     private boolean windowCloseHookInstalled;
 
     private static final class Settings {
@@ -321,11 +322,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     }
 
     private int[] selectedChannels() {
-        String cytoplasm = (String) getInferencePanel().getOptionsPanel()
-                .getCytoplasmComboBox().getSelectedItem();
-        String nuclei = (String) getInferencePanel().getOptionsPanel()
-                .getNucleiComboBox().getSelectedItem();
-        return new int[] {CellposeChannels.parse(cytoplasm), CellposeChannels.parse(nuclei)};
+        return getInferencePanel().getOptionsPanel().selectedChannels();
     }
 
     private Float selectedDiameter() {
@@ -355,7 +352,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         parameters.put("diameter", diameter == null ? "auto" : diameter.toString());
         parameters.put("cyto_color", (String) getInferencePanel().getOptionsPanel()
                 .getCytoplasmComboBox().getSelectedItem());
-        parameters.put("nuclei_color", (String) getInferencePanel().getOptionsPanel()
+        parameters.put("nuclei_color", "nuclei".equals(parameters.get("model")) ? "none" : (String) getInferencePanel().getOptionsPanel()
                 .getNucleiComboBox().getSelectedItem());
         parameters.put("display_all", Boolean.toString(getInferencePanel().getOptionsPanel()
                 .getDisplayIntermediateOutputsCheckBox().isSelected()));
@@ -476,10 +473,10 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         cancelChannelRead();
         selectedSystemImageFile = preview;
         getInferencePanel().getImageSourcePanel().setSystemPathSelectionConfirmed(false);
-        channelWorker = new javax.swing.SwingWorker<Integer, Void>() {
-            @Override protected Integer doInBackground() throws IOException {
+        channelWorker = new javax.swing.SwingWorker<ImageChannels, Void>() {
+            @Override protected ImageChannels doInBackground() throws IOException {
                 if (consumer == null) throw new IOException("A host image loader is required.");
-                return consumer.getImageFileChannels(preview);
+                return consumer.getImageFileChannelInfo(preview);
             }
 
             @Override protected void done() {
@@ -509,7 +506,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     }
 
     private void cancelChannelRead() {
-        javax.swing.SwingWorker<Integer, Void> pending = channelWorker;
+        javax.swing.SwingWorker<ImageChannels, Void> pending = channelWorker;
         channelWorker = null;
         if (pending != null) pending.cancel(true);
     }
