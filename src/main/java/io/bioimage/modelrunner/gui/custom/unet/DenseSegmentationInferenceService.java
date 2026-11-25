@@ -21,6 +21,7 @@ import java.util.function.IntFunction;
 import org.apposed.appose.BuildException;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
+import io.bioimage.modelrunner.gui.custom.segmentation.SegmentationRegions.Kind;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.model.InferenceProgress;
 import io.bioimage.modelrunner.tensor.Tensor;
@@ -42,6 +43,8 @@ public interface DenseSegmentationInferenceService {
             Consumer<InferenceProgress> progressConsumer, String device)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException;
+
+    default Kind regionKind() { return Kind.INSTANCE_PLANES; }
 
     void setObjectSize(List<Rectangle2D.Double> boxes);
     void setObjectSizeByTime(IntFunction<Rectangle2D.Double> sizes);

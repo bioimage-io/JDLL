@@ -123,6 +123,11 @@ public final class YoloUiUtils {
         }
     }
 
+    static void setFullText(AbstractButton button, String text) {
+        button.putClientProperty(FULL_TEXT_KEY, text);
+        button.setText(text);
+    }
+
     /**
      * Performs ensure full text.
      *

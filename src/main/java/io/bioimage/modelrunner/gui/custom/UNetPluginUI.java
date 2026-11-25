@@ -140,6 +140,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
             DenseSegmentationBackend backend) {
         super(adapter, backend.getDisplayName());
         this.consumer = consumer;
+        inferencePanel.getActionPanel().setOpenImageRoisSupported(consumer == null || consumer.supportsSegmentationRois());
         this.backend = backend;
         this.inferenceService = backend.createInferenceService();
         this.trainingService = backend.createTrainingService();
@@ -275,12 +276,15 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         inferencePanel.getLogPanel().appendHtml("Preparing " + backend.getDisplayName() + " inference...");
         inferenceSizeHints = inferencePanel.getImageDisplayPanel().getSizeHints();
         inferenceRunning = true;
+        inferencePanel.getActionPanel().setOutputLocked(true);
         updateTabLocks();
     }
 
     private void finishInferenceUiState() {
         inferencePanel.getLogPanel().stopRunTimer();
         inferenceRunning = false;
+        inferencePanel.getActionPanel().setOutputLocked(false);
+        inferencePanel.updateImageActionState();
         updateTabLocks();
     }
 
@@ -564,14 +568,18 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == this.inferencePanel.getActionPanel().getRunButton()) {
+            if (inferenceRunning || trainingRunning) return;
             cancelled = false;
+            SegmentationSelection selection = new SegmentationSelection(inferencePanel,
+                    selectedSystemPath == null ? selectedSystemImageFile : selectedSystemPath);
             startInferenceUiState();
             workerThread = new Thread(() -> {
                 try (EnvironmentSetupLog.Scope setup = inferencePanel.getLogPanel().openEnvironmentLog()) {
-                    runUnet();
+                    runUnet(selection);
                 } catch (Exception e1) {
                     if (!cancelled) {
-                        e1.printStackTrace();
+                        SwingUtilities.invokeLater(() -> inferencePanel.getLogPanel().appendHtml(
+                            "Inference failed: " + String.valueOf(e1.getMessage())));
                     }
                 } finally {
                     SwingUtilities.invokeLater(this::finishInferenceUiState);
@@ -601,25 +609,24 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         }
     }
 
-    private void runUnet()
+    private void runUnet(SegmentationSelection selection)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
         if (consumer != null) {
             consumer.notifyParams(null);
         }
-        String modelPath = this.inferencePanel.getModelSelectionPanel().getSelectedModelValue();
-        if (this.inferencePanel.getImageSourcePanel().getSystemImagesRadio().isSelected()) {
-            runUnetOnSystemImage(modelPath);
+        String modelPath = selection.model;
+        if (selection.files) {
+            runUnetOnSystemImage(modelPath, selection);
             return;
         }
-        runUnetOnOpenImage(modelPath);
+        runUnetOnOpenImage(modelPath, selection);
     }
 
-    private <T extends RealType<T> & NativeType<T>> void runUnetOnOpenImage(String modelPath)
+    private <T extends RealType<T> & NativeType<T>> void runUnetOnOpenImage(String modelPath, SegmentationSelection selection)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
-        Object selected = ((YoloImageSelectionEntry) inferencePanel.getImageSourcePanel()
-                .getOpenImagesComboBox().getSelectedItem()).getImage();
+        Object selected = selection.image;
         if (selected == null) {
             JOptionPane.showMessageDialog(null, "Please open an image", "No image open", JOptionPane.ERROR_MESSAGE);
             return;
@@ -631,18 +638,22 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         try {
             List<Tensor<T>> outputs = inferenceService.run(modelPath, rai, logConsumer, true,
                     selectedInferenceDevice());
-            for (Tensor<T> output : outputs) {
-                consumer.displayImage(output.getData(), output.getAxesOrderString(), output.getName());
+            Tensor<T> labels = outputs.get(0);
+            selection.output.display(consumer, selected, labels, labels.getName(), inferenceService.regionKind(),
+                    () -> cancelled, logConsumer);
+            for (int i = 1; !cancelled && i < outputs.size(); i++) {
+                Tensor<T> extra = outputs.get(i);
+                consumer.displayImage(extra.getData(), extra.getAxesOrderString(), extra.getName());
             }
         } finally {
             SwingUtilities.invokeLater(() -> UNetPluginUI.this.inferencePanel.getLogPanel().stopRunTimer());
         }
     }
 
-    private <T extends RealType<T> & NativeType<T>> void runUnetOnSystemImage(String modelPath)
+    private <T extends RealType<T> & NativeType<T>> void runUnetOnSystemImage(String modelPath, SegmentationSelection selection)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
-        File source = selectedSystemPath == null ? selectedSystemImageFile : selectedSystemPath;
+        File source = selection.source;
         List<File> images = systemInferenceImages(source);
         if (images.isEmpty()) {
             SwingUtilities.invokeLater(() -> {
@@ -656,7 +667,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         logConsumer.accept("Starting inference on " + images.size() + " image(s).");
         InferenceRunFiles run = InferenceRunFiles.create(source, backend.getDisplayName().toLowerCase(Locale.ROOT),
                 modelPath, images, logConsumer);
-        int savedMasks = 0;
+        int savedImages = 0;
         try {
             for (int i = 0; i < images.size(); i ++) {
                 if (cancelled || Thread.currentThread().isInterrupted()) {
@@ -690,9 +701,9 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                         throw new IOException(backend.getDisplayName()
                                 + " did not return a labels image for " + imageFile.getName());
                     }
-                    File outputMask = LabelMaskWriter.write(outputs.get(0), run.outputFile(imageFile, "_labels.tif"));
-                    savedMasks++;
-                    logConsumer.accept("Saved labels: " + outputMask.getAbsolutePath());
+                    selection.output.save(consumer, run, imageFile, outputs.get(0), inferenceService.regionKind(),
+                            () -> cancelled, logConsumer);
+                    savedImages++;
                     if (!emittedPatchProgress[0]) {
                         logConsumer.accept(imageProgressBar(imageIndex, totalImages));
                     }
@@ -706,8 +717,8 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
         if (cancelled || Thread.currentThread().isInterrupted()) {
             return;
         }
-        logConsumer.accept("Saved " + backend.getDisplayName() + " label masks for "
-                + savedMasks + " image(s).");
+        logConsumer.accept("Saved " + backend.getDisplayName() + " results for "
+                + savedImages + " image(s).");
     }
 
     private String selectedInferenceDevice() {

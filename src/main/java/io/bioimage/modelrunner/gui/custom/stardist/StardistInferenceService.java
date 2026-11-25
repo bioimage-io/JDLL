@@ -31,6 +31,7 @@ import java.util.function.IntFunction;
 import org.apposed.appose.BuildException;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
+import io.bioimage.modelrunner.gui.custom.segmentation.SegmentationRegions.Kind;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.custom.InferenceStack;
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
@@ -51,6 +52,10 @@ public class StardistInferenceService {
     private String loadedModelPath;
     private String loadedDevice;
     private StarDist model;
+
+    public Kind regionKind() {
+        return model.is3D() ? Kind.INSTANCE_VOLUME : Kind.INSTANCE_PLANES;
+    }
     private Rectangle size = null;
     private IntFunction<Rectangle2D.Double> objectSizeByTime;
     private Double threshold = null;
@@ -323,7 +328,10 @@ public class StardistInferenceService {
         Tensor<T> input = model.is3D()
                 ? prepareVolumeInput(rai, model.getNChannels())
                 : preparePlanarInput(rai, model.getNChannels());
-        return model.inference(input);
+        List<Tensor<R>> outputs = model.inference(input);
+        if (outputs.isEmpty() || !"labels".equals(outputs.get(0).getName()))
+            throw new RunModelException("StarDist did not return decoded instance labels.");
+        return outputs;
     }
 
     private static <T extends RealType<T> & NativeType<T>>

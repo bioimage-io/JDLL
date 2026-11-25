@@ -233,7 +233,7 @@ public class YoloInferencePanel extends JPanel {
         boolean hasValidSource = imageSourcePanel.hasValidSelectedSource();
         boolean hasValidOpenImage = imageSourcePanel.getOpenImagesRadio().isSelected()
                 && imageSourcePanel.hasValidOpenImageSelection();
-        actionPanel.getRunButton().setEnabled(hasValidSource);
+        actionPanel.setRunAvailable(hasValidSource);
         drawButton.setEnabled(hasValidSource);
         refreshButton.setEnabled(hasValidSource);
         imageSourcePanel.getFocusButton().setEnabled(hasValidOpenImage);

@@ -24,10 +24,13 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 
 import javax.swing.JComponent;
 
 import io.bioimage.modelrunner.model.detection.Detection;
+import io.bioimage.modelrunner.gui.custom.segmentation.SegmentationRegions;
+import io.bioimage.modelrunner.tensor.Tensor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -230,6 +233,28 @@ public abstract class ConsumerInterface {
 	 * @param detections the detections.
 	 */
 	public abstract void displayDetections(List<Detection> detections);
+
+    /** Hosts opting in attach regions to the captured source image supplied by the workflow. */
+    public boolean supportsSegmentationRois() { return false; }
+
+    /** Called on the inference worker with the requested outputs. Either argument can be absent.
+     * Hosts can prepare both output types off the event thread before publishing them together. */
+    public <T extends RealType<T> & NativeType<T>> void displaySegmentation(Object source,
+            SegmentationRegions regions, Tensor<T> labels, String name, BooleanSupplier cancelled)
+            throws IOException, InterruptedException {
+        if (regions != null) throw new IOException("This host cannot display segmentation ROIs.");
+        Runnable show = () -> {
+            if (!cancelled.getAsBoolean()) displayImage(labels.getData(), labels.getAxesOrderString(), name);
+        };
+        if (javax.swing.SwingUtilities.isEventDispatchThread()) show.run();
+        else try { javax.swing.SwingUtilities.invokeAndWait(show); }
+        catch (java.lang.reflect.InvocationTargetException e) { throw new IOException("Could not display " + name, e.getCause()); }
+    }
+
+    /** Optional native sidecar in the run directory. JDLL also exports pixel-coordinate GeoJSON. */
+    public void saveSegmentationRois(File source, File destination, SegmentationRegions regions,
+            BooleanSupplier cancelled) throws IOException {
+    }
 
 	/**
 	 * Performs save detections.

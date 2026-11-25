@@ -23,7 +23,6 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ComponentColorModel;
 import java.awt.image.ComponentSampleModel;
 import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferFloat;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
@@ -45,6 +44,9 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.type.numeric.IntegerType;
+import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
 /** Writes single-channel labels, preserving Z/time and float label precision in TIFF. */
@@ -112,15 +114,19 @@ public final class LabelMaskWriter {
     }
 
     private static <T extends RealType<T> & NativeType<T>> BufferedImage plane(
-            RandomAccessibleInterval<T> labels, String axes, int z, int t, boolean floating) throws IOException {
+            RandomAccessibleInterval<T> labels, String axes, int z, int t, boolean tiff) throws IOException {
         int xAxis = axes.indexOf('x'), yAxis = axes.indexOf('y');
         int width = Math.toIntExact(labels.dimension(xAxis)), height = Math.toIntExact(labels.dimension(yAxis));
         BufferedImage image;
-        if (floating) {
+        if (tiff) {
+            T type = labels.getType();
+            int dataType = type instanceof IntType ? DataBuffer.TYPE_INT
+                    : type instanceof DoubleType || (type instanceof IntegerType && type.getBitsPerPixel() >= 32)
+                    ? DataBuffer.TYPE_DOUBLE : DataBuffer.TYPE_FLOAT;
             ComponentColorModel colors = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_GRAY),
-                    false, false, Transparency.OPAQUE, DataBuffer.TYPE_FLOAT);
-            ComponentSampleModel samples = new ComponentSampleModel(DataBuffer.TYPE_FLOAT, width, height, 1, width, new int[] {0});
-            WritableRaster raster = Raster.createWritableRaster(samples, new DataBufferFloat(Math.multiplyExact(width, height)), null);
+                    false, false, Transparency.OPAQUE, dataType);
+            ComponentSampleModel samples = new ComponentSampleModel(dataType, width, height, 1, width, new int[] {0});
+            WritableRaster raster = Raster.createWritableRaster(samples, samples.createDataBuffer(), null);
             image = new BufferedImage(colors, raster, false, null);
         } else {
             image = new BufferedImage(width, height, BufferedImage.TYPE_USHORT_GRAY);
@@ -136,7 +142,7 @@ public final class LabelMaskWriter {
                 position[xAxis] = x;
                 access.setPosition(position);
                 double value = access.get().getRealDouble();
-                if (!floating && value > 65535) throw new IOException("Labels above 65535 require TIFF output.");
+                if (!tiff && value > 65535) throw new IOException("Labels above 65535 require TIFF output.");
                 image.getRaster().setSample(x, y, 0, Double.isFinite(value) && value > 0 ? value : 0);
             }
         }

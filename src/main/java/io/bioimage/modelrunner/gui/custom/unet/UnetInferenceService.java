@@ -29,6 +29,7 @@ import java.util.function.IntFunction;
 import org.apposed.appose.BuildException;
 
 import io.bioimage.modelrunner.exceptions.LoadModelException;
+import io.bioimage.modelrunner.gui.custom.segmentation.SegmentationRegions.Kind;
 import io.bioimage.modelrunner.exceptions.RunModelException;
 import io.bioimage.modelrunner.gui.custom.InferenceStack;
 import io.bioimage.modelrunner.gui.custom.interfaces.ModelInstaller;
@@ -50,6 +51,13 @@ public class UnetInferenceService implements DenseSegmentationInferenceService {
     private String loadedModelPath;
     private String loadedDevice;
     private Unet model;
+
+    @Override
+    public Kind regionKind() {
+        if ("instance_friendly".equals(model.getTask()))
+            return model.isVolumeModel() ? Kind.INSTANCE_VOLUME : Kind.INSTANCE_PLANES;
+        return model.isVolumeModel() ? Kind.SEMANTIC_VOLUME : Kind.SEMANTIC_PLANES;
+    }
     private Rectangle2D.Double objectReference;
     private IntFunction<Rectangle2D.Double> objectSizeByTime;
     private Consumer<InferenceProgress> progressConsumer;

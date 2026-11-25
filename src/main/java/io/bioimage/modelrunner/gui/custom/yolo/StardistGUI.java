@@ -64,6 +64,7 @@ public class StardistGUI extends JPanel {
      * @param adapter the adapter.
      */
     protected StardistGUI(GuiAdapter adapter) {
+        inferencePanel.getActionPanel().enableSegmentationOutputs(inferencePanel.getImageSourcePanel());
         setLayout(null);
         setOpaque(true);
         setBackground(YoloUiUtils.PANEL_BG);

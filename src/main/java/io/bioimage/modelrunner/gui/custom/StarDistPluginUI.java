@@ -126,6 +126,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     	super(adapter);
         // Set a modern-looking border layout with padding
     	this.consumer = consumer;
+        inferencePanel.getActionPanel().setOpenImageRoisSupported(consumer == null || consumer.supportsSegmentationRois());
     	List<JComponent> componentList = new ArrayList<JComponent>();
 
     	String modelsDir = consumer == null ? null : consumer.getModelsDir();
@@ -280,12 +281,15 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         inferencePanel.getLogPanel().appendHtml("Preparing StarDist inference...");
         inferenceSizeHints = inferencePanel.getImageDisplayPanel().getSizeHints();
         inferenceRunning = true;
+        inferencePanel.getActionPanel().setOutputLocked(true);
         updateTabLocks();
     }
 
     private void finishInferenceUiState() {
         inferencePanel.getLogPanel().stopRunTimer();
         inferenceRunning = false;
+        inferencePanel.getActionPanel().setOutputLocked(false);
+        inferencePanel.updateImageActionState();
         updateTabLocks();
     }
 
@@ -463,15 +467,19 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
     	if (e.getSource() == this.inferencePanel.getActionPanel().getRunButton()) {
-    		cancelled = false;
+            if (inferenceRunning || trainingRunning) return;
+            cancelled = false;
+            SegmentationSelection selection = new SegmentationSelection(inferencePanel,
+                    selectedSystemPath == null ? selectedSystemImageFile : selectedSystemPath);
             startInferenceUiState();
     		workerThread = new Thread(() -> {
                 try (EnvironmentSetupLog.Scope setup = inferencePanel.getLogPanel().openEnvironmentLog()) {
-        			runStardist();
+                    runStardist(selection);
     			} catch (Exception e1) {
     				if (cancelled)
     					return;
-    				e1.printStackTrace();
+                    SwingUtilities.invokeLater(() -> inferencePanel.getLogPanel().appendHtml(
+                            "Inference failed: " + String.valueOf(e1.getMessage())));
     			} finally {
                     SwingUtilities.invokeLater(this::finishInferenceUiState);
     			}
@@ -509,25 +517,24 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
     	this.consumer.notifyParams(null);
     }
     
-    private void runStardist()
+    private void runStardist(SegmentationSelection selection)
     		throws RunModelException, LoadModelException, BuildException, IOException,
     		ExecutionException, InterruptedException {
     	saveParams();
-    	String modelPath = this.inferencePanel.getModelSelectionPanel().getSelectedModelValue();
+        String modelPath = selection.model;
         inferenceService.setThreshold(selectedProbabilityThreshold());
-    	if (this.inferencePanel.getImageSourcePanel().getSystemImagesRadio().isSelected()) {
-    		runStardistOnSystemImage(modelPath);
+        if (selection.files) {
+            runStardistOnSystemImage(modelPath, selection);
     		return;
     	}
-    	runStardistOnOpenImage(modelPath);
+        runStardistOnOpenImage(modelPath, selection);
     }
 
-    private < T extends RealType< T > & NativeType< T > > void runStardistOnOpenImage(String modelPath)
+    private < T extends RealType< T > & NativeType< T > > void runStardistOnOpenImage(String modelPath, SegmentationSelection selection)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
-    	// TODO remove RandomAccessibleInterval<T> rai = consumer.getFocusedImageAsRai();
-    	Object objIm =((YoloImageSelectionEntry) inferencePanel.getImageSourcePanel().getOpenImagesComboBox().getSelectedItem()).getImage();
-    	if (objIm == null) {
+        Object objIm = selection.image;
+        if (objIm == null) {
     		JOptionPane.showMessageDialog(null, "Please open an image", "No image open", JOptionPane.ERROR_MESSAGE);
     		return;
     	}
@@ -538,19 +545,23 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         try {
             List<Tensor<T>> detections = inferenceService.run(modelPath, rai, logConsumer, true,
                     selectedInferenceDevice());
-            for (int k = 0; k < detections.size(); k ++) {
-            	consumer.displayImage(detections.get(k).getData(), detections.get(k).getAxesOrderString(), detections.get(k).getName());
+            Tensor<T> labels = detections.get(0);
+            selection.output.display(consumer, objIm, labels, labels.getName(), inferenceService.regionKind(),
+                    () -> cancelled, logConsumer);
+            for (int i = 1; !cancelled && i < detections.size(); i++) {
+                Tensor<T> extra = detections.get(i);
+                consumer.displayImage(extra.getData(), extra.getAxesOrderString(), extra.getName());
             }
         } finally {
             SwingUtilities.invokeLater(() -> StarDistPluginUI.this.inferencePanel.getLogPanel().stopRunTimer());
         }
     }
 
-    private < T extends RealType< T > & NativeType< T > > void runStardistOnSystemImage(String modelPath)
+    private < T extends RealType< T > & NativeType< T > > void runStardistOnSystemImage(String modelPath, SegmentationSelection selection)
             throws RunModelException, LoadModelException, BuildException, IOException,
             ExecutionException, InterruptedException {
     	consumer.notifyParams(null);
-        File source = selectedSystemPath == null ? selectedSystemImageFile : selectedSystemPath;
+        File source = selection.source;
         List<File> images = systemInferenceImages(source);
         if (images.isEmpty()) {
             SwingUtilities.invokeLater(() -> {
@@ -563,7 +574,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                 StarDistPluginUI.this.inferencePanel.getLogPanel().appendHtml(str));
         logConsumer.accept("Starting inference on " + images.size() + " image(s).");
         InferenceRunFiles run = InferenceRunFiles.create(source, "stardist", modelPath, images, logConsumer);
-        int savedMasks = 0;
+        int savedImages = 0;
         try {
             for (int i = 0; i < images.size(); i++) {
                 if (cancelled || Thread.currentThread().isInterrupted()) {
@@ -596,9 +607,9 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                     if (outputs.isEmpty()) {
                         throw new IOException("StarDist did not return a labels image for " + imageFile.getName());
                     }
-                    File outputMask = LabelMaskWriter.write(outputs.get(0), run.outputFile(imageFile, "_labels.tif"));
-                    savedMasks++;
-                    logConsumer.accept("Saved labels: " + outputMask.getAbsolutePath());
+                    selection.output.save(consumer, run, imageFile, outputs.get(0), inferenceService.regionKind(),
+                            () -> cancelled, logConsumer);
+                    savedImages++;
                     if (!emittedPatchProgress[0]) {
                         logConsumer.accept(imageProgressBar(imageIndex, totalImages));
                     }
@@ -612,7 +623,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
         if (cancelled || Thread.currentThread().isInterrupted()) {
             return;
         }
-        logConsumer.accept("Saved StarDist label masks for " + savedMasks + " image(s).");
+        logConsumer.accept("Saved StarDist results for " + savedImages + " image(s).");
     }
 
     private String selectedInferenceDevice() {

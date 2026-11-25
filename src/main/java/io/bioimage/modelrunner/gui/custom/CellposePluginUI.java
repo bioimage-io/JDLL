@@ -22,34 +22,23 @@ package io.bioimage.modelrunner.gui.custom;
 import io.bioimage.modelrunner.model.python.envs.EnvironmentSetupLog;
 
 import java.awt.Color;
-import java.awt.Transparency;
+import io.bioimage.modelrunner.gui.custom.segmentation.SegmentationOutput;
+import io.bioimage.modelrunner.gui.custom.segmentation.SegmentationRegions.Kind;
 import java.awt.Window;
-import java.awt.color.ColorSpace;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
-import java.awt.image.ComponentColorModel;
-import java.awt.image.ComponentSampleModel;
-import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferFloat;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.ImageOutputStream;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -66,7 +55,6 @@ import io.bioimage.modelrunner.gui.custom.yolo.YoloImageFiles;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSelectionEntry;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloImageSourcePanel;
 import io.bioimage.modelrunner.tensor.Tensor;
-import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -105,12 +93,14 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         final File source;
         final YoloImageSelectionEntry entry;
         final SizeHints.Snapshot hints;
+        final SegmentationOutput output;
 
-        Settings(CellposeInferenceService.Run run, File source, YoloImageSelectionEntry entry, SizeHints.Snapshot hints) {
+        Settings(CellposeInferenceService.Run run, File source, YoloImageSelectionEntry entry, SizeHints.Snapshot hints, SegmentationOutput output) {
             this.run = run;
             this.source = source;
             this.entry = entry;
             this.hints = hints;
+            this.output = output;
         }
     }
 
@@ -132,6 +122,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     public CellposePluginUI(ConsumerInterface consumer, GuiAdapter adapter) {
         super(adapter);
         this.consumer = consumer;
+        getInferencePanel().getActionPanel().setOpenImageRoisSupported(consumer == null || consumer.supportsSegmentationRois());
         String modelsDirectory = consumer == null ? null : consumer.getModelsDir();
         this.inferenceService = new CellposeInferenceService(new CellposeInstaller(modelsDirectory));
 
@@ -266,7 +257,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
                 selectedDiameter(), selectedInferenceDevice(), !files && getInferencePanel().getOptionsPanel()
                         .getDisplayIntermediateOutputsCheckBox().isSelected());
         return new Settings(run, files ? source : null, files ? null : entry,
-                getInferencePanel().getImageDisplayPanel().getSizeHints());
+                getInferencePanel().getImageDisplayPanel().getSizeHints(), getInferencePanel().getActionPanel().output());
     }
 
     private void runCellpose(Settings settings) throws Exception {
@@ -281,7 +272,12 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         RandomAccessibleInterval<T> image = consumer.convertIntoRai(settings.entry.getImage());
         List<Tensor<FloatType>> outputs = inferenceService.run(
                 settings.run.withSizeHints(settings.hints.forImage(null)), image, this::appendLog);
-        if (!cancelled) SwingUtilities.invokeAndWait(() -> displayOutputs(outputs, settings.entry.getTitle()));
+        Tensor<FloatType> labels = outputs.get(0);
+        settings.output.display(consumer, settings.entry.getImage(), labels, outputName(settings.entry.getTitle(), labels.getName()),
+                Kind.INSTANCE_PLANES, () -> cancelled, this::appendLog);
+        if (!cancelled && outputs.size() > 1) SwingUtilities.invokeAndWait(() -> {
+            if (!cancelled) displayOutputs(outputs.subList(1, outputs.size()), settings.entry.getTitle());
+        });
     }
 
     private <T extends RealType<T> & NativeType<T>> void runOnSystemImages(Settings settings) throws Exception {
@@ -306,12 +302,13 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
             List<Tensor<FloatType>> outputs = inferenceService.run(
                     settings.run.withSizeHints(settings.hints.forImage(imageFile)), image, this::appendLog);
             if (cancelled) return;
-            File outputFile = run.outputFile(imageFile, "_labels.tif");
-            writeLabelMask(outputs.get(0), outputFile);
-            appendLog("Saved labels: " + outputFile.getAbsolutePath());
+            settings.output.save(consumer, run, imageFile, outputs.get(0), Kind.INSTANCE_PLANES,
+                    () -> cancelled, this::appendLog);
+            if (outputs.size() > 1)
+                SwingUtilities.invokeAndWait(() -> displayOutputs(outputs.subList(1, outputs.size()), imageFile.getName()));
             saved++;
         }
-        appendLog("Saved Cellpose label masks for " + saved + " image(s).");
+        appendLog("Saved Cellpose results for " + saved + " image(s).");
     }
 
     private <T extends RealType<T> & NativeType<T>> void displayOutputs(
@@ -375,6 +372,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         panel.getOptionsPanel().getDisplayIntermediateOutputsCheckBox().setEnabled(!running);
         getAccelerationCheckBox().setEnabled(!running);
         panel.getImageSourcePanel().setInteractionEnabled(!running);
+        panel.getActionPanel().setOutputLocked(running);
         panel.getActionPanel().getCancelButton().setEnabled(running);
         panel.updateImageActionState();
         if (running) {
@@ -612,61 +610,6 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     RandomAccessibleInterval<T> readImageFileAsRai(File imageFile) throws IOException {
         if (consumer == null) throw new IOException("Filesystem inference requires a host image loader.");
         return consumer.openImageAsRai(imageFile);
-    }
-
-    private static <T extends RealType<T> & NativeType<T>> void writeLabelMask(
-            Tensor<T> tensor, File outputFile) throws IOException {
-        RandomAccessibleInterval<T> labels = tensor.getData();
-        String axes = tensor.getAxesOrderString();
-        int depth = 1;
-        for (int axis = 0; axis < labels.numDimensions(); axis++)
-            if (axes.charAt(axis) != 'x' && axes.charAt(axis) != 'y')
-                depth = Math.multiplyExact(depth, Math.toIntExact(labels.dimension(axis)));
-        Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("TIFF");
-        if (!writers.hasNext()) {
-            throw new IOException("No TIFF writer is available.");
-        }
-        ImageWriter writer = writers.next();
-        try (ImageOutputStream output = ImageIO.createImageOutputStream(outputFile)) {
-            writer.setOutput(output);
-            writer.prepareWriteSequence(null);
-            for (int frame = 0; frame < depth; frame++) {
-                writer.writeToSequence(new javax.imageio.IIOImage(
-                        labelImage(labels, axes, frame), null, null), null);
-            }
-            writer.endWriteSequence();
-        } finally {
-            writer.dispose();
-        }
-    }
-
-    private static <T extends RealType<T> & NativeType<T>> BufferedImage labelImage(
-            RandomAccessibleInterval<T> labels, String axes, int frame) {
-        int xAxis = axes == null ? 0 : axes.toLowerCase().indexOf('x');
-        int yAxis = axes == null ? 1 : axes.toLowerCase().indexOf('y');
-        int width = Math.toIntExact(labels.dimension(xAxis));
-        int height = Math.toIntExact(labels.dimension(yAxis));
-        ComponentColorModel colors = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_GRAY),
-                false, false, Transparency.OPAQUE, DataBuffer.TYPE_FLOAT);
-        ComponentSampleModel samples = new ComponentSampleModel(DataBuffer.TYPE_FLOAT, width, height, 1, width, new int[] {0});
-        WritableRaster raster = Raster.createWritableRaster(samples, new DataBufferFloat(Math.multiplyExact(width, height)), null);
-        BufferedImage image = new BufferedImage(colors, raster, false, null);
-        RandomAccess<T> access = labels.randomAccess();
-        long[] position = new long[labels.numDimensions()];
-        for (int axis = 0; axis < position.length; axis++) {
-            if (axis == xAxis || axis == yAxis) continue;
-            position[axis] = frame % labels.dimension(axis);
-            frame /= labels.dimension(axis);
-        }
-        for (int y = 0; y < height; y++) {
-            position[yAxis] = y;
-            for (int x = 0; x < width; x++) {
-                position[xAxis] = x;
-                access.setPosition(position);
-                raster.setSample(x, y, 0, access.get().getRealFloat());
-            }
-        }
-        return image;
     }
 
     public static void main(String[] args) {
