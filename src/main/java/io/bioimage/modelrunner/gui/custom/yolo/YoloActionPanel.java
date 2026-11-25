@@ -21,11 +21,12 @@ package io.bioimage.modelrunner.gui.custom.yolo;
 
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.util.Arrays;
+import java.util.List;
+import java.util.prefs.Preferences;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
-import java.awt.Insets;
-import java.util.prefs.Preferences;
 import io.bioimage.modelrunner.gui.custom.segmentation.SegmentationOutput;
 
 public class YoloActionPanel extends JPanel {
@@ -33,10 +34,12 @@ public class YoloActionPanel extends JPanel {
     private static final long serialVersionUID = -763353214342801966L;
 
     private static final int GAP = 6;
+    private static final List<SegmentationOutput> OUTPUTS = Arrays.asList(
+            SegmentationOutput.LABELS, SegmentationOutput.BOTH, SegmentationOutput.ROIS);
 
     protected final JButton cancelButton = new JButton("Cancel");
     protected final JButton runButton = new JButton("Infer");
-    private JButton previous, next;
+    private SegmentationActionCarousel carousel;
     private YoloImageSourcePanel segmentationSource;
     private boolean openRois = true, sourceReady = true, outputLocked;
     private SegmentationOutput openOutput, fileOutput;
@@ -50,10 +53,10 @@ public class YoloActionPanel extends JPanel {
     void enableSegmentationOutputs(YoloImageSourcePanel source, Preferences settings) {
         segmentationSource = source;
         preferences = settings;
-        openOutput = preference("open", SegmentationOutput.ROIS);
-        fileOutput = preference("files", SegmentationOutput.LABELS);
-        previous = arrow("\u2039", -1);
-        next = arrow("\u203a", 1);
+        openOutput = preference("open");
+        fileOutput = preference("files");
+        carousel = new SegmentationActionCarousel(runButton, OUTPUTS, this::browse);
+        add(carousel);
         source.getSystemImagesRadio().addItemListener(e -> updateOutput());
         updateOutput();
     }
@@ -64,28 +67,19 @@ public class YoloActionPanel extends JPanel {
         updateOutput();
     }
 
-    private SegmentationOutput preference(String source, SegmentationOutput fallback) {
+    private SegmentationOutput preference(String source) {
+        SegmentationOutput fallback = SegmentationOutput.BOTH;
         try { return SegmentationOutput.valueOf(preferences.get("segmentation." + source, fallback.name())); }
         catch (IllegalArgumentException e) { return fallback; }
     }
 
-    private JButton arrow(String text, int direction) {
-        JButton b = new JButton(text);
-        YoloUiUtils.styleFlatSecondaryButton(b);
-        b.setMargin(new Insets(0, 0, 0, 0));
-        String tip = direction < 0 ? "Previous output" : "Next output";
-        b.setToolTipText(tip);
-        b.getAccessibleContext().setAccessibleName(tip);
-        b.addActionListener(e -> {
-            boolean files = segmentationSource.getSystemImagesRadio().isSelected();
-            SegmentationOutput[] modes = SegmentationOutput.values();
-            SegmentationOutput value = modes[Math.floorMod(output().ordinal() + direction, modes.length)];
-            if (files) fileOutput = value; else openOutput = value;
-            preferences.put("segmentation." + (files ? "files" : "open"), value.name());
-            updateOutput();
-        });
-        add(b);
-        return b;
+    private void browse(int direction) {
+        boolean files = segmentationSource.getSystemImagesRadio().isSelected();
+        int index = Math.floorMod(OUTPUTS.indexOf(output()) + direction, OUTPUTS.size());
+        SegmentationOutput value = OUTPUTS.get(index);
+        if (files) fileOutput = value; else openOutput = value;
+        preferences.put("segmentation." + (files ? "files" : "open"), value.name());
+        updateOutput();
     }
 
     public SegmentationOutput output() {
@@ -105,18 +99,14 @@ public class YoloActionPanel extends JPanel {
     }
 
     private void updateOutput() {
-        if (previous == null || next == null) return;
+        if (carousel == null) return;
+        SegmentationOutput selection = output();
         boolean supported = openRois || segmentationSource.getSystemImagesRadio().isSelected()
-                || output() == SegmentationOutput.LABELS;
-        previous.setEnabled(!outputLocked);
-        next.setEnabled(!outputLocked);
+                || selection == SegmentationOutput.LABELS;
         runButton.setEnabled(sourceReady && supported && !outputLocked);
-        String caption = "Run \u2192 " + output().title;
-        YoloUiUtils.setFullText(runButton, caption);
-        runButton.getAccessibleContext().setAccessibleName(caption);
-        runButton.setToolTipText(supported ? caption : "Update the host adapter to add ROIs to an open image.");
+        carousel.select(selection, !outputLocked);
+        runButton.setToolTipText(supported ? selection.actionLabel : "Update the host adapter to add ROIs to an open image.");
         doLayout();
-        repaint();
     }
 
     /**
@@ -149,19 +139,17 @@ public class YoloActionPanel extends JPanel {
     public void doLayout() {
         int w = Math.max(0, getWidth());
         int h = Math.max(0, getHeight());
-        boolean carousel = previous != null;
-        int cancelW = Math.max(1, (w - GAP) / (carousel ? 3 : 2));
+        int cancelW = Math.max(1, (w - GAP) / (carousel != null ? 3 : 2));
         int runW = Math.max(1, w - GAP - cancelW);
         cancelButton.setBounds(0, 0, cancelW, h);
-        if (carousel) {
-            int arrowW = Math.min(32, Math.max(1, runW / 7));
-            previous.setBounds(cancelW + GAP, 0, arrowW, h);
-            next.setBounds(w - arrowW, 0, arrowW, h);
-            runW = Math.max(1, runW - 2 * arrowW);
-            runButton.setBounds(cancelW + GAP + arrowW, 0, runW, h);
-        } else runButton.setBounds(cancelW + GAP, 0, runW, h);
+        if (carousel != null) {
+            carousel.setBounds(cancelW + GAP, 0, runW, h);
+            carousel.doLayout();
+        } else {
+            runButton.setBounds(cancelW + GAP, 0, runW, h);
+            YoloUiUtils.applyResponsiveText(runButton, runW - 8, h);
+        }
         YoloUiUtils.applyResponsiveText(cancelButton, cancelW - 8, h);
-        YoloUiUtils.applyResponsiveText(runButton, runW - 8, h);
     }
 
     /**

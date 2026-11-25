@@ -18,12 +18,18 @@ import net.imglib2.type.numeric.RealType;
 
 /** Delivery of the final segmentation tensor. Other model outputs have their own delivery path. */
 public enum SegmentationOutput {
-    ROIS("ROIs", true, false), LABELS("Label image", false, true), BOTH("ROIs + labels", true, true);
+    ROIS("ROIs", "Generate ROIs", true, false),
+    LABELS("Label image", "Generate labels", false, true),
+    BOTH("ROIs + labels", "Generate labels + ROIs", true, true);
 
     public final String title;
+    public final String actionLabel;
     private final boolean rois, labels;
-    SegmentationOutput(String title, boolean rois, boolean labels) {
-        this.title = title; this.rois = rois; this.labels = labels;
+    SegmentationOutput(String title, String actionLabel, boolean rois, boolean labels) {
+        this.title = title;
+        this.actionLabel = actionLabel;
+        this.rois = rois;
+        this.labels = labels;
     }
 
     public <T extends RealType<T> & NativeType<T>> void display(ConsumerInterface host, Object source,
