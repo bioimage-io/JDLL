@@ -88,7 +88,7 @@ public class Yolo extends DLModelPytorchProtected {
 	public static final int DEFAULT_TRAIN_BATCH_SIZE = 16;
 	public static final int DEFAULT_TRAIN_SEED = 0;
 	public static final int DEFAULT_NOMINAL_BATCH_SIZE = 64;
-	public static final boolean DEFAULT_TRAIN_DETERMINISTIC = true;
+	public static final boolean DEFAULT_TRAIN_DETERMINISTIC = false;
 	public static final int DEFAULT_TRAIN_WORKERS = 0;
 	public static final boolean DEFAULT_TRAIN_EXIST_OK = true;
 	public static final boolean DEFAULT_TRAIN_VERBOSE = false;
@@ -612,8 +612,12 @@ public class Yolo extends DLModelPytorchProtected {
 			project = outputDir.getParentFile().getAbsolutePath();
 		}
 		String nl = System.lineSeparator();
-		String optionsJson = TRAINING_GSON.toJson(trainOptions == null
-				? Collections.<String, Object>emptyMap() : trainOptions);
+		Map<String, Object> options = new HashMap<>();
+		options.put("deterministic", DEFAULT_TRAIN_DETERMINISTIC);
+		if (trainOptions != null) {
+			options.putAll(trainOptions);
+		}
+		String optionsJson = TRAINING_GSON.toJson(options);
 		String optionsBase64 = Base64.getEncoder().encodeToString(optionsJson.getBytes(StandardCharsets.UTF_8));
 		return ""
 				+ "import base64, contextlib, json, logging, os, platform, random, shutil, sys" + nl
