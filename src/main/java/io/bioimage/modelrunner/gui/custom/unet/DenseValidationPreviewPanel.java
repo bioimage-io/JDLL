@@ -63,6 +63,11 @@ public class DenseValidationPreviewPanel extends YoloValidationPreviewPanel {
         if (arrays) volume.loadPreview(path); else raster.loadPreview(path);
     }
 
+    @Override public void showUnavailable(String message) {
+        ((CardLayout) getLayout()).show(this, "raster");
+        raster.showUnavailable(message);
+    }
+
     @Override public void setTrainingStatus(boolean active, int step, int steps, int epochs,
             long elapsed, double secondsPerIteration) {
         if (raster == null) return;

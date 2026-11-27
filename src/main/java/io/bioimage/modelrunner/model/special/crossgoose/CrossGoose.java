@@ -282,6 +282,7 @@ public final class CrossGoose extends DLModelPytorchProtected {
                 + TrainingCodeUtils.pytorchMemoryCleanupFunction("_jdll_cleanup_pytorch_memory")
                 + "_jdll_cross_goose_config = json.loads(r'''"
                 + TrainingCodeUtils.toJson(config) + "''')" + nl
+                + TrainingCodeUtils.pythonModule("jdll_training_continuation", "python/training_continuation.py")
                 + TrainingCodeUtils.pythonModule("validation_control", "python/validation_control.py")
                 + "_jdll_request_dir = _jdll_cross_goose_config.pop('_jdll_validation_requests', None)" + nl
                 + "_jdll_control = validation_control.file_control(_jdll_request_dir) if _jdll_request_dir else None" + nl
@@ -292,7 +293,7 @@ public final class CrossGoose extends DLModelPytorchProtected {
                 + "maximum=event.get('maximum', 1), info=event)" + nl
                 + "  return not task.cancel_requested" + nl
                 + "try:" + nl
-                + "  _jdll_cross_goose_result = jdll_cross_goose_train(_jdll_cross_goose_config, "
+                + "  _jdll_cross_goose_result = jdll_training_continuation.train_dense(jdll_cross_goose_train, _jdll_cross_goose_config, "
                 + "callback=_jdll_cross_goose_callback, cancellation=lambda: task.cancel_requested, control=_jdll_control)" + nl
                 + "  for _jdll_kind, _jdll_key in (('last', 'last_checkpoint'), ('best', 'best_checkpoint')):" + nl
                 + "    _jdll_path = _jdll_cross_goose_result.get(_jdll_key)" + nl

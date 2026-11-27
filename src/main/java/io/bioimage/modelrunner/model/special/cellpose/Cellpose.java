@@ -82,9 +82,11 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 
 	protected int[] channels;
 
+	private int[] savedSourceChannels;
 	private Float diameter;
 	private volatile Float resolvedDiameter;
 	private boolean includeIntermediateOutputs = true;
+	private boolean restoreImage;
 	private Consumer<String> logConsumer;
 
 	protected String setDiameterCode = "";
@@ -125,9 +127,9 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	}
 
 	protected static final String LOAD_MODEL_CODE_ABSTRACT = ""
-			+ "if 'denoise' not in globals().keys():" + System.lineSeparator()
-			+ "  from cellpose import denoise" + System.lineSeparator()
-			+ "  task.export(denoise=denoise)" + System.lineSeparator()
+			+ "if 'models' not in globals().keys():" + System.lineSeparator()
+			+ "  from cellpose import models" + System.lineSeparator()
+			+ "  task.export(models=models)" + System.lineSeparator()
 			+ "if 'torch' not in globals().keys():" + System.lineSeparator()
 			+ "  import torch" + System.lineSeparator()
 			+ "  task.export(torch=torch)" + System.lineSeparator()
@@ -145,7 +147,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			+ "device = torch.device(_jdll_resolved_device)" + System.lineSeparator()
 			+ "_jdll_cellpose_gpu = device.type != 'cpu'" + System.lineSeparator()
 			+ "task.export(device=device)" + System.lineSeparator()
-			+ MODEL_VAR_NAME + " = denoise.CellposeDenoiseModel(gpu=_jdll_cellpose_gpu, pretrained_model=%s, device=device)" + System.lineSeparator()
+			+ MODEL_VAR_NAME + " = models.CellposeModel(gpu=_jdll_cellpose_gpu, pretrained_model=%s, device=device)" + System.lineSeparator()
 			+ "task.export(" + MODEL_VAR_NAME + "=" + MODEL_VAR_NAME +")" + System.lineSeparator();
 
 	protected static final String PATH_TO_RDF = "special_models/cellpose/rdf.yaml";
@@ -154,7 +156,6 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 
 	private static final String ONE_CHANNEL_STR = "ch_0";
 
-	private static final String TWO_CHANNEL_STR = "ch_0, ch_1";
 
 	private static final String THREE_CHANNEL_STR = "ch_0, ch_1, ch_3";
 
@@ -187,6 +188,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		if (channels == null || channels.length != 2
 				|| channels[0] < 0 || channels[0] > 3 || channels[1] < 0 || channels[1] > 3)
 			throw new IllegalArgumentException("Cellpose expects two channel indices between 0 and 3.");
+		savedSourceChannels = null;
 		this.channels = channels.clone();
 	}
 
@@ -233,6 +235,11 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		includeIntermediateOutputs = include;
 	}
 
+	/** Segment the restored image and append it to the intermediate outputs. */
+	public void setRestoreImage(boolean restore) {
+		restoreImage = restore;
+	}
+
 	public void setLogConsumer(Consumer<String> consumer) {
 		logConsumer = consumer;
 	}
@@ -240,10 +247,11 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	@Override
 	protected void configureTask(Task task) {
 		task.listen(event -> {
-			if (event.responseType != ResponseType.UPDATE || event.info == null
-					|| !"cellpose_diameter".equals(event.info.get("type"))) return;
-			Object value = event.info.get("diameter");
-			if (value instanceof Number) resolvedDiameter = ((Number) value).floatValue();
+			if (event.responseType != ResponseType.UPDATE || event.info == null) return;
+			if ("cellpose_diameter".equals(event.info.get("type"))) {
+				Object value = event.info.get("diameter");
+				if (value instanceof Number) resolvedDiameter = ((Number) value).floatValue();
+			} else if (!"cellpose_restoration".equals(event.info.get("type"))) return;
 			if (logConsumer != null && event.message != null) logConsumer.accept(event.message);
 		});
 	}
@@ -308,6 +316,16 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		if (inputs.length != 1)
 			throw new IllegalArgumentException(String.format("Cellpose has 1 positional arguemnt, %s were given", inputs.length));
 		if (isBMZ) return super.inference(inputs);
+        if (savedSourceChannels != null) {
+            Tensor<T> tensor = inputs[0];
+            RandomAccessibleInterval<T> data = tensor.getData();
+            if ("xy".equals(tensor.getAxesOrderString())) data = Views.addDimension(data, 0, 0);
+            else if (!"xyc".equals(tensor.getAxesOrderString()))
+                throw new IllegalArgumentException("Cellpose expects xy or xyc axes.");
+            resolvedDiameter = null;
+            return super.inference(Tensor.build(tensor.getName(), "xyc",
+                    io.bioimage.modelrunner.gui.custom.cellpose.CellposeChannels.pack(data, savedSourceChannels)));
+        }
 		List<Tensor<T>> checked = checkInputTensors(new ArrayList<>(Arrays.asList(inputs)));
 		resolvedDiameter = null;
 		return super.inference(checked.get(0));
@@ -329,7 +347,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			throw new IllegalArgumentException(String.format("Cellpose has 1 positional arguemnt, %s were given", batchedInputs.length));
 		List<List<Tensor<R>>> outs = new ArrayList<>();
 		for (Tensor<T> singleInput : batchedInputs[0]) {
-			List<Tensor<R>> singleOuts = super.inference(singleInput);
+			List<Tensor<R>> singleOuts = inference(singleInput);
 			if (outs.size() == 0) {
 				for (Tensor<R> singleOut : singleOuts) {
 					List<Tensor<R>> nBatch = new ArrayList<>();
@@ -338,8 +356,6 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			}
 			int c = 0;
 			for (Tensor<R> singleOut : singleOuts) {
-				List<Tensor<R>> nBatch = new ArrayList<>();
-				nBatch.add(singleOut);
 				outs.get(c ++).add(singleOut);
 			}
 		}
@@ -356,17 +372,22 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		else if (axesOrder.contains("c")
 				&& inputTensors.getData().dimensionsAsLongArray()[axesOrder.indexOf("c")] != 1)
 			throw new IllegalArgumentException("Inputs to cellpose model can only have either 1 or 3 channels.");
-		String adaptedRdfString;
 		String weightsName = new File(this.weightsPath).getName();
-		if (nChannels == 1)
-			adaptedRdfString = String.format(rdfString, ONE_CHANNEL_STR, ONE_CHANNEL_STR, weightsName);
-		else
-			adaptedRdfString = String.format(rdfString, THREE_CHANNEL_STR, TWO_CHANNEL_STR, weightsName);
+		int[] selected = savedSourceChannels != null ? savedSourceChannels : channels;
+		boolean twoRestored = selected == null ? nChannels == 3 : selected[1] > 0;
+		String adaptedRdfString = String.format(rdfString, nChannels == 1 ? ONE_CHANNEL_STR : THREE_CHANNEL_STR,
+				twoRestored ? "cell, nuclei" : "cell", weightsName);
 
 		this.descriptor = ModelDescriptorFactory.readFromYamlTextString(adaptedRdfString);
 		descriptor.addModelPath(Paths.get(new File(this.weightsPath).getParentFile().getAbsolutePath()));
 		this.tileCalculator = TileCalculator.init(descriptor);
 	}
+
+    @Override
+    protected String pythonInitializationScript() {
+        // Import native dependencies before Appose starts reading stdin (Windows scipy import lock).
+        return "import torch\nfrom cellpose import models";
+    }
 
 	/**
 	 * Builds model code.
@@ -384,7 +405,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 			if (in == null) throw new IOException("Missing Cellpose inference helper");
 			code += new String(in.readAllBytes(), StandardCharsets.UTF_8) + System.lineSeparator();
 		}
-		code += "task.export(resolve_cellpose_diameter=resolve_cellpose_diameter)" + System.lineSeparator();
+		code += "task.export(resolve_cellpose_diameter=resolve_cellpose_diameter, restore_cellpose_plane=restore_cellpose_plane)" + System.lineSeparator();
 		return code;
 	}
 
@@ -409,6 +430,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		for (int i = 0; i < inRais.size(); i ++) {
 			SharedMemoryArray shma = SharedMemoryArray.createSHMAFromRAI(inRais.get(i).getData(), false, false);
 			code += codeToConvertShmaToPython(shma, names.get(i));
+			code += names.get(i) + " = np.swapaxes(" + names.get(i) + ", 0, 1)" + System.lineSeparator();
 			inShmaList.add(shma);
 		}
 		String nameList = "[";
@@ -420,14 +442,22 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		nameList += "]";
 		channelList += "]";
 		code += createDiamCode(nameList, channelList);
-		code += "_jdll_masks, _jdll_flows, _jdll_styles, _jdll_imgs_dn = " + MODEL_VAR_NAME + ".eval("
+		if (restoreImage) {
+			code += "_jdll_restored = restore_cellpose_plane(" + MODEL_VAR_NAME + ", "
+					+ nameList + "[0], " + channelList + "[0], diameter, task)" + System.lineSeparator();
+			nameList = "[_jdll_restored]";
+			channelList = "[[1, 2 if _jdll_restored.shape[-1] == 2 else 0]]";
+		}
+		code += "_jdll_masks, _jdll_flows, _jdll_styles = " + MODEL_VAR_NAME + ".eval("
 				+ nameList + ", channels=" + channelList + ", channel_axis=-1, diameter=diameter)" + System.lineSeparator();
 		code += "def _jdll_first(value):" + System.lineSeparator();
 		code += "  return value[0] if isinstance(value, (list, tuple)) else value" + System.lineSeparator();
 		code += "_jdll_flows0 = _jdll_first(_jdll_flows)" + System.lineSeparator();
 		code += OUTPUT_LIST_KEY + (includeIntermediateOutputs
-				? " = [_jdll_first(_jdll_masks), _jdll_flows0[0], _jdll_flows0[1], _jdll_flows0[2], _jdll_first(_jdll_styles), _jdll_first(_jdll_imgs_dn)]"
-				: " = [_jdll_first(_jdll_masks)]") + System.lineSeparator();
+				? " = [_jdll_first(_jdll_masks).T, _jdll_flows0[0].swapaxes(0,1), _jdll_flows0[1].swapaxes(1,2), _jdll_flows0[2].T, _jdll_first(_jdll_styles)]"
+				: " = [_jdll_first(_jdll_masks).T]") + System.lineSeparator();
+		if (restoreImage && includeIntermediateOutputs)
+			code += OUTPUT_LIST_KEY + ".append(_jdll_restored.swapaxes(0,1))" + System.lineSeparator();
 		code += String.format("handle_output_list(%s, %s, %s, %s, %s)", OUTPUT_LIST_KEY,
 				SHMS_KEY, SHM_NAMES_KEY, DTYPES_KEY, DIMS_KEY)  + System.lineSeparator();
 		code += taskOutputsCode();
@@ -442,10 +472,9 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 * @return the created string.
 	 */
 	protected <T extends RealType<T> & NativeType<T>> String createChannelsArgCode(RandomAccessibleInterval<T> rai) {
+		if (savedSourceChannels != null) return savedSourceChannels[1] == 0 ? "[1, 0]" : "[1, 2]";
 		long[] dims = rai.dimensionsAsLongArray();
 		if (channels == null && dims.length == 2)
-			return "[0, 0]";
-		else if (channels == null && dims.length == 3 && dims[2] == 1)
 			return "[0, 0]";
 		else if (channels == null && dims.length == 3 && dims[2] == 1)
 			return "[0, 0]";
@@ -485,9 +514,13 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		File wFile = new File(weightsPath);
 		if (wFile.isDirectory() && new File(wFile, Constants.RDF_FNAME).isFile())
 			return init(ModelDescriptorFactory.readFromLocalFile(new File(wFile, Constants.RDF_FNAME).getAbsolutePath()), device);
-		if (!wFile.isFile())
+		if (wFile.isDirectory()) weightsPath = CellposeModels.weights(wFile).getAbsolutePath();
+		if (!new File(weightsPath).isFile())
 			throw new IllegalArgumentException("The path provided does not correspond to an existing file: " + weightsPath);
         Cellpose cellpose = new Cellpose(null, null, weightsPath, null, null, device);
+        File parent = new File(weightsPath).getAbsoluteFile().getParentFile();
+        if (new File(parent, "model.json").isFile())
+            cellpose.savedSourceChannels = CellposeModels.channels(parent);
 		try (InputStream in = RDF_URL.openStream();
 		     ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 
@@ -497,8 +530,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 		        baos.write(buffer, 0, len);
 		    }
 		    cellpose.rdfString = baos.toString(StandardCharsets.UTF_8.name());
-		} catch (IOException e) {
-        }
+		}
 		return cellpose;
 	}
 
@@ -598,6 +630,7 @@ public class Cellpose extends BioimageIoModelPytorchProtected {
 	 */
 	public static Cellpose fromPretained(String pretrainedModel, String modelsDir, String device) throws IOException,
 																						InterruptedException, ExecutionException, BuildException {
+		if (new File(pretrainedModel).exists()) return init(pretrainedModel, device);
 		if (PRETRAINED_CELLPOSE_MODELS.contains(pretrainedModel)) {
 			String weightsPath = fileIsCellpose(pretrainedModel, modelsDir);
 			if (weightsPath == null)

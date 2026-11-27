@@ -22,9 +22,10 @@ package io.bioimage.modelrunner.gui.custom.gui;
 import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.custom.cellpose.CellposeInferencePanel;
 import io.bioimage.modelrunner.gui.custom.yolo.YoloGUI;
+import io.bioimage.modelrunner.gui.custom.cellpose.CellposeTrainPanel;
 
 /**
- * Standard inference-only Cellpose GUI.
+ * Standard Cellpose inference and training GUI.
  */
 public class CellposeGUI extends YoloGUI {
 
@@ -49,9 +50,12 @@ public class CellposeGUI extends YoloGUI {
     }
 
     private CellposeGUI(GuiAdapter adapter, CellposeInferencePanel inferencePanel) {
-        super(adapter, "Cellpose", inferencePanel, null);
+        super(adapter, "Cellpose", inferencePanel, new CellposeTrainPanel());
         this.cellposeInferencePanel = inferencePanel;
     }
+
+    @Override
+    public CellposeTrainPanel getTrainPanel() { return (CellposeTrainPanel) super.getTrainPanel(); }
 
     /**
      * Returns the Cellpose inference panel.

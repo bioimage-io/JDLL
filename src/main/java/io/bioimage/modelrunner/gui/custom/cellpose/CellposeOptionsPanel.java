@@ -54,6 +54,7 @@ public class CellposeOptionsPanel extends JPanel {
         YoloUiUtils.styleInput(cytoplasmComboBox);
         YoloUiUtils.styleInput(nucleiComboBox);
         displayIntermediateOutputs.setOpaque(false);
+        displayIntermediateOutputs.setToolTipText("Restore the selected channels before segmentation and display the restored image and flows.");
         add(cytoplasmLabel);
         add(cytoplasmComboBox);
         add(nucleiLabel);

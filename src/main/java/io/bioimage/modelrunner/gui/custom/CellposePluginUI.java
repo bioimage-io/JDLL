@@ -49,6 +49,8 @@ import io.bioimage.modelrunner.gui.adapter.GuiAdapter;
 import io.bioimage.modelrunner.gui.custom.cellpose.CellposeInferencePanel;
 import io.bioimage.modelrunner.gui.custom.cellpose.CellposeChannels;
 import io.bioimage.modelrunner.gui.custom.ConsumerInterface.ImageChannels;
+import io.bioimage.modelrunner.model.special.cellpose.CellposeModels;
+import io.bioimage.modelrunner.gui.custom.cellpose.CellposeTrainingController;
 import io.bioimage.modelrunner.gui.custom.cellpose.CellposeInferenceService;
 import io.bioimage.modelrunner.gui.custom.cellpose.CellposeInstaller;
 import io.bioimage.modelrunner.gui.custom.gui.CellposeGUI;
@@ -81,6 +83,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 
     private final ConsumerInterface consumer;
     private final CellposeInferenceService inferenceService;
+    private final CellposeTrainingController training;
     private volatile boolean cancelled;
     private volatile boolean inferenceRunning;
     private Thread workerThread;
@@ -127,17 +130,21 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         String modelsDirectory = consumer == null ? null : consumer.getModelsDir();
         this.inferenceService = new CellposeInferenceService(new CellposeInstaller(modelsDirectory));
 
-        LinkedHashMap<String, String> models = new LinkedHashMap<String, String>();
-        models.put("cyto3", "cyto3");
-        models.put("cyto2", "cyto2");
-        models.put("cyto", "cyto");
-        models.put("nuclei", "nuclei");
+        LinkedHashMap<String, String> models = CellposeModels.entries(modelsDirectory);
+        getTrainPanel().setBaseModels(models);
+        this.training = new CellposeTrainingController(this, modelsDirectory, this::selectedInferenceDevice,
+                () -> inferenceRunning, inferenceService::close, dir -> {
+                    getTrainPanel().setBaseModels(CellposeModels.entries(modelsDirectory));
+                    getTrainPanel().setSelectedBaseModelValue(dir.getAbsolutePath());
+                    getInferencePanel().getModelSelectionPanel().addOrSelectModel("[Custom] " + dir.getName(), dir.getAbsolutePath());
+                });
         getInferencePanel().getModelSelectionPanel().setModels(models);
 
         getInferencePanel().getModelSelectionPanel().getBrowseButton().addActionListener(this);
         getInferencePanel().getActionPanel().getRunButton().addActionListener(this);
         getInferencePanel().getActionPanel().getCancelButton().addActionListener(this);
         getInferencePanel().getActionPanel().getCancelButton().setEnabled(false);
+        getInferencePanel().getModelSelectionPanel().getModelComboBox().addActionListener(e -> applySavedChannels());
         installInferenceSourceListeners();
 
         if (consumer != null) {
@@ -167,6 +174,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         cancelled = true;
         getInferencePanel().getImageDisplayPanel().clearImage();
         cancelChannelRead();
+        training.close();
         inferenceService.close();
         if (workerThread != null && workerThread.isAlive()) {
             workerThread.interrupt();
@@ -196,7 +204,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     }
 
     private void startInference() {
-        if (inferenceRunning) {
+        if (inferenceRunning || training.running()) {
             return;
         }
         final Settings settings;
@@ -361,6 +369,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
 
     private void setInferenceRunning(boolean running) {
         inferenceRunning = running;
+        getTabs().setEnabledAt(1, !running);
         CellposeInferencePanel panel = getInferencePanel();
         panel.getModelSelectionPanel().getModelComboBox().setEnabled(!running);
         panel.getModelSelectionPanel().getBrowseButton().setEnabled(!running);
@@ -382,6 +391,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
     private void installInferenceSourceListeners() {
         YoloImageSourcePanel source = getInferencePanel().getImageSourcePanel();
         source.getSystemImagesRadio().addActionListener(e -> updateSystemPathPreviewFromField());
+        source.getOpenImagesComboBox().addActionListener(e -> SwingUtilities.invokeLater(this::applySavedChannels));
         source.getOpenImagesRadio().addActionListener(e -> showOpenImageSource());
         source.getSystemPathField().addActionListener(e -> updateSystemPathPreviewFromField());
         source.setSystemPathDropConsumer(this::updateSystemPathPreview);
@@ -492,6 +502,7 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
                 try {
                     CellposeChannels.configure(getInferencePanel().getOptionsPanel().getCytoplasmComboBox(),
                             getInferencePanel().getOptionsPanel().getNucleiComboBox(), get());
+                    applySavedChannels();
                     getInferencePanel().getImageSourcePanel().setSystemPathSelectionConfirmed(true);
                 } catch (Exception error) {
                     selectedSystemPath = null;
@@ -517,11 +528,26 @@ public class CellposePluginUI extends CellposeGUI implements ActionListener {
         getInferencePanel().updateImageActionState();
     }
 
+    private void applySavedChannels() {
+        String selected = getInferencePanel().getModelSelectionPanel().getSelectedModelValue();
+        if (selected == null) return;
+        File file = new File(selected);
+        File dir = file.isDirectory() ? file : file.getAbsoluteFile().getParentFile();
+        if (!new File(dir, "model.json").isFile()) return;
+        try {
+            getInferencePanel().getOptionsPanel().selectSavedChannels(CellposeModels.channels(file));
+        } catch (IOException error) { appendLog(error.getMessage()); }
+    }
+
     private void browseModel() {
         JFileChooser chooser = new JFileChooser();
-        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             File model = chooser.getSelectedFile();
+            if (!CellposeModels.isSelectable(model.getAbsolutePath())) {
+                JOptionPane.showMessageDialog(this, "Select native Cellpose weights or a trained model folder.");
+                return;
+            }
             getInferencePanel().getModelSelectionPanel()
                     .addOrSelectModel(model.getName(), model.getAbsolutePath());
         }

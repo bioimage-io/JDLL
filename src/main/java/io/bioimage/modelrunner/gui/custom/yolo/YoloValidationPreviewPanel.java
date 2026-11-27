@@ -129,6 +129,11 @@ public class YoloValidationPreviewPanel extends JPanel implements TrainingValida
         updateButtons();
     }
 
+    public void showUnavailable(String message) {
+        clearPreview();
+        imagePanel.setEmptyMessage(message);
+    }
+
     /**
      * Loads the load preview.
      *

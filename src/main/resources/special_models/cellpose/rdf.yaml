@@ -93,21 +93,12 @@ outputs:
     type: float32
     unit: arbitrary unit
 - axes:
-  - id: x
-    scale: 1.0
-    size: {axis_id: x, offset: 0, tensor_id: input}
-    type: space
-  - id: y
-    scale: 1.0
-    size: {axis_id: y, offset: 0, tensor_id: input}
-    type: space
-  - channel_names: [%s]
-    type: channel
-  id: image_dn
+  - {id: x, scale: 1.0, size: {axis_id: x, offset: 0, tensor_id: input}, type: space}
+  - {id: y, scale: 1.0, size: {axis_id: y, offset: 0, tensor_id: input}, type: space}
+  - {type: channel, channel_names: [%s]}
+  id: restored
   test_tensor: null
-  data:
-    type: float32
-    unit: arbitrary unit
+  data: {type: float32, unit: arbitrary unit}
 tags: [nuclei segmentation, epithelial cells, fluorescence microscopy, cell-segmentation, cellpose, 2D]
 type: model
 version: 0.1.0

@@ -120,11 +120,16 @@ public class UnetTrainingService implements DenseSegmentationTrainingService {
             installer.installModelWeights(config.getBaseModelPath(), logConsumer);
         }
         PreparedDataset dataset = SegmentationDatasetPreparer.prepare(config.getDatasetPath(), config.getModelName(),
-                config.getModelsDir(), 0.15d, SegmentationDatasetPreparer.Framework.UNET, logConsumer);
+                config.getModelsDir(), 0.15d, SegmentationDatasetPreparer.Framework.UNET, logConsumer, new io.bioimage.modelrunner.gui.custom.training.TrainingSplit(
+                        new File(config.getDatasetPath()), new File(config.getOutputModelDir()),
+                        config.isFineTune() ? config.getBaseModelPath() : null, logConsumer));
         validateDatasetCompatibility(config, dataset);
         try (ValidationRequests requests = new ValidationRequests()) {
             synchronized (this) { validationRequests = requests; }
             Map<String, Object> values = toPythonConfig(config, dataset.getDatasetRoot());
+            values.put("_jdll_legacy", io.bioimage.modelrunner.gui.custom.training.TrainingContinuation.legacyMetadata(config.getBaseModelPath()));
+            values.put("_jdll_spatial_source", dataset.getSpatialSource());
+            values.put("_jdll_source_root", new File(config.getDatasetPath()).getAbsolutePath());
             values.put("_jdll_validation_requests", requests.getDirectory());
             Unet.train(values, progressConsumer, previewConsumer, logConsumer, this::setRunningPython, event -> {
                 requests.accept(event);

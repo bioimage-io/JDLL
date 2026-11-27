@@ -28,13 +28,12 @@ import org.apposed.appose.BuildException;
 
 import io.bioimage.modelrunner.model.python.envs.PixiEnvironmentManager;
 import io.bioimage.modelrunner.model.special.cellpose.Cellpose;
+import io.bioimage.modelrunner.model.special.cellpose.CellposeModels;
 
 /**
  * Installs Cellpose and resolves official model aliases to local weights.
  */
 public class CellposeInstaller {
-
-    private static final long LOG_INTERVAL_MILLIS = 50L;
 
     private final String modelsDirectory;
 
@@ -47,50 +46,6 @@ public class CellposeInstaller {
     public String installAndResolve(String model, Consumer<String> logConsumer)
             throws IOException, ExecutionException, InterruptedException, BuildException {
         PixiEnvironmentManager.installRequirements(Cellpose.resolvePytorchEnv(), logConsumer);
-        File custom = model == null ? null : new File(model);
-        if (custom != null && custom.isFile()) {
-            return custom.getAbsolutePath();
-        }
-        String installed = Cellpose.findPretrainedModelInstalled(model, modelsDirectory);
-        if (installed != null) {
-            return installed;
-        }
-        accept(logConsumer, "Downloading Cellpose " + model + " weights.");
-        ThrottledProgress progress = new ThrottledProgress(logConsumer);
-        String resolved = Cellpose.donwloadPretrained(model, modelsDirectory,
-                value -> progress.accept("Downloading Cellpose " + model + " weights: "
-                        + Math.round(value * 1000.0) / 10.0 + "%"));
-        progress.acceptNow("Downloading Cellpose " + model + " weights: 100.0%");
-        return resolved;
-    }
-
-    private static void accept(Consumer<String> consumer, String message) {
-        if (consumer != null) {
-            consumer.accept(message);
-        }
-    }
-
-    private static final class ThrottledProgress {
-        private final Consumer<String> consumer;
-        private long lastUpdate;
-
-        private ThrottledProgress(Consumer<String> consumer) {
-            this.consumer = consumer;
-        }
-
-        private void accept(String message) {
-            long now = System.currentTimeMillis();
-            if (consumer != null && now - lastUpdate >= LOG_INTERVAL_MILLIS) {
-                lastUpdate = now;
-                consumer.accept(message);
-            }
-        }
-
-        private void acceptNow(String message) {
-            if (consumer != null) {
-                lastUpdate = System.currentTimeMillis();
-                consumer.accept(message);
-            }
-        }
+        return CellposeModels.resolve(model, modelsDirectory, logConsumer);
     }
 }

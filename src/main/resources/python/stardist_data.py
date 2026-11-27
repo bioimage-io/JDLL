@@ -323,9 +323,23 @@ class DatasetStore:
         if not eligible:
             raise ValueError('The single source is too small for separate training and validation regions '
                              'at this patch size. Supply another image/volume or use a smaller preset.')
-        axis = max(eligible, key=lambda i: source.shape[i] / patch[i])
-        length, size = source.shape[axis], patch[axis]
-        cut = length - max(size, min(length - size, int(round(length * fraction))))
+        mask = source.raw(True)
+        for axis in sorted(eligible, key=lambda i: source.shape[i] / patch[i], reverse=True):
+            length, size = source.shape[axis], patch[axis]
+            occupied = np.flatnonzero(np.any(mask, axis=tuple(i for i in range(mask.ndim) if i != axis)))
+            if occupied.size < 2:
+                continue
+            first, last = max(size, int(occupied[0]) + 1), min(length - size, int(occupied[-1]))
+            if first <= last:
+                target = length - int(round(length * fraction))
+                view = np.moveaxis(mask, axis, 0)
+                cut = next((k for k in sorted(range(first, last+1), key=lambda k: abs(k-target))
+                            if not np.any((view[k] != 0) & (view[k-1] == view[k]))), None)
+                if cut is not None:
+                    break
+        else:
+            raise ValueError('No disjoint training and validation regions at this patch size both contain annotations. '
+                             'Supply another annotated source or use a smaller preset.')
         train_region = [slice(0, n) for n in source.shape]
         val_region = list(train_region)
         train_region[axis], val_region[axis] = slice(0, cut), slice(cut, length)
@@ -411,6 +425,33 @@ class Source:
         elif image.shape[-1] < channels:
             image = np.concatenate((image, np.zeros(image.shape[:-1] + (channels - image.shape[-1],), np.float32)), axis=-1)
         return image[..., :channels]
+
+
+def restore_holdout(run, train, val, notify):
+    """Resolve the original source regions against the current lazy image readers."""
+    from dataclasses import dataclass
+
+    @dataclass
+    class Pair:
+        image: object
+        spatial_shape: tuple
+        source: object
+        region: tuple = ()
+
+    groups = [[Pair(a.source.image, a.source.shape, a.source) for a in group] for group in (train, val)]
+    train, val = run.restore_domains(*groups, notify)
+    out = []
+    training_regions = {}
+    for group in (train, val):
+        sources = [Domain(p.source, tuple(slice(a,b) for a,b in p.region)) if p.region else p.source for p in group]
+        for source in sources:
+            if isinstance(source, Domain):
+                if group is train:
+                    training_regions[source.image] = source
+                elif source.image in training_regions:
+                    source.normalization_source = training_regions[source.image]
+        out.extend(([LazyArray(s, False) for s in sources], [LazyArray(s, True) for s in sources]))
+    return out
 
 
 class Domain(Source):

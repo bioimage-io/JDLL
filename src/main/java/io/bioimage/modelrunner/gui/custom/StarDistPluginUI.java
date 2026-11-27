@@ -799,7 +799,7 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                         }));
                 if (trainingRunId == trainingUiRunId) {
                     appendTrainingLog("Training completed successfully.");
-                    refreshStardistModels();
+
                 }
             } catch (Exception | Error e) {
                 if (trainingRunId == trainingUiRunId && !cancelled) {
@@ -808,7 +808,10 @@ public class StarDistPluginUI extends StardistGUI implements ActionListener {
                     e.printStackTrace();
                 }
             } finally {
-                SwingUtilities.invokeLater(() -> finishTrainingUiState(trainingRunId));
+                SwingUtilities.invokeLater(() -> {
+                    finishTrainingUiState(trainingRunId);
+                    if (!trainingRunning) refreshStardistModels();
+                });
             }
         });
         workerThread.start();

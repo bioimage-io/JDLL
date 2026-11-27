@@ -179,7 +179,7 @@ public class StardistTrainPanel extends BaseTrainPanel {
                         && !StardistModelRegistry.isSelectableFineTuneSource(entry.getValue(), dimensions)) {
                     continue;
                 }
-                comboModel.addElement(new YoloModelSelectionEntry(entry.getKey(), entry.getValue()));
+                comboModel.addElement(trainingEntry(entry.getKey(), entry.getValue()));
             }
         }
         baseModelComboBox.setModel(comboModel);

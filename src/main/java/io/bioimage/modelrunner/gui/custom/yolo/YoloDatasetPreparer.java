@@ -19,6 +19,8 @@
  */
 package io.bioimage.modelrunner.gui.custom.yolo;
 
+import java.util.Arrays;
+import io.bioimage.modelrunner.gui.custom.training.TrainingSplit;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
@@ -121,7 +123,12 @@ final class YoloDatasetPreparer {
     }
 
     static YoloDatasetPreparationResult prepareDetailed(String datasetPath, String modelName,
-            String modelsDir, int imageSize, Consumer<String> logConsumer)
+            String modelsDir, int imageSize, Consumer<String> logConsumer) throws IOException {
+        return prepareDetailed(datasetPath, modelName, modelsDir, imageSize, logConsumer, null);
+    }
+
+    static YoloDatasetPreparationResult prepareDetailed(String datasetPath, String modelName,
+            String modelsDir, int imageSize, Consumer<String> logConsumer, TrainingSplit assignment)
             throws IOException {
         if (datasetPath == null || datasetPath.trim().isEmpty()) {
             throw new IllegalArgumentException("Please provide a YOLO training dataset path.");
@@ -135,6 +142,17 @@ final class YoloDatasetPreparer {
         File yaml = input.isFile() && isYaml(input) ? input : findDatasetYaml(input);
         if (yaml != null) {
             YamlDataset dataset = readYamlDataset(yaml);
+            if (assignment != null && (dataset.hasTrainOnly() || dataset.hasTrainAndVal())) {
+                List<YoloSample> training = new ArrayList<>(dataset.train.samples);
+                List<YoloSample> validation = dataset.hasTrainAndVal() ? new ArrayList<>(dataset.val.samples) : new ArrayList<>();
+                boolean changed = assign(assignment, training, validation);
+                if (needsRegions(training, validation, assignment))
+                    return spatialDataset(input.getName(), modelName, modelsDir, dataset.namesOrInferred(),
+                            boxSources(training), boxSources(validation), imageSize, assignment, logConsumer);
+                if (changed)
+                    return createGeneratedYoloDataset(dataset.sourceName(), modelName, modelsDir, dataset.namesOrInferred(),
+                            training, validation, false, logConsumer);
+            }
             if (dataset.hasTrainAndVal()) {
                 log(logConsumer, "Found YOLO train/validation splits. Using YAML: " + yaml.getAbsolutePath());
                 Map<String, Object> summary = logYoloDatasetSummary(logConsumer, "reused existing YOLO YAML",
@@ -164,6 +182,17 @@ final class YoloDatasetPreparer {
         SplitData valSplit = firstNonNull(findYoloSplit(input, "val"),
                 findYoloSplit(input, "validation"),
                 findYoloSplit(input, "valid"));
+        if (assignment != null && trainSplit != null && !trainSplit.samples.isEmpty()) {
+            List<YoloSample> training = new ArrayList<>(trainSplit.samples);
+            List<YoloSample> validation = valSplit == null ? new ArrayList<>() : new ArrayList<>(valSplit.samples);
+            boolean changed = assign(assignment, training, validation);
+            if (needsRegions(training, validation, assignment))
+                return spatialDataset(input.getName(), modelName, modelsDir, inferNamesFromLabelFiles(training, validation),
+                        boxSources(training), boxSources(validation), imageSize, assignment, logConsumer);
+            if (changed)
+                return createGeneratedYoloDataset(input.getName(), modelName, modelsDir, inferNamesFromLabelFiles(training, validation),
+                        training, validation, false, logConsumer);
+        }
         if (trainSplit != null && !trainSplit.samples.isEmpty()
                 && valSplit != null && !valSplit.samples.isEmpty()) {
             File generatedYaml = writeFolderYaml(input, trainSplit, valSplit);
@@ -193,6 +222,16 @@ final class YoloDatasetPreparer {
                 findMaskSamples(input, "validation"),
                 findMaskSamples(input, "valid"));
         if (!trainMasks.isEmpty()) {
+            if (assignment != null) {
+                trainMasks = new ArrayList<>(trainMasks);
+                valMasks = new ArrayList<>(valMasks);
+                assignment.assignDetections(trainMasks, valMasks, p -> p.image, p -> p.mask, p -> !p.boxes.isEmpty(),
+                        1 - TRAIN_FRACTION, SPLIT_SEED, (p, region) -> containsBox(p.boxes, region));
+            }
+            if (assignment != null && (trainMasks.size() + valMasks.size() == 1
+                    || java.util.stream.Stream.concat(trainMasks.stream(),valMasks.stream()).anyMatch(p -> assignment.previouslySpatial(p.image))))
+                return spatialDataset(input.getName(), modelName, modelsDir, Collections.singletonList(DEFAULT_CLASS_NAME),
+                        trainMasks, valMasks, imageSize, assignment, logConsumer);
             boolean splitTrain = valMasks.isEmpty();
             log(logConsumer, "Dataset is not directly YOLO-compatible; converting instance masks to YOLO labels.");
             log(logConsumer, "Found " + trainMasks.size() + " training mask image(s)"
@@ -207,6 +246,113 @@ final class YoloDatasetPreparer {
 
         throw new IllegalArgumentException("Could not recognize a YOLO dataset or an instance-mask dataset in: "
                 + input.getAbsolutePath());
+    }
+
+    private static boolean needsRegions(List<YoloSample> train, List<YoloSample> val, TrainingSplit assignment) {
+        return train.size()+val.size() == 1 || java.util.stream.Stream.concat(train.stream(), val.stream())
+                .anyMatch(p -> assignment.previouslySpatial(p.image));
+    }
+
+    private static List<MaskSample> boxSources(List<YoloSample> samples) throws IOException {
+        List<MaskSample> result = new ArrayList<>();
+        for (YoloSample sample : samples) {
+            ImageSize size = readImageSize(sample.image);
+            if (size == null) throw new IOException("Cannot read detection image " + sample.image);
+            result.add(new MaskSample(sample.image, sample.label, size.width, size.height,
+                    readYoloBoxes(sample.label, size.width, size.height)));
+        }
+        return result;
+    }
+
+    private static YoloDatasetPreparationResult spatialDataset(String sourceName, String modelName, String modelsDir,
+            List<String> names, List<MaskSample> train, List<MaskSample> val, int imageSize, TrainingSplit assignment,
+            Consumer<String> log) throws IOException {
+        List<GeneratedSample> training = new ArrayList<>(), validation = new ArrayList<>();
+        GenerationStats trainStats = new GenerationStats(), valStats = new GenerationStats();
+        for (List<MaskSample> group : Arrays.asList(train,val)) for (MaskSample sample : group) {
+            if (train.size()+val.size() != 1 && !assignment.previouslySpatial(sample.image)) {
+                (group == train ? training : validation).addAll(buildGeneratedSamples(sample.image, sample.width, sample.height,
+                        sample.boxes, imageSize, group == train ? trainStats : valStats));
+                continue;
+            }
+            Rectangle trainRegion = rectangle(assignment.retainedBounds(sample.image, "train"));
+            Rectangle valRegion = rectangle(assignment.retainedBounds(sample.image, "val"));
+            Rectangle field = new Rectangle(0, 0, sample.width, sample.height);
+            boolean keep = trainRegion != null && valRegion != null && !trainRegion.intersects(valRegion)
+                    && field.contains(trainRegion) && field.contains(valRegion)
+                    && trainRegion.union(valRegion).equals(field)
+                    && sample.boxes.stream().allMatch(box -> box.fullyInside(trainRegion) || box.fullyInside(valRegion));
+            Rectangle[] regions = keep ? new Rectangle[]{trainRegion, valRegion} : disjointRegions(sample);
+            for (int i=0; i<2; i++) {
+                List<Box> boxes = new ArrayList<>();
+                for (Box box : sample.boxes) if (box.fullyInside(regions[i])) boxes.add(box.relativeTo(regions[i]));
+                (i == 0 ? training : validation).add(GeneratedSample.crop(sample.image,regions[i],boxes));
+            }
+            assignment.recordSpatial(sample.image,sample.mask,bounds(regions[0]),bounds(regions[1]));
+            log(log, "Using disjoint training and validation regions of " + sample.image.getName() + ".");
+        }
+        return writeGeneratedDataset(createUniqueGeneratedRoot(sourceName,modelName,modelsDir),names,training,validation,
+                false,imageSize,log,trainStats,valStats);
+    }
+
+    private static int[][] bounds(Rectangle r) {
+        return new int[][]{{r.y,r.y+r.height},{r.x,r.x+r.width}};
+    }
+
+    private static Rectangle rectangle(int[][] bounds) {
+        if (bounds == null || bounds.length != 2 || bounds[0].length != 2 || bounds[1].length != 2) return null;
+        return new Rectangle(bounds[1][0], bounds[0][0], bounds[1][1]-bounds[1][0], bounds[0][1]-bounds[0][0]);
+    }
+
+    private static boolean containsBox(List<Box> boxes, int[][] bounds) {
+        Rectangle region = rectangle(bounds);
+        return region != null && boxes.stream().anyMatch(box -> box.fullyInside(region));
+    }
+
+    private static Rectangle[] disjointRegions(MaskSample sample) throws IOException {
+        Rectangle[] best = null;
+        double distance = Double.POSITIVE_INFINITY;
+        for (boolean horizontal : new boolean[]{true,false}) {
+            int length = horizontal ? sample.width : sample.height;
+            // Candidate boundaries only change when a bounding box starts or ends.
+            Set<Integer> cuts = new java.util.TreeSet<>();
+            cuts.add((int)Math.round(length * TRAIN_FRACTION));
+            for (Box b : sample.boxes) {
+                cuts.add((int)Math.floor(horizontal ? b.x1 : b.y1));
+                cuts.add((int)Math.ceil(horizontal ? b.x2 : b.y2));
+            }
+            for (int cut : cuts) {
+                if (cut < 2 || length-cut < 2) continue;
+                double delta = Math.abs(cut/(double)length - TRAIN_FRACTION);
+                if (delta >= distance) continue;
+                Rectangle first = new Rectangle(0,0,horizontal ? cut : sample.width,horizontal ? sample.height : cut);
+                Rectangle second = new Rectangle(horizontal ? cut : 0,horizontal ? 0 : cut,
+                        horizontal ? length-cut : sample.width,horizontal ? sample.height : length-cut);
+                if (sample.boxes.stream().allMatch(b -> b.fullyInside(first) || b.fullyInside(second))
+                        && sample.boxes.stream().anyMatch(b -> b.fullyInside(first))
+                        && sample.boxes.stream().anyMatch(b -> b.fullyInside(second))) {
+                    best = new Rectangle[]{first,second};
+                    distance = delta;
+                }
+            }
+        }
+        if (best == null) throw new IOException("No disjoint holdout containing complete objects on both sides in "
+                + sample.image + ". Supply another annotated image.");
+        return best;
+    }
+
+    private static boolean assign(TrainingSplit assignment, List<YoloSample> training, List<YoloSample> validation) throws IOException {
+        Set<File> annotated = new HashSet<>();
+        for (List<YoloSample> sources : Arrays.asList(training, validation))
+            for (YoloSample sample : sources)
+                if (sample.label != null && sample.label.isFile() && !readYoloBoxes(sample.label,1,1).isEmpty())
+                    annotated.add(sample.image);
+        return assignment.assignDetections(training, validation, p -> p.image, p -> p.label, p -> annotated.contains(p.image),
+                1 - TRAIN_FRACTION, SPLIT_SEED, (p, bounds) -> {
+                    ImageSize size = readImageSize(p.image);
+                    if (size == null) throw new IOException("Cannot read detection image " + p.image);
+                    return containsBox(readYoloBoxes(p.label, size.width, size.height), bounds);
+                });
     }
 
     private static File findDatasetYaml(File input) throws IOException {
@@ -1397,7 +1543,7 @@ final class YoloDatasetPreparer {
                 Box box = new Box(0, b[0], b[1], b[2] + 1.0, b[3] + 1.0, objectIndex++, pixelArea);
                 if (box.isValid()) boxes.add(box);
             }
-            return new MaskSample(imageFile, size.width, size.height, boxes);
+            return new MaskSample(imageFile, maskFile, size.width, size.height, boxes);
         } catch (IOException e) {
             if (String.valueOf(e.getMessage()).contains(NpyImageFile.DOCUMENTATION_URL)) throw e;
             throw invalidMask(maskFile, "Cannot read mask: " + e.getMessage());
@@ -1766,8 +1912,11 @@ final class YoloDatasetPreparer {
         private final int height;
         private final List<Box> boxes;
 
-        private MaskSample(File image, int width, int height, List<Box> boxes) {
+        private final File mask;
+
+        private MaskSample(File image, File mask, int width, int height, List<Box> boxes) {
             this.image = image;
+            this.mask = mask;
             this.width = width;
             this.height = height;
             this.boxes = boxes;

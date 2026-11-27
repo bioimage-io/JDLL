@@ -139,6 +139,11 @@ public final class SegmentationDatasetPreparer {
      */
     public static PreparedDataset prepare(String datasetPath, String modelName, String modelsDir,
             double validFraction, Framework framework, Consumer<String> logConsumer) throws IOException {
+        return prepare(datasetPath, modelName, modelsDir, validFraction, framework, logConsumer, null);
+    }
+
+    public static PreparedDataset prepare(String datasetPath, String modelName, String modelsDir,
+            double validFraction, Framework framework, Consumer<String> logConsumer, TrainingSplit assignment) throws IOException {
         if (datasetPath == null || datasetPath.trim().isEmpty()) {
             throw new IllegalArgumentException("Please provide a training dataset path.");
         }
@@ -181,7 +186,15 @@ public final class SegmentationDatasetPreparer {
         summary.channelNormalizationRequired = channelPlan.normalizationRequired;
         boolean needsGeneratedDataset = !discovery.directlyDigestible || !backendCanPairDirectly
                 || summary.requiresFilteredDataset() || channelPlan.normalizationRequired;
-        if (target == Framework.STARDIST && needsGeneratedDataset
+        if (assignment != null) {
+            List<Pair> training = new ArrayList<>(train.pairs), validation = new ArrayList<>(val.pairs);
+            boolean changed = assignment.assign(training, validation, p -> p.image, p -> p.mask,
+                    p -> p.objectCount > 0, validFraction, SPLIT_SEED, true);
+            train = new Split("train", training);
+            val = new Split("val", validation);
+            summary.generatedValidationSplit = changed && !summary.explicitValidationSplit;
+            needsGeneratedDataset |= changed;
+        } else if (target == Framework.STARDIST && needsGeneratedDataset
                 && val.pairs.isEmpty() && train.pairs.size() > 1) {
             SplitPair split = splitTrainVal(train.pairs, validFraction, channelPlan.stratify);
             train = new Split("train", split.train);
@@ -193,11 +206,38 @@ public final class SegmentationDatasetPreparer {
         boolean generated = false;
         if (needsGeneratedDataset) {
             datasetRoot = writeLinkedDataset(input.getName(), modelName, modelsDir, train, val,
-                    channelPlan, logConsumer);
+                    channelPlan, logConsumer, assignment != null);
             generated = true;
         }
         logSummary(logConsumer, datasetRoot, generated, summary, train, val);
-        return new PreparedDataset(datasetRoot, generated, summary, channelPlan.targetChannels, dimensionality);
+        return new PreparedDataset(datasetRoot, generated, summary, channelPlan.targetChannels, dimensionality,
+                assignment == null ? null : assignment.spatialSource());
+    }
+
+    /** Discover original image/mask paths for backends that validate pixels and split domains themselves. */
+    public static Map<String, List<List<String>>> discoverSourcePairs(File root) throws IOException {
+        Discovery discovery = discover(root, Framework.UNET);
+        if (discovery.train.rawPairs.isEmpty()) throw new IOException("No training image/mask pairs in " + root);
+        if (discovery.val.rawPairs.isEmpty()) {
+            for (String alias : VAL_ALIASES) {
+                Path folder = new File(root, alias).toPath();
+                if (Files.isDirectory(folder)) try (java.util.stream.Stream<Path> paths = Files.walk(folder)) {
+                    if (paths.anyMatch(p -> Files.isRegularFile(p) && hasExtension(p.toFile(), IMAGE_EXTENSIONS)))
+                        throw new IOException("Incomplete validation dataset in " + root);
+                }
+            }
+        }
+        Map<String, List<List<String>>> result = new LinkedHashMap<>();
+        for (LayoutResult split : Arrays.asList(discovery.train, discovery.val)) {
+            List<List<String>> pairs = new ArrayList<>();
+            for (RawPair pair : split.rawPairs) {
+                if (pair.mask == null) throw new IOException((pair.missingMask ? "Missing mask for " :
+                        "Ambiguous masks for ") + pair.image);
+                pairs.add(Arrays.asList(pair.image.getAbsolutePath(), pair.mask.getAbsolutePath()));
+            }
+            result.put(split == discovery.train ? "train" : "val", pairs);
+        }
+        return result;
     }
 
     /** Reviews paired headers without decoding masks or generating a dataset. */
@@ -637,11 +677,24 @@ public final class SegmentationDatasetPreparer {
     }
 
     private static File writeLinkedDataset(String sourceName, String modelName, String modelsDir,
-            Split train, Split val, ChannelPlan channelPlan, Consumer<String> logConsumer) throws IOException {
+            Split train, Split val, ChannelPlan channelPlan, Consumer<String> logConsumer, boolean allowReferences) throws IOException {
         File root = createUniqueGeneratedRoot(sourceName, modelName, modelsDir);
         log(logConsumer, "Creating linked segmentation dataset at: " + root.getAbsolutePath());
-        writeSplit(root, train);
-        writeSplit(root, val);
+        try {
+            writeSplit(root, train);
+            writeSplit(root, val);
+        } catch (java.nio.file.FileSystemException unavailable) {
+            if (!allowReferences) throw unavailable;
+            Map<String,List<List<String>>> sources = new LinkedHashMap<>();
+            for (Split group : Arrays.asList(train,val)) {
+                List<List<String>> files = new ArrayList<>();
+                for (Pair pair : group.pairs) files.add(Arrays.asList(pair.image.getAbsolutePath(),pair.mask.getAbsolutePath()));
+                sources.put(group.name,files);
+            }
+            Files.writeString(root.toPath().resolve("jdll-source-pairs.json"), new com.google.gson.Gson().toJson(sources));
+            log(logConsumer, "File links are unavailable. Training reads the original images and masks directly.");
+            return root;
+        }
         List<String> info = new ArrayList<String>(Arrays.asList(
                 "This dataset contains links to the original images and masks.",
                 "Generated by JDLL to normalize a segmentation dataset layout."));
@@ -1122,6 +1175,8 @@ public final class SegmentationDatasetPreparer {
     }
 
     public static final class PreparedDataset {
+        private final File spatialSource;
+        public String getSpatialSource() { return spatialSource == null ? null : spatialSource.getAbsolutePath(); }
         private final File datasetRoot;
         private final boolean generated;
         private final Summary summary;
@@ -1129,7 +1184,8 @@ public final class SegmentationDatasetPreparer {
         private final Dimensionality dimensionality;
 
         private PreparedDataset(File datasetRoot, boolean generated, Summary summary, int targetImageChannels,
-                Dimensionality dimensionality) {
+                Dimensionality dimensionality, File spatialSource) {
+            this.spatialSource = spatialSource;
             this.datasetRoot = datasetRoot;
             this.generated = generated;
             this.summary = summary;

@@ -90,12 +90,17 @@ public class CellposeInferenceService {
     public <T extends RealType<T> & NativeType<T>, R extends RealType<R> & NativeType<R>>
     List<Tensor<R>> run(String modelSelection, RandomAccessibleInterval<T> image,
             int[] channels, Float diameter, String device, Consumer<String> log) throws Exception {
-        return (List) run(new Run(modelSelection, channels, diameter, device, true), image, log);
+        return (List) run(new Run(modelSelection, channels, diameter, device, true), image, log, false);
     }
 
     /** Inputs have explicit X,Y,C,Z,T axes, with trailing singleton axes optional. */
     public <T extends RealType<T> & NativeType<T>> List<Tensor<FloatType>> run(
             Run run, RandomAccessibleInterval<T> image, Consumer<String> log) throws Exception {
+        return run(run, image, log, run.intermediates);
+    }
+
+    private <T extends RealType<T> & NativeType<T>> List<Tensor<FloatType>> run(
+            Run run, RandomAccessibleInterval<T> image, Consumer<String> log, boolean restore) throws Exception {
         RandomAccessibleInterval<T> input = canonicalInput(image);
         CellposeChannels.validate(run.channels, input.dimension(2));
         String path = installer.installAndResolve(run.modelSelection, log);
@@ -103,11 +108,12 @@ public class CellposeInferenceService {
         Cellpose active = model;
         active.setChannels(new int[] {1, run.channels[1] == 0 ? 0 : 2});
         active.setIncludeIntermediateOutputs(run.intermediates);
+        active.setRestoreImage(restore);
         active.setLogConsumer(message -> {
             if (run.diameter == null || !run.diameterLogged) accept(log, message);
         });
         try {
-            return runFrames(active, run, input, log);
+            return runFrames(active, run, input, log, restore);
         } finally {
             active.setLogConsumer(null);
         }
@@ -136,11 +142,12 @@ public class CellposeInferenceService {
     }
 
     private <T extends RealType<T> & NativeType<T>> List<Tensor<FloatType>> runFrames(
-            Cellpose model, Run run, RandomAccessibleInterval<T> input, Consumer<String> log) throws RunModelException {
+            Cellpose model, Run run, RandomAccessibleInterval<T> input, Consumer<String> log, boolean restore) throws RunModelException {
         long depth = input.dimension(3), frames = input.dimension(4);
         List<Tensor<FloatType>> result = new ArrayList<>();
-        int[] indices = run.intermediates ? new int[] {0, 1, 2, 3, 5} : new int[] {0};
-        String[] names = {"labels", "flows_0", "flows_1", "flows_2", "image_dn"};
+        int[] indices = {0, 1, 2, 3, 5};
+        int count = restore ? 5 : (run.intermediates ? 4 : 1);
+        String[] names = {"labels", "flows_0", "flows_1", "flows_2", "restored"};
         String[] axes = {"xy", "xyc", "cxy", "xy", "xyc"};
         for (long t = 0; t < frames; t++) {
             Float diameter = run.diameterAt(Math.toIntExact(t));
@@ -152,15 +159,13 @@ public class CellposeInferenceService {
                 RandomAccessibleInterval<T> plane = Views.hyperSlice(Views.hyperSlice(input, 4, t), 3, z);
                 List<Tensor<FloatType>> outputs = model.inference(
                         Tensor.build("input", "xyc", CellposeChannels.pack(plane, run.channels)));
-                if (outputs.size() != (run.intermediates ? 6 : 1))
+                if (outputs.size() != (run.intermediates ? count + 1 : 1))
                     throw new IllegalArgumentException("Unexpected Cellpose output count: " + outputs.size());
                 run.diameterLogged = true;
-                for (int i = 0; i < indices.length; i++) {
+                for (int i = 0; i < count; i++) {
                     RandomAccessibleInterval<FloatType> source = outputs.get(indices[i]).getData();
                     if (result.size() <= i) {
                         long[] shape = Arrays.copyOf(source.dimensionsAsLongArray(), source.numDimensions() + 2);
-                        // Cellpose omits the auxiliary denoised channel when that plane is constant.
-                        if (i == 4 && run.channels[1] != 0) shape[2] = 2;
                         shape[shape.length - 2] = depth;
                         shape[shape.length - 1] = frames;
                         result.add(Tensor.build(names[i], axes[i] + "zt", ArrayImgs.floats(shape)));
@@ -168,9 +173,6 @@ public class CellposeInferenceService {
                     RandomAccessibleInterval<FloatType> target = result.get(i).getData();
                     target = Views.hyperSlice(Views.hyperSlice(target, target.numDimensions() - 1, t),
                             target.numDimensions() - 2, z);
-                    if (i == 4 && source.dimension(2) == 1 && target.dimension(2) == 2)
-                        target = Views.interval(target, new long[] {0, 0, 0},
-                                new long[] {target.dimension(0) - 1, target.dimension(1) - 1, 0});
                     copy(source, target);
                 }
             }

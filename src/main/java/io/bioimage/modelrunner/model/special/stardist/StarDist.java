@@ -1851,6 +1851,10 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "preview_dir.mkdir(parents=True, exist_ok=True)" + nl
 				+ "stardist_log_path = output_dir / 'training.log'" + nl
 				+ "config = json.loads(r'''" + TrainingCodeUtils.toJson(config) + "''')" + nl
+				+ "spatial_source = config.pop('_jdll_spatial_source', None)" + nl
+                + "original_dataset = config.pop('_jdll_source_root', data_dir)" + nl
+                + "legacy_run = config.pop('_jdll_legacy', None)" + nl
+                + "base_directory = config.pop('_jdll_base_directory', None)" + nl
 				+ "fine_tune_weights = config.pop('_jdll_fine_tune_weights', None)" + nl
 				+ "fine_tune_source_config = config.pop('_jdll_fine_tune_source_config', None)" + nl
 				+ "n_dim = int(config.pop('n_dim', 2))" + nl
@@ -2269,15 +2273,37 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ TrainingCodeUtils.pythonModule("stardist_data", "python/stardist_data.py")
 				+ TrainingCodeUtils.pythonModule("validation_control", "python/validation_control.py")
 				+ TrainingCodeUtils.pythonModule("stardist_sampling", "python/stardist_sampling.py")
-				+ TrainingCodeUtils.pythonModule("stardist_validation", "python/stardist_validation.py")
+				+ TrainingCodeUtils.pythonModule("jdll_training_continuation", "python/training_continuation.py")
+                + TrainingCodeUtils.pythonModule("stardist_validation", "python/stardist_validation.py")
 				+ "storage = stardist_data.DatasetStore(_read_array, _canonical_array, n_dim, config['n_channel_in'], data_options, _task_update, _cancel_requested)" + nl
-				+ "train_pairs, val_pairs = _dataset()" + nl
+				 + "run = jdll_training_continuation.TrainingRun(output_dir, config['train_epochs'], base_directory, legacy_run)" + nl
+                + "run.spatial_source = spatial_source" + nl
+                + "run.minimum_region_shape = config['train_patch_size']" + nl
+                + "run.source_root = Path(original_dataset).absolute()" + nl
+                + "run.info['dataset'] = str(run.source_root)" + nl
+                + "signature = output_dir / 'validation.sha256'" + nl
+                + "if signature.is_file(): run.info['validation'] = signature.read_text()" + nl
+                + "if run.selected:" + nl
+                + "  if int(fine_tune_source_config.get('n_channel_in', 1)) != int(config.get('n_channel_in', 1)):" + nl
+                + "    run.use_fine_tuning()" + nl
+                + "    _task_update(message='Input channels changed. Adapting the network with a fresh fine-tuning optimizer.')" + nl
+                + "  else:" + nl
+                + "    fine_tune_weights = str(run.parent / run.selected['weights'])" + nl
+                + "    config['train_learning_rate'] = fine_tune_source_config['train_learning_rate']" + nl
+                + "    config['train_epochs'] = run.total" + nl
+                + "run.flush()" + nl
+                + "source_pairs = jdll_training_continuation.source_pairs(data_dir)" + nl
+                + "train_pairs, val_pairs = [[(Path(i), Path(m)) for i,m in source_pairs[s]] for s in ('train','val')] if source_pairs else _dataset()" + nl
 				+ "X_train, Y_train = _load_pairs(train_pairs)" + nl
 				+ "X_val, Y_val = _load_pairs(val_pairs)" + nl
-				+ "if not val_pairs and len(train_pairs) == 1:" + nl
+				+ "if spatial_source or (run.selected and (output_dir / 'split.json').is_file()):" + nl
+                + "  X_train, Y_train, X_val, Y_val = stardist_data.restore_holdout(run, Y_train, Y_val, lambda msg: _task_update(message=msg))" + nl
+                + "if not X_val and len(X_train) == 1:" + nl
 				+ "  X_train, Y_train, X_val, Y_val = storage.spatial_split(X_train, Y_train, config['train_patch_size'], " + validFraction + ")" + nl
 				+ "  val_pairs = list(train_pairs)" + nl
-				+ "_resolve_anisotropy(train_pairs, Y_train)" + nl
+				+ "train_pairs, val_pairs = [[(a.source.image, a.source.mask) for a in group] for group in (Y_train, Y_val)]" + nl
+                + "run.record_domains(*[[(a.source.image, a.source.mask, getattr(a.source, 'bounds', ())) for a in group] for group in (Y_train, Y_val)])" + nl
+                + "_resolve_anisotropy(train_pairs, Y_train)" + nl
 				+ "_save_object_statistics(Y_train)" + nl
 				+ "with open(stardist_log_path, 'a', encoding='utf-8') as stardist_log, contextlib.redirect_stdout(stardist_log), contextlib.redirect_stderr(stardist_log), tf.device(_jdll_tf_device):" + nl
 				+ "  config_type = Config3D if n_dim == 3 else Config2D" + nl
@@ -2288,12 +2314,13 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "    transfer_message = _load_fine_tune_weights(model)" + nl
 				+ "    _task_update(message=transfer_message, info={'type': 'fine_tune', 'message': transfer_message})" + nl
 				+ "  model.prepare_for_training()" + nl
-				+ "  if fine_tune_weights is not None:" + nl
+				+ "  if fine_tune_weights is not None and not run.selected:" + nl
 				+ "    _baseline_validation(model, X_val, Y_val)" + nl
 				+ "  model.callbacks.append(JDLLProgressCallback(model, X_val, Y_val))" + nl
 				+ "  validation = stardist_validation.PatchValidation(model, X_val, Y_val, output_dir," + nl
 				+ "    validation_options, preview_count, _task_update, _cancel_requested, _atomic_npy_save," + nl
 				+ "    source_paths=[str(pair[0]) for pair in val_pairs], request_path=full_validation_request)" + nl
+				+ "  validation.run = run" + nl
 				+ "  best_path = output_dir / str(config.get('train_checkpoint', 'weights_best.h5'))" + nl
 				+ "  last_path = output_dir / str(config.get('train_checkpoint_last', 'weights_last.h5'))" + nl
 				+ "  history = stardist_validation.train_with_validation(model, X_train, Y_train, validation," + nl
@@ -2316,6 +2343,7 @@ public final class StarDist extends DLModelPytorchProtected {
 				+ "      json.dump(dict(model.thresholds._asdict()), threshold_file)" + nl
 				+ "    _task_update(message='Retained StarDist thresholds; automatic full-volume threshold optimization is disabled.', info={'type': 'thresholds'})" + nl
 				+ "_task_update(message='Exported/final StarDist model directory: ' + str(output_dir), info={'type': 'checkpoint', 'kind': 'final', 'path': str(output_dir)})" + nl
+				+ "run.finish('cancelled' if _cancel_requested() or history is None else 'complete')" + nl
 				+ "storage.close()" + nl
 				+ "task.outputs['result'] = str(output_dir)" + nl;
 		}

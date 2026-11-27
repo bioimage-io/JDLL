@@ -473,7 +473,8 @@ class PatchValidation(Callback):
             schedule=self.schedule.state(), training_checkpoint='training_state-%06d' % epoch))
         for path in self.output.glob('training_state-*.*'):
             number = path.name.split('-', 1)[1].split('.', 1)[0]
-            if number.isdigit() and int(number) < epoch - 1:
+            protected = {slot["epoch"] for slot in self.run.info["checkpoints"].values()} if getattr(self, "run", None) else set()
+            if number.isdigit() and int(number) < epoch - 1 and int(number) not in protected:
                 path.unlink()
 
     def _full_validation(self, epoch):
@@ -615,7 +616,50 @@ class ValidationArtifacts(Callback):
         self.best_path = Path(self.checkpoint.filepath) if self.checkpoint is not None else None
         self.best_exists = self.best_path is not None and self.best_path.is_file()
 
+    def on_train_begin(self, logs=None):
+        run = getattr(self.validation, "run", None)
+        if not run or not run.selected:
+            return
+        slot = run.selected
+        prefix = None
+        if slot["restore"]:
+            prefix = (run.parent / slot["state"]).with_suffix("")
+            opt = self.model.optimizer
+            if hasattr(opt, "build"):
+                opt.build(self.model.trainable_variables)
+            elif hasattr(opt, "_create_all_weights"):
+                opt._create_all_weights(self.model.trainable_variables)
+            tf.train.Checkpoint(model=self.model, optimizer=opt).restore(str(prefix)).expect_partial()
+        score = slot.get("score")
+        if run.validation_changed or score is None:
+            result = {}
+            self.validation.on_epoch_end(run.start - 1, result)
+            score = float(result["val_loss"])
+            self.validation.update(message=f"Validation changed. Starting validation loss: {score:.5f}.")
+        self.best = self.checkpoint.best = score
+        self.model.save_weights(str(self.best_path))
+        saved = json.loads(prefix.with_suffix(".json").read_text()) if prefix and prefix.with_suffix(".json").is_file() else {}
+        for cb in self.validation.ref.callbacks:
+            if hasattr(cb, "cooldown_counter"):
+                cb.best = score if run.validation_changed else saved.get("best", score)
+                cb.wait = 0 if run.validation_changed else saved.get("wait", 0)
+                cb.cooldown_counter = 0 if run.validation_changed else saved.get("cooldown", 0)
+        state = self.save_training_state(run.start)
+        run.checkpoint("best", run.start, self.best_path, state, score)
+        self.validation.update(message=f"Continuing from {slot['kind']} epoch {run.start} " +
+                               ("with its optimizer." if slot["restore"] else "with a fresh optimizer."))
+
+    def save_training_state(self, epoch):
+        prefix = self.validation.output / ("training_state-%06d" % epoch)
+        tf.train.Checkpoint(model=self.model, optimizer=self.model.optimizer).write(str(prefix))
+        for cb in self.validation.ref.callbacks:
+            if hasattr(cb, "cooldown_counter"):
+                atomic_json(prefix.with_suffix(".json"), dict(best=float(cb.best), wait=int(cb.wait),
+                            cooldown=int(cb.cooldown_counter)))
+        return prefix.with_suffix(".index")
+
     def on_epoch_end(self, epoch, logs=None):
+        improved = False
         # Runs after checkpoint callbacks, so a diagnostic failure cannot lose the best model.
         if self.checkpoint is not None:
             best = self.checkpoint.best
@@ -627,6 +671,7 @@ class ValidationArtifacts(Callback):
                               path=str(self.best_path), overwrite=self.best_exists,
                               monitor='val_loss', value=float(best)))
                 self.best_exists = True
+                improved = True
             self.best = best
         last_name = self.validation.ref.config.train_checkpoint_last
         if last_name:
@@ -638,8 +683,13 @@ class ValidationArtifacts(Callback):
             self.validation.update(message=('Overwriting' if overwrite else 'Saving') + ' StarDist last checkpoint: ' + str(path),
                                    info=dict(type='checkpoint', kind='last', status='saved', epoch=epoch + 1,
                                              path=str(path), overwrite=overwrite))
-        tf.train.Checkpoint(model=self.model, optimizer=self.model.optimizer).write(
-            str(self.validation.output / ('training_state-%06d' % (epoch + 1))))
+        state = self.save_training_state(epoch + 1)
+        run = getattr(self.validation, "run", None)
+        if run:
+            if last_name:
+                run.checkpoint("last", epoch + 1, path, state, float(logs["val_loss"]))
+            if improved:
+                run.checkpoint("best", epoch + 1, self.best_path, state, float(self.best))
         self.validation.save_state(epoch + 1)
         self.validation.finish_epoch(epoch + 1)
 
@@ -657,6 +707,8 @@ def train_with_validation(model, images, labels, validation, epochs, steps):
         for callback in model.callbacks:
             if hasattr(callback, 'best') and getattr(callback, 'monitor', None) == 'val_loss':
                 callback.best = best
+    if getattr(validation, "run", None) and validation.run.selected:
+        validation.initial_epoch = validation.run.start
     def batches():
         for _ in range(max(0, epochs - validation.initial_epoch) * steps):
             with validation.sampling_lock:

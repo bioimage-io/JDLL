@@ -627,7 +627,9 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "import ultralytics" + nl
 				+ "from ultralytics import YOLO" + nl
 				+ "from ultralytics.utils import LOGGER" + nl
-				+ TrainingCodeUtils.pythonModule("jdll_yolo_data", "python/yolo_data.py")
+				 + TrainingCodeUtils.pythonModule("jdll_training_continuation", "python/training_continuation.py")
+                + TrainingCodeUtils.pythonModule("jdll_yolo_continuation", "python/yolo_continuation.py")
+                + TrainingCodeUtils.pythonModule("jdll_yolo_data", "python/yolo_data.py")
 				+ "model_source = r'" + TrainingCodeUtils.py(modelSource) + "'" + nl
 				+ "dataset_yaml = r'" + TrainingCodeUtils.py(new File(datasetYamlPath).getAbsolutePath()) + "'" + nl
 				+ "output_weights = r'" + TrainingCodeUtils.py(outputFile.getAbsolutePath()) + "'" + nl
@@ -651,7 +653,23 @@ public class Yolo extends DLModelPytorchProtected {
 				+ "imgsz = " + imageSize + nl
 				+ "batch_size = " + batchLiteral(batchRequest, normalizedDevice, modelSource) + nl
 				+ "train_options = json.loads(base64.b64decode('" + optionsBase64 + "').decode('utf-8'))" + nl
-				+ "preview_assets_dir = train_options.pop('jdll_preview_assets', os.path.join(preview_dir, 'images'))" + nl
+				 + "run_output = train_options.pop('jdll_run_dir', None)" + nl
+                + "attempt = train_options.pop('jdll_attempt', 1)" + nl
+                + "run = None" + nl
+                + "if run_output:" + nl
+                + "  run_dir_path = jdll_training_continuation.Path(run_output)" + nl
+                + "  index = run_dir_path / 'continuation.json'" + nl
+                + "  if attempt > 1 and index.exists():" + nl
+                + "    if jdll_training_continuation.read_json(index).get('checkpoints'): raise RuntimeError('Memory exhausted after a validated epoch. Continue from the saved checkpoint.')" + nl
+                + "    index.unlink()" + nl
+                + "  run = jdll_training_continuation.TrainingRun(run_output, epochs, model_source, train_options.pop('jdll_legacy', None))" + nl
+                + "  run.info['dataset'] = train_options.pop('jdll_dataset_path', dataset_yaml)" + nl
+                + "  signature = run_dir_path / 'validation.sha256'" + nl
+                + "  if signature.exists(): run.info['validation'] = signature.read_text()" + nl
+                + "  if run.selected: model_source = str(run.parent / run.selected['weights'])" + nl
+                + "  epochs = run.total" + nl
+                + "  run.flush()" + nl
+                + "preview_assets_dir = train_options.pop('jdll_preview_assets', os.path.join(preview_dir, 'images'))" + nl
 				+ "os.makedirs(preview_assets_dir, exist_ok=True)" + nl
 				+ "preview_epoch_period = " + Math.max(1, previewEpochPeriod) + nl
 				+ "preview_sample_count = " + DEFAULT_VALIDATION_PREVIEW_SAMPLE_COUNT + nl
@@ -847,7 +865,8 @@ public class Yolo extends DLModelPytorchProtected {
 					+ "  train_args = dict(train_options)" + nl
 					+ "  jdll_yolo_data.DOCUMENTATION = train_args.pop('jdll_documentation', jdll_yolo_data.DOCUMENTATION)" + nl
 					+ "  train_args['trainer'] = jdll_yolo_data.trainer_class(dataset_yaml, jdll_yolo_data.load_normalization(output_weights), _task_update, _cancel_requested)" + nl
-					+ "  train_args.update(data=dataset_yaml, epochs=epochs, imgsz=imgsz, batch=batch_size, project=project, name=run_name, exist_ok=" + pyBool(DEFAULT_TRAIN_EXIST_OK) + ", verbose=" + pyBool(DEFAULT_TRAIN_VERBOSE) + ", plots=" + pyBool(DEFAULT_TRAIN_PLOTS) + ", workers=" + DEFAULT_TRAIN_WORKERS + ", device=train_device)" + nl
+					+ "  if run: train_args['trainer'] = jdll_yolo_continuation.continuing_trainer(train_args['trainer'], run, _task_update)" + nl
+                    + "  train_args.update(data=dataset_yaml, epochs=epochs, imgsz=imgsz, batch=batch_size, project=project, name=run_name, exist_ok=" + pyBool(DEFAULT_TRAIN_EXIST_OK) + ", verbose=" + pyBool(DEFAULT_TRAIN_VERBOSE) + ", plots=" + pyBool(DEFAULT_TRAIN_PLOTS) + ", workers=" + DEFAULT_TRAIN_WORKERS + ", device=train_device)" + nl
 					+ "  with open(yolo_log_path, 'a', encoding='utf-8') as yolo_log, contextlib.redirect_stdout(yolo_log), contextlib.redirect_stderr(yolo_log):" + nl
 					+ "    results = model.train(**train_args)" + nl
 					+ "  trainer = getattr(model, 'trainer', None)" + nl
@@ -881,6 +900,10 @@ public class Yolo extends DLModelPytorchProtected {
 					+ "  task.outputs['best_epoch'] = state.get('best_epoch', 0)" + nl
 					+ "  task.outputs['best_metrics'] = state.get('best_metrics', {})" + nl
 					+ "  task.outputs['final_metrics'] = state.get('final_metrics', {})" + nl
+                    + "  if run: run.finish('cancelled' if _cancel_requested() else 'complete')" + nl
+                    + "except BaseException:" + nl
+                    + "  if run: run.finish('cancelled' if _cancel_requested() else 'failed')" + nl
+                    + "  raise" + nl
 				+ "finally:" + nl
 				+ "  try:" + nl
 				+ "    del results" + nl

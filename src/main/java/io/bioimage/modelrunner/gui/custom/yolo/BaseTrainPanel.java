@@ -19,6 +19,8 @@
  */
 package io.bioimage.modelrunner.gui.custom.yolo;
 
+import io.bioimage.modelrunner.gui.custom.training.TrainingContinuation;
+
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.FontMetrics;
@@ -194,6 +196,7 @@ public abstract class BaseTrainPanel extends JPanel {
         add(trainActionPanel);
 
         updateMode();
+        baseModelComboBox.addActionListener(e -> suggestEpochs());
         fineTuneRadio.addActionListener(e -> updateMode());
         scratchRadio.addActionListener(e -> updateMode());
     }
@@ -212,7 +215,35 @@ public abstract class BaseTrainPanel extends JPanel {
         label.setText("");
     }
 
+    private String suggestedModel;
+    private String normalEpochs;
+
+    protected YoloModelSelectionEntry trainingEntry(String name, String value) {
+        TrainingContinuation run = TrainingContinuation.find(value);
+        if (run != null) name += " (continue training from " + run.checkpoint + ", epoch " + run.epoch + "/" + run.budget + ")";
+        return new YoloModelSelectionEntry(name, value);
+    }
+
+    private void suggestEpochs() {
+        String value = fineTuneRadio.isSelected() ? getSelectedBaseModelValue() : null;
+        if (java.util.Objects.equals(suggestedModel, value)) return;
+        suggestedModel = value;
+        TrainingContinuation run = TrainingContinuation.find(value);
+        if (run != null) {
+            if (normalEpochs == null) normalEpochs = epochsField.getText();
+            epochsField.setText(Integer.toString(Math.max(1, run.budget - run.epoch)));
+            epochsLabel.setText("More epochs");
+            if (datasetField.getText().trim().isEmpty() && run.dataset() != null && new java.io.File(run.dataset()).exists())
+                datasetField.setText(run.dataset());
+        } else if (normalEpochs != null) {
+            epochsField.setText(normalEpochs);
+            normalEpochs = null;
+            epochsLabel.setText("Epochs");
+        }
+    }
+
     private void updateMode() {
+        suggestEpochs();
         boolean fineTune = fineTuneRadio.isSelected();
         boolean available = !trainingRunning && !datasetReviewRunning;
         fineTuneRadio.setEnabled(available);

@@ -93,7 +93,9 @@ public class StardistTrainingService {
         validate(config);
         PreparedDataset dataset = SegmentationDatasetPreparer.prepare(config.getDatasetPath(), config.getModelName(),
                 config.getModelsDir(), config.getValidFraction(), SegmentationDatasetPreparer.Framework.STARDIST,
-                logConsumer);
+                logConsumer, new io.bioimage.modelrunner.gui.custom.training.TrainingSplit(
+                        new File(config.getDatasetPath()), new File(config.getOutputModelDir()),
+                        config.isFineTune() ? config.getBaseModelPath() : null, logConsumer));
         File datasetRoot = dataset.getDatasetRoot();
 
         installer.installEnvironment(logConsumer);
@@ -123,6 +125,8 @@ public class StardistTrainingService {
         File cancelFile = beginCancelSignal();
         try (ValidationRequests requests = new ValidationRequests()) {
             synchronized (this) { validationRequests = requests; }
+            trainingConfig.put("_jdll_spatial_source", dataset.getSpatialSource());
+            trainingConfig.put("_jdll_source_root", new File(config.getDatasetPath()).getAbsolutePath());
             trainingConfig.put("_jdll_full_validation_request", requests.getDirectory());
             StarDist.train(datasetRoot.getAbsolutePath(), null,
                     config.getOutputModelDir(), config.getDevice(), dataset.getImageChannels(),
@@ -238,11 +242,15 @@ public class StardistTrainingService {
         }
 
         int sourceChannels = intValue(sourceConfig.get("n_channel_in"), 1);
+        trainingConfig.put("_jdll_legacy", io.bioimage.modelrunner.gui.custom.training.TrainingContinuation.legacyMetadata(config.getBaseModelPath()));
+        trainingConfig.put("_jdll_base_directory", source.getModelDirectory().getAbsolutePath());
         trainingConfig.put("_jdll_fine_tune_weights", initialWeights.getAbsolutePath());
         trainingConfig.put("_jdll_fine_tune_source_config", sourceConfig);
-        log(logConsumer, "Fine-tuning source: " + source.getModelDirectory().getAbsolutePath());
+        boolean continuation = io.bioimage.modelrunner.gui.custom.training.TrainingContinuation.find(
+                config.getBaseModelPath()) != null && sourceChannels == dataset.getTargetImageChannels();
+        log(logConsumer, (continuation ? "Continuation source: " : "Fine-tuning source: ") + source.getModelDirectory().getAbsolutePath());
         log(logConsumer, "Copied initial weights to: " + initialWeights.getAbsolutePath());
-        log(logConsumer, "Fine-tuning configuration: learning_rate=" + FINE_TUNE_LEARNING_RATE
+        if (!continuation) log(logConsumer, "Fine-tuning configuration: learning_rate=" + FINE_TUNE_LEARNING_RATE
                 + ", fresh_optimizer=true, frozen_layers=0, source_channels=" + sourceChannels
                 + ", training_channels=" + dataset.getTargetImageChannels() + ".");
         if (sourceChannels != dataset.getTargetImageChannels()) {

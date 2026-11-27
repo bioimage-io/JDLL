@@ -15,14 +15,9 @@ def resolve_cellpose_diameter(model, images, channels, requested, weights, task)
             "cytotorch_0": "size_cytotorch_0.npy",
             "nucleitorch_0": "size_nucleitorch_0.npy",
         }
-        expected = path.parent / official[path.name] if path.name in official else None
-        candidates = sorted(p for p in path.parent.glob("size_*.npy") if p.is_file())
-        if expected is not None and expected.is_file():
+        expected = path.parent / official.get(path.name, path.name + "_size.npy")
+        if expected.is_file():
             selected = expected
-        elif expected is None and candidates:
-            selected = candidates[0]
-            if len(candidates) > 1:
-                warning = "Multiple size models found; using " + selected.name + "."
         if selected is not None:
             try:
                 from cellpose.models import SizeModel
@@ -32,8 +27,10 @@ def resolve_cellpose_diameter(model, images, channels, requested, weights, task)
                     cache = model._jdll_size_models = {}
                 key = str(selected.resolve())
                 if key not in cache:
-                    cache[key] = SizeModel(pretrained_size=str(selected), cp_model=model.cp)
-                estimate = np.asarray(cache[key].eval(images, channels=channels, channel_axis=-1)[0]).reshape(-1)
+                    cache[key] = SizeModel(pretrained_size=str(selected), cp_model=model)
+                styles = model.eval(images, channels=channels, channel_axis=-1, diameter=None,
+                                    rescale=1.0, resample=False, compute_masks=False)[2]
+                estimate = np.asarray(cache[key]._size_estimation(styles[0])).reshape(-1)
                 if estimate.size != 1 or not np.isfinite(estimate[0]) or estimate[0] <= 0:
                     raise ValueError("size estimator returned an invalid diameter")
                 diameter = float(estimate[0])
@@ -42,12 +39,13 @@ def resolve_cellpose_diameter(model, images, channels, requested, weights, task)
                 raise
             except Exception as error:
                 warning = "Diameter estimation failed: " + str(error) + "."
-        else:
-            warning = "No matching size model found." if expected is not None else "No size model found."
+        elif path.name in official:
+            warning = "No matching size model found."
         if diameter is None:
-            diameter = float(getattr(model.cp, "diam_labels", model.cp.diam_mean))
+            diameter = float(getattr(model, "diam_labels", model.diam_mean))
             source = "model_default"
-            warning = (warning or "") + " Using the segmentation model's default diameter."
+            if warning:
+                warning += " Using the segmentation model's default diameter."
     diameter = float(diameter)
     if not np.isfinite(diameter) or diameter <= 0:
         raise ValueError("Cellpose diameter must be a finite, positive number of pixels")
@@ -62,3 +60,25 @@ def resolve_cellpose_diameter(model, images, channels, requested, weights, task)
                 "source": source, "size_model": str(selected) if selected else None,
                 "warning": bool(warning)})
     return diameter
+
+
+def restore_cellpose_plane(model, image, channels, diameter, task):
+    """Restore the selected channels at input resolution using Cellpose 3 denoising."""
+    import numpy as np
+    from pathlib import Path
+    from cellpose.denoise import DenoiseModel
+
+    family = "nuclei" if model.diam_mean == 17 else "cyto3"
+    if Path(model.pretrained_model).name in ("cyto2torch_0", "cytotorch_0"):
+        family = "cyto2"
+    key = ("denoise_" + family, channels[1] > 0)
+    if getattr(model, "_jdll_restorer_key", None) != key:
+        task.update(message="Loading Cellpose restoration model " + key[0] + ".",
+                    info={"type": "cellpose_restoration"})
+        model._jdll_restorer = DenoiseModel(model_type=key[0], device=model.device, chan2=key[1])
+        model._jdll_restorer_key = key
+    restored = model._jdll_restorer.eval(image, channels=channels, channel_axis=-1, diameter=diameter)
+    # Cellpose drops a constant secondary channel. Keep the selected layout stable across Z and T.
+    if key[1] and restored.shape[-1] == 1:
+        restored = np.concatenate((restored, np.zeros_like(restored)), axis=-1)
+    return restored

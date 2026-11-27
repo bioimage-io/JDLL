@@ -68,10 +68,15 @@ public final class CrossGooseTrainingService implements DenseSegmentationTrainin
         if (Thread.currentThread().isInterrupted()) throw new InterruptedException("Cross-GOOSE training cancelled.");
         PreparedDataset dataset = SegmentationDatasetPreparer.prepare(config.getDatasetPath(),
                 config.getModelName(), config.getModelsDir(), 0.15d,
-                SegmentationDatasetPreparer.Framework.CROSS_GOOSE, logConsumer);
+                SegmentationDatasetPreparer.Framework.CROSS_GOOSE, logConsumer, new io.bioimage.modelrunner.gui.custom.training.TrainingSplit(
+                        new File(config.getDatasetPath()), new File(config.getOutputModelDir()),
+                        config.isFineTune() ? config.getBaseModelPath() : null, logConsumer));
         try (ValidationRequests requests = new ValidationRequests()) {
             synchronized (this) { validationRequests = requests; }
             Map<String, Object> valuesForPython = pythonConfig(config, dataset.getDatasetRoot());
+            valuesForPython.put("_jdll_legacy", io.bioimage.modelrunner.gui.custom.training.TrainingContinuation.legacyMetadata(config.getBaseModelPath()));
+            valuesForPython.put("_jdll_spatial_source", dataset.getSpatialSource());
+            valuesForPython.put("_jdll_source_root", new File(config.getDatasetPath()).getAbsolutePath());
             valuesForPython.put("_jdll_validation_requests", requests.getDirectory());
             CrossGoose.train(valuesForPython, progressConsumer, previewConsumer, logConsumer,
                     this::setRunningPython, event -> {

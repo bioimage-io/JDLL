@@ -846,7 +846,7 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                         }));
                 if (trainingRunId == trainingUiRunId) {
                     appendTrainingLog("Training completed successfully.");
-                    refreshModels();
+
                 }
             } catch (Exception | Error ex) {
                 if (trainingRunId == trainingUiRunId && !cancelled) {
@@ -855,7 +855,10 @@ public class UNetPluginUI extends UnetGUI implements ActionListener {
                     ex.printStackTrace();
                 }
             } finally {
-                SwingUtilities.invokeLater(() -> finishTrainingUiState(trainingRunId));
+                SwingUtilities.invokeLater(() -> {
+                    finishTrainingUiState(trainingRunId);
+                    if (!trainingRunning) refreshModels();
+                });
             }
         }, backend.getDisplayName().toLowerCase(Locale.ROOT).replace(' ', '-') + "-training");
         workerThread.start();

@@ -199,7 +199,7 @@ public class UnetTrainPanel extends BaseTrainPanel {
                 new DefaultComboBoxModel<YoloModelSelectionEntry>();
         if (models != null) {
             for (Map.Entry<String, String> entry : models.entrySet()) {
-                comboModel.addElement(new YoloModelSelectionEntry(entry.getKey(), entry.getValue()));
+                comboModel.addElement(trainingEntry(entry.getKey(), entry.getValue()));
             }
         }
         baseModelComboBox.setModel(comboModel);

@@ -724,7 +724,7 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                         logConsumer);
                 if (trainingRunId == trainingUiRunId) {
                     appendTrainingLog("Training completed successfully.");
-                    refreshYoloModels();
+
                 }
             } catch (Exception | Error e) {
                 if (trainingRunId == trainingUiRunId && !cancelled) {
@@ -733,7 +733,10 @@ public class YOLOPluginUI extends YoloGUI implements ActionListener {
                     e.printStackTrace();
                 }
             } finally {
-                SwingUtilities.invokeLater(() -> finishTrainingUiState(trainingRunId));
+                SwingUtilities.invokeLater(() -> {
+                    finishTrainingUiState(trainingRunId);
+                    if (!trainingRunning) refreshYoloModels();
+                });
             }
         });
         workerThread.start();

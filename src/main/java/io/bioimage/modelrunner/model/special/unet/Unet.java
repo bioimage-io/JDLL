@@ -531,11 +531,12 @@ public final class Unet extends DLModelPytorchProtected {
                 + "_jdll_unet_config = json.loads(r'''" + TrainingCodeUtils.toJson(config) + "''')" + nl
                 + TrainingCodeUtils.resolveDevice("torch", "_jdll_unet_config.get('device', 'cpu')",
                         "_jdll_unet_config['device']", "task.update")
+                + TrainingCodeUtils.pythonModule("jdll_training_continuation", "python/training_continuation.py")
                 + TrainingCodeUtils.pythonModule("validation_control", "python/validation_control.py")
                 + "_jdll_request_dir = _jdll_unet_config.pop('_jdll_validation_requests', None)" + nl
                 + "_jdll_control = validation_control.file_control(_jdll_request_dir) if _jdll_request_dir else None" + nl
                 + "try:" + nl
-                + "  _jdll_unet_result = jdll_unet_train(_jdll_unet_config, task=task, control=_jdll_control)" + nl
+                + "  _jdll_unet_result = jdll_training_continuation.train_dense(jdll_unet_train, _jdll_unet_config, task=task, control=_jdll_control)" + nl
                 + "  for _jdll_kind, _jdll_key in (('last', 'last_checkpoint'), ('best', 'best_checkpoint')):" + nl
                 + "    _jdll_path = _jdll_unet_result.get(_jdll_key)" + nl
                 + "    if _jdll_path:" + nl

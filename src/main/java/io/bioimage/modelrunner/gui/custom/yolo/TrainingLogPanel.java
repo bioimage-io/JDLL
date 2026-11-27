@@ -434,7 +434,8 @@ public class TrainingLogPanel extends JPanel {
     private AttributeSet styleForMessage(String message) {
         if ("Training completed successfully.".equals(message)) return successStyle;
         if ("Training stopped by user.".equals(message)) return cancelledStyle;
-        if ("Training failed.".equals(message)) return failureStyle;
+        if ("Training failed.".equals(message) || (message != null && message.startsWith("Training failed:")))
+            return failureStyle;
         return message != null && message.startsWith(BEST_VALIDATION_PREFIX)
                 ? bestValidationStyle
                 : messageStyle;

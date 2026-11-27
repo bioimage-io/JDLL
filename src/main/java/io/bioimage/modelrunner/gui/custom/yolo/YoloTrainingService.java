@@ -91,7 +91,10 @@ public class YoloTrainingService {
         try {
             try {
                 dataset = YoloDatasetPreparer.prepareDetailed(config.getDatasetYamlPath(), config.getModelName(),
-                        config.getModelsDir(), config.getImageSize(), logConsumer);
+                        config.getModelsDir(), config.getImageSize(), logConsumer,
+                        new io.bioimage.modelrunner.gui.custom.training.TrainingSplit(
+                                new File(config.getDatasetYamlPath()).isFile() ? new File(config.getDatasetYamlPath()).getAbsoluteFile().getParentFile() : new File(config.getDatasetYamlPath()),
+                                config.getOutputModelDir(), config.isFineTune() ? config.getBaseModelPath() : null, logConsumer));
             } catch (IOException e) {
                 throw new IOException(String.valueOf(e.getMessage()).replace(io.bioimage.modelrunner.numpy.NpyImageFile.DOCUMENTATION_URL,
                         imageDocumentationUrl), e);
@@ -123,6 +126,10 @@ public class YoloTrainingService {
                         canonicalizeAttemptPath(message, attemptDir, config.getOutputModelDir()));
                 try {
                     java.util.Map<String, Object> backendOptions = config.getBackendTrainingOptions();
+                    backendOptions.put("jdll_dataset_path", config.getDatasetYamlPath());
+                    backendOptions.put("jdll_run_dir", config.getOutputModelDir().getAbsolutePath());
+                    backendOptions.put("jdll_legacy", io.bioimage.modelrunner.gui.custom.training.TrainingContinuation.legacyMetadata(config.getBaseModelPath()));
+                    backendOptions.put("jdll_attempt", attemptNumber);
                     backendOptions.put("jdll_documentation", imageDocumentationUrl);
                     backendOptions.put("jdll_preview_assets", new File(config.getOutputModelDir(), "validation_images").getAbsolutePath());
                     YoloTrainingAttemptResult completed = Yolo.trainAttempt(
